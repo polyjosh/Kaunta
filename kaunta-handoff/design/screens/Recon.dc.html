@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta admin: reconciliation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; box-sizing: border-box; background: #FAF6F1; color: #22180F; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums;">
+  <dc-import name="AdminNav" active="recon" hint-size="100%,118px"></dc-import>
+  <main style="max-width: 1240px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px;">
+      <h1 style="margin: 0; font-size: 32px; font-weight: 800;">Reconcile · Tue 10 Nov</h1>
+      <span style="font-size: 15px; color: #5A4A3B;">Business day 06:00 to 06:00 · 1 shift still open</span>
+    </div>
+
+    <section style="background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px;"><h2 style="margin: 0; font-size: 22px; font-weight: 800;">Cash, per shift</h2><span style="font-size: 14px; color: #5A4A3B;">Expected = float + cash sales − expenses paid from the drawer</span></div>
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; min-width: 820px; border-collapse: collapse; font-size: 15px;">
+          <thead><tr style="color: #5A4A3B; text-align: right;"><th scope="col" style="text-align: left; padding: 10px 8px; font-weight: 700;">Shift</th><th scope="col" style="padding: 10px 8px; font-weight: 700;">Float</th><th scope="col" style="padding: 10px 8px; font-weight: 700;">+ Cash sales</th><th scope="col" style="padding: 10px 8px; font-weight: 700;">− Expenses</th><th scope="col" style="padding: 10px 8px; font-weight: 700;">= Expected</th><th scope="col" style="padding: 10px 8px; font-weight: 700;">Counted</th><th scope="col" style="text-align: left; padding: 10px 8px; font-weight: 700;">Result</th></tr></thead>
+          <tbody>
+            <sc-for list="{{shifts}}" as="s" hint-placeholder-count="3">
+              <tr style="border-top: 1px solid #EFE6DB; text-align: right;">
+                <th scope="row" style="text-align: left; padding: 14px 8px; font-weight: 800;">{{s.who}}<div style="font-size: 13px; font-weight: 500; color: #75634F;">{{s.when}}</div></th>
+                <td style="padding: 14px 8px;">{{s.float}}</td><td style="padding: 14px 8px;">{{s.sales}}</td><td style="padding: 14px 8px;">{{s.exp}}<div style="font-size: 13px; color: #75634F;">{{s.expNote}}</div></td>
+                <td style="padding: 14px 8px; font-weight: 800;">{{s.expected}}</td><td style="padding: 14px 8px; font-weight: 800;">{{s.counted}}</td>
+                <td style="text-align: left; padding: 14px 8px;"><span style="height: 30px; padding: 0 10px 0 6px; border-radius: 999px; background: {{s.bg}}; color: {{s.fg}}; display: inline-flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 800; white-space: nowrap;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{s.d}}"/></svg>{{s.result}}</span></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size: 14px; line-height: 1.45; color: #5A4A3B;">Amounts in KES. Wanjiku’s shortfall of KES 300 is recorded against her shift. Akinyi’s shift will show here when she closes it on Counter 2.</div>
+    </section>
+
+    <section style="background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px;"><h2 style="margin: 0; font-size: 22px; font-weight: 800;">M-Pesa, for the day</h2><span style="font-size: 14px; color: #5A4A3B;">Compare what staff recorded with your till statement</span></div>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: stretch;">
+        <div style="flex: 1 1 220px; padding: 16px; border-radius: 14px; background: #F3ECE3; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 15px; font-weight: 700; color: #5A4A3B;">Recorded in Kaunta</span><span style="font-size: 30px; font-weight: 800;">KES 48,400</span><span style="font-size: 14px; color: #5A4A3B;">63 payments · 61 with a code</span></div>
+        <label style="flex: 1 1 220px; padding: 16px; border-radius: 14px; border: 2px solid #E0681A; background: #FFFFFF; display: flex; flex-direction: column; gap: 6px;"><span style="font-size: 15px; font-weight: 800;">Till total from your statement</span><span style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 20px; font-weight: 700; color: #75634F;">KES</span><input type="text" inputmode="numeric" value="{{till}}" onChange="{{onTill}}" aria-label="Till total in KES" style="flex: 1; min-width: 0; height: 48px; border: none; outline: none; background: transparent; font: inherit; font-size: 30px; font-weight: 800; color: #22180F;"></span><span style="font-size: 14px; color: #5A4A3B;">From the M-Pesa till statement for this business day</span></label>
+        <div style="flex: 1 1 220px; padding: 16px; border-radius: 14px; background: {{diffBg}}; color: {{diffFg}}; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 15px; font-weight: 800;">{{diffLabel}}</span><span style="font-size: 30px; font-weight: 800;">{{diffAmount}}</span><span style="font-size: 14px;">{{diffNote}}</span></div>
+      </div>
+      <sc-if value="{{hasGap}}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-size: 16px; font-weight: 800;">Payments to check first: no M-Pesa code entered</div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 14px; border-radius: 12px; border: 1px solid #E2D6C8;"><span style="flex: 1 1 260px; font-size: 15px;"><b>#046 Table 7</b> · split · M-Pesa part · Kiprop · 01:55</span><span style="font-size: 17px; font-weight: 800;">KES 750</span><button type="button" style="min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid #D6C8B8; background: #FFFFFF; color: #22180F; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;">Open order</button></div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 14px; border-radius: 12px; border: 1px solid #E2D6C8;"><span style="flex: 1 1 260px; font-size: 15px;"><b>#022 Table 3</b> · M-Pesa · Mwangi · 19:14</span><span style="font-size: 17px; font-weight: 800;">KES 600</span><button type="button" style="min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid #D6C8B8; background: #FFFFFF; color: #22180F; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;">Open order</button></div>
+        </div>
+      </sc-if>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding-top: 6px; border-top: 1px solid #EFE6DB;">
+        <button type="button" disabled style="min-height: 52px; padding: 0 20px; border-radius: 14px; border: 1px dashed #C9B6A2; background: #F3ECE3; color: #5A4A3B; font: inherit; font-size: 16px; font-weight: 700;">Close the business day</button>
+        <span style="font-size: 14px; color: #5A4A3B;">Available when every shift is closed and the till total is entered. You can close with a difference, and it’s kept on record.</span>
+      </div>
+    </section>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1400}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { till: '47,650' }; }
+  renderVals() {
+    const f = (n) => n.toLocaleString('en-US');
+    const check = 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M8 12.5l2.7 2.7L16 9.8';
+    const x = 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M15 9l-6 6 M9 9l6 6';
+    const clock = 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M12 7v5l3 2';
+    const shifts = [
+      { who: 'Mwangi', when: 'Counter 2 · 16:00 – 20:00', float: '2,000', sales: '6,820', exp: '0', expNote: '', expected: '8,820', counted: '8,820', result: 'Matches', bg: '#E3F5EC', fg: '#17784E', d: check },
+      { who: 'Wanjiku', when: 'Counter 1 · 18:00 – 02:14', float: '2,000', sales: '11,950', exp: '1,200', expNote: 'Ice 700 · airtime 500', expected: '12,750', counted: '12,450', result: 'Short KES 300', bg: '#FCE6E4', fg: '#B3261E', d: x },
+      { who: 'Akinyi', when: 'Counter 2 · 20:00 – still open', float: '2,000', sales: '12,800', exp: '0', expNote: 'so far', expected: '14,800', counted: '—', result: 'Shift open', bg: '#E4EEFB', fg: '#1F5FAF', d: clock }
+    ];
+    const recorded = 48400;
+    const tillN = parseInt(String(this.state.till).replace(/[^0-9]/g, '') || '0', 10);
+    const diff = recorded - tillN;
+    const gap = diff !== 0;
+    return {
+      shifts, till: this.state.till,
+      onTill: (e) => this.setState({ till: e.target.value }),
+      hasGap: diff > 0,
+      diffLabel: diff === 0 ? 'Matches' : diff > 0 ? 'Recorded but not on the till' : 'On the till but not recorded',
+      diffAmount: 'KES ' + f(Math.abs(diff)),
+      diffNote: diff === 0 ? 'Every M-Pesa payment is accounted for.' : diff > 0 ? 'Staff recorded M-Pesa that didn’t arrive. Check the payments below.' : 'Money arrived that no one recorded. It may be a sale that was never entered.',
+      diffBg: diff === 0 ? '#E3F5EC' : '#FCE6E4', diffFg: diff === 0 ? '#145F3E' : '#7A1A14'
+    };
+  }
+}
+</script>
+</body>
+</html>

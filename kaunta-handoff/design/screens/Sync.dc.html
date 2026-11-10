@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta counter: sync status</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position: relative; width: 360px; height: 800px; overflow: hidden; background: #15100C; color: #F7EEE4; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums; display: flex; flex-direction: column;">
+  <div style="height: 60px; flex: none; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; gap: 6px; background: #1F1812; border-bottom: 1px solid #3D3127;">
+    <a href="Sell.dc.html" aria-label="Back to Sell" style="width: 48px; height: 48px; color: #F7EEE4; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <h1 style="flex: 1; margin: 0; font-size: 20px; font-weight: 800;">Sync</h1>
+    <div style="height: 36px; padding: 0 10px 0 8px; border-radius: 999px; border: 1px solid {{pill.border}}; background: {{pill.bg}}; color: {{pill.fg}}; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{pill.d}}"/></svg>{{pill.label}}</div>
+  </div>
+
+  <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 14px 12px 16px; display: flex; flex-direction: column; gap: 12px;">
+    <div style="padding: 20px 16px; border-radius: 16px; background: {{pill.bg}}; border: 1px solid {{pill.border}}; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px;">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="{{pill.fg}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{pill.d}}"/></svg>
+      <div style="font-size: 22px; font-weight: 800;">{{head}}</div>
+      <div style="font-size: 16px; line-height: 1.45; color: #DCD2C6;">{{body}}</div>
+      <sc-if value="{{online}}" hint-placeholder-val="{{ true }}">
+        <button type="button" style="margin-top: 4px; min-height: 52px; padding: 0 24px; border-radius: 14px; border: none; background: #F7EEE4; color: #15100C; font: inherit; font-size: 17px; font-weight: 800; cursor: pointer;">Send now</button>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{hasReview}}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 14px; border-radius: 14px; border: 2px solid #F2C94C; background: #2A2312; display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;"><span style="font-size: 17px; font-weight: 800;">Order #036 · Table 6</span><span style="height: 30px; padding: 0 10px 0 6px; border-radius: 999px; background: #F2C94C; color: #241A02; display: inline-flex; align-items: center; gap: 5px; font-size: 15px; font-weight: 800; white-space: nowrap;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z M12 9v4 M12 17h.01"/></svg>Needs admin</span></div>
+        <div style="font-size: 15px; line-height: 1.45; color: #E9DCC4;">Tusker was sold at KES 300 while offline, but an admin had changed the price to KES 320. The sale is kept as recorded. An admin will decide, and there’s nothing for you to do.</div>
+      </div>
+    </sc-if>
+
+    <div style="font-size: 16px; font-weight: 800; color: #CDBCA9; padding: 4px 4px 0;">{{listTitle}}</div>
+    <sc-for list="{{items}}" as="i" hint-placeholder-count="4">
+      <div style="min-height: 64px; padding: 10px 14px; box-sizing: border-box; border-radius: 14px; border: 1px solid #3D3127; background: #241C15; display: flex; align-items: center; gap: 12px;">
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 17px; font-weight: 700;">{{i.what}}</span><span style="font-size: 14px; color: #AE9B87;">{{i.meta}}</span></div>
+        <span style="flex: none; height: 30px; padding: 0 10px 0 6px; border-radius: 999px; background: {{chip.bg}}; color: {{chip.fg}}; display: inline-flex; align-items: center; gap: 5px; font-size: 15px; font-weight: 700;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{chip.d}}"/></svg>{{chip.label}}</span>
+      </div>
+    </sc-for>
+    <div style="font-size: 14px; line-height: 1.45; color: #AE9B87; padding: 0 4px;">Nothing here is lost if the phone restarts. Items are sent in the order they happened, and each one keeps its own time and the name of whoever recorded it.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"state":{"editor":"enum","options":["waiting","offline"],"default":"waiting"},"$preview":{"width":360,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const off = this.props.state === 'offline';
+    const up = 'M17.5 19H7a5 5 0 1 1 1-9.9A6 6 0 0 1 19.4 10 4.5 4.5 0 0 1 17.5 19z M12 16v-5 M9.5 13.5L12 11l2.5 2.5';
+    const offD = 'M2 2l20 20 M17.5 17.5H7a5 5 0 0 1-1.4-9.8 M9.5 5.5A6 6 0 0 1 19.4 10H20a3 3 0 0 1 1.5 5.6';
+    const pill = off
+      ? { label: 'Offline · 3 saved', d: offD, fg: '#B9C7D3', bg: '#222A31', border: '#34404A' }
+      : { label: '3 waiting', d: up, fg: '#A6CEFF', bg: '#172A42', border: '#24406A' };
+    const items = [
+      { what: 'Order #048 · Counter', meta: 'KES 600 · 22:43 · Wanjiku' },
+      { what: 'Payment on #044 · Cash', meta: 'KES 400 · 22:44 · Wanjiku' },
+      { what: 'Void request on #039', meta: 'Guinness ×1 · 22:45 · Otieno' }
+    ];
+    return {
+      pill, items, online: !off, hasReview: off,
+      head: off ? 'Offline. Keep selling.' : '3 waiting to send',
+      body: off ? 'No internet since 22:40. Everything is saved on this phone and will send by itself when the connection comes back.' : 'Last synced 22:41, 2 minutes ago. These will send automatically. You don’t need to do anything.',
+      listTitle: off ? 'Saved on this phone · 3' : 'Waiting to sync · 3',
+      chip: off ? { label: 'Saved', d: offD, fg: '#B9C7D3', bg: '#222A31' } : { label: 'Waiting', d: up, fg: '#A6CEFF', bg: '#172A42' }
+    };
+  }
+}
+</script>
+</body>
+</html>

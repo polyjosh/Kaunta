@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta counter: sell</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position: relative; width: 360px; height: 800px; overflow: hidden; background: #15100C; color: #F7EEE4; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums; display: flex; flex-direction: column;">
+
+  <!-- Top bar: who is recording, sync, open orders -->
+  <div style="height: 60px; flex: none; box-sizing: border-box; padding: 0 8px 0 12px; display: flex; align-items: center; gap: 8px; background: #1F1812; border-bottom: 1px solid #3D3127;">
+    <button type="button" aria-label="{{t.switchUser}}" style="flex: 1; min-width: 0; height: 48px; padding: 0; border: none; background: transparent; color: #F7EEE4; font: inherit; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+      <span style="width: 36px; height: 36px; flex: none; border-radius: 999px; background: #FFB27A; color: #1C1006; font-size: 17px; font-weight: 800; display: flex; align-items: center; justify-content: center;">W</span>
+      <span style="font-size: 17px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Wanjiku</span>
+    </button>
+    <sc-if value="{{syncSynced}}" hint-placeholder-val="{{ true }}">
+      <button type="button" style="flex: none; height: 40px; padding: 0 12px 0 9px; border-radius: 999px; border: 1px solid #1F4A38; background: #133226; color: #7BE3B3; font: inherit; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H7a5 5 0 1 1 1-9.9A6 6 0 0 1 19.4 10 4.5 4.5 0 0 1 17.5 19z M9 14l2 2 4-4"/></svg>{{t.synced}}</button>
+    </sc-if>
+    <sc-if value="{{syncWaiting}}" hint-placeholder-val="{{ false }}">
+      <button type="button" style="flex: none; height: 40px; padding: 0 12px 0 9px; border-radius: 999px; border: 1px solid #24406A; background: #172A42; color: #A6CEFF; font: inherit; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H7a5 5 0 1 1 1-9.9A6 6 0 0 1 19.4 10 4.5 4.5 0 0 1 17.5 19z M12 16v-5 M9.5 13.5L12 11l2.5 2.5"/></svg>{{t.waiting}}</button>
+    </sc-if>
+    <sc-if value="{{syncOffline}}" hint-placeholder-val="{{ false }}">
+      <button type="button" style="flex: none; height: 40px; padding: 0 12px 0 9px; border-radius: 999px; border: 1px solid #34404A; background: #222A31; color: #B9C7D3; font: inherit; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20 M17.5 17.5H7a5 5 0 0 1-1.4-9.8 M9.5 5.5A6 6 0 0 1 19.4 10H20a3 3 0 0 1 1.5 5.6"/></svg>{{t.offline}}</button>
+    </sc-if>
+    <button type="button" aria-label="{{ordersAria}}" style="position: relative; flex: none; width: 48px; height: 48px; border-radius: 12px; border: 1px solid #3D3127; background: #2E241B; color: #F7EEE4; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z M9 8h6 M9 12h6 M9 16h3"/></svg>
+      <span style="position: absolute; top: -6px; right: -6px; min-width: 24px; height: 24px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: #F7EEE4; color: #15100C; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center;">{{openCount}}</span>
+    </button>
+  </div>
+
+  <!-- Search -->
+  <div style="flex: none; padding: 10px 12px 4px;">
+    <label style="height: 48px; box-sizing: border-box; padding: 0 4px 0 14px; border-radius: 12px; border: 1px solid #3D3127; background: #241C15; display: flex; align-items: center; gap: 10px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#AE9B87" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none;"><path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M21 21l-4.3-4.3"/></svg>
+      <input type="search" value="{{q}}" onChange="{{onQ}}" placeholder="{{t.search}}" aria-label="{{t.search}}" style="flex: 1; min-width: 0; height: 44px; border: none; outline: none; background: transparent; color: #F7EEE4; font: inherit; font-size: 17px; font-weight: 500;">
+      <sc-if value="{{searching}}" hint-placeholder-val="{{ false }}">
+        <button type="button" onClick="{{clearQ}}" aria-label="{{t.clear}}" style="flex: none; width: 44px; height: 44px; border: none; border-radius: 10px; background: transparent; color: #CDBCA9; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18 M6 6l12 12"/></svg></button>
+      </sc-if>
+    </label>
+  </div>
+
+  <!-- Category tabs -->
+  <div role="tablist" style="flex: none; display: flex; gap: 8px; padding: 8px 12px 10px; overflow-x: auto;">
+    <sc-for list="{{tabs}}" as="c" hint-placeholder-count="5">
+      <button type="button" role="tab" aria-selected="{{c.on}}" onClick="{{c.pick}}" style="flex: none; height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid {{c.border}}; background: {{c.bg}}; color: {{c.fg}}; font: inherit; font-size: 16px; font-weight: 700; white-space: nowrap; cursor: pointer;">{{c.label}}</button>
+    </sc-for>
+  </div>
+
+  <!-- Product grid -->
+  <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 2px 12px 16px;">
+    <sc-if value="{{searching}}" hint-placeholder-val="{{ false }}">
+      <div style="font-size: 16px; font-weight: 700; color: #CDBCA9; padding: 0 2px 10px;">{{resultsLabel}}</div>
+    </sc-if>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+      <sc-for list="{{tiles}}" as="p" hint-placeholder-count="8">
+        <sc-if value="{{p.out}}" hint-placeholder-val="{{ false }}">
+          <button type="button" disabled style="height: 100px; box-sizing: border-box; padding: 12px; border-radius: 14px; border: 1px dashed #4A3C30; background: #15100C; color: #AE9B87; font: inherit; text-align: left; display: flex; flex-direction: column; justify-content: space-between;">
+            <span style="font-size: 17px; font-weight: 700; line-height: 1.2;">{{p.name}}</span>
+            <span style="font-size: 15px; font-weight: 700; color: #CDBCA9; display: flex; align-items: center; gap: 6px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5z M3 8l9 5 9-5 M12 13v8"/></svg>{{t.out}}</span>
+          </button>
+        </sc-if>
+        <sc-if value="{{p.inStock}}" hint-placeholder-val="{{ true }}">
+          <button type="button" onClick="{{p.tap}}" aria-label="{{p.aria}}" style="position: relative; height: 100px; box-sizing: border-box; padding: 12px; border-radius: 14px; border: {{p.border}}; background: {{p.bg}}; color: #F7EEE4; font: inherit; text-align: left; display: flex; flex-direction: column; justify-content: space-between; cursor: pointer;">
+            <span style="font-size: 17px; font-weight: 700; line-height: 1.2; padding-right: 30px;">{{p.name}}</span>
+            <sc-if value="{{p.has}}" hint-placeholder-val="{{ false }}">
+              <span style="position: absolute; top: 8px; right: 8px; min-width: 30px; height: 30px; padding: 0 7px; box-sizing: border-box; border-radius: 999px; background: #FF8F3F; color: #1C1006; font-size: 17px; font-weight: 800; display: flex; align-items: center; justify-content: center;">{{p.qty}}</span>
+            </sc-if>
+            <sc-if value="{{p.multi}}" hint-placeholder-val="{{ false }}">
+              <span style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 14px; font-weight: 600; color: #CDBCA9; display: flex; align-items: center; gap: 4px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>{{p.sizeLabel}}</span>
+                <span style="font-size: 17px; font-weight: 800; white-space: nowrap;">{{p.price}}</span>
+              </span>
+            </sc-if>
+            <sc-if value="{{p.single}}" hint-placeholder-val="{{ true }}">
+              <span style="display: flex; justify-content: space-between; align-items: baseline; gap: 6px;">
+                <span style="font-size: 20px; font-weight: 800; white-space: nowrap;">{{p.price}}</span>
+                <sc-if value="{{p.low}}" hint-placeholder-val="{{ false }}">
+                  <span style="font-size: 14px; font-weight: 700; color: #F2C94C; display: flex; align-items: center; gap: 3px; white-space: nowrap;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z M12 9v4 M12 17h.01"/></svg>{{p.lowLabel}}</span>
+                </sc-if>
+                <sc-if value="{{p.noLow}}" hint-placeholder-val="{{ true }}">
+                  <span style="font-size: 14px; color: #AE9B87; white-space: nowrap;">{{p.sizeLabel}}</span>
+                </sc-if>
+              </span>
+            </sc-if>
+          </button>
+        </sc-if>
+      </sc-for>
+    </div>
+    <sc-if value="{{noResults}}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 40px 16px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center;">
+        <div style="font-size: 19px; font-weight: 800;">{{t.noResults}}</div>
+        <div style="font-size: 16px; line-height: 1.45; color: #CDBCA9;">{{t.noResultsHint}}</div>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- Order tray -->
+  <div style="flex: none; background: #1F1812; border-top: 1px solid #3D3127; border-radius: 20px 20px 0 0; padding: 12px 12px 14px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -10px 28px rgba(0,0,0,0.4);">
+    <div style="display: flex; gap: 8px;">
+      <button type="button" onClick="{{openServer}}" style="flex: 1 1 auto; min-width: 0; height: 44px; padding: 0 10px 0 6px; border-radius: 999px; border: 1px solid #4A3C30; background: #2E241B; color: #F7EEE4; font: inherit; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <span style="width: 30px; height: 30px; flex: none; border-radius: 999px; background: {{srv.bg}}; color: #1C1006; font-size: 15px; font-weight: 800; display: flex; align-items: center; justify-content: center;">{{srv.i}}</span>
+        <span style="flex: 1; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{serverLabel}}</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#CDBCA9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none;"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <button type="button" onClick="{{openTable}}" style="flex: 0 1 auto; min-width: 0; height: 44px; padding: 0 10px 0 12px; border-radius: 999px; border: 1px solid #4A3C30; background: #2E241B; color: #F7EEE4; font: inherit; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer;">
+        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{tableLabel}}</span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#CDBCA9" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none;"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+    </div>
+    <button type="button" onClick="{{openOrder}}" disabled="{{empty}}" style="min-height: 56px; padding: 4px 4px 4px 4px; border: none; background: transparent; color: #F7EEE4; font: inherit; text-align: left; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+        <span style="font-size: 16px; font-weight: 800; color: #CDBCA9; display: flex; align-items: center; gap: 4px;">{{countLabel}}<sc-if value="{{notEmpty}}" hint-placeholder-val="{{ true }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></sc-if></span>
+        <span style="font-size: 16px; font-weight: 500; color: #F7EEE4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{summary}}</span>
+      </span>
+      <span style="flex: none; font-size: 30px; font-weight: 800; letter-spacing: -0.01em;">{{totalLabel}}</span>
+    </button>
+    <div style="display: flex; gap: 8px;">
+      <button type="button" onClick="{{recordPaid}}" disabled="{{empty}}" style="flex: 1 1 0; min-width: 0; min-height: 64px; padding: 6px 10px; border-radius: 14px; border: 1px solid #4A3C30; background: #2E241B; color: {{secFg}}; font: inherit; font-size: 16px; font-weight: 700; line-height: 1.15; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="{{secIcon}}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none;"><path d="M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M8 12.5l2.7 2.7L16 9.8"/></svg><span>{{t.recordPaid}}</span></button>
+      <button type="button" onClick="{{record}}" disabled="{{empty}}" style="flex: 1.4 1 0; min-width: 0; min-height: 64px; padding: 6px 12px; border-radius: 14px; border: none; background: {{priBg}}; color: {{priFg}}; font: inherit; font-size: 17px; font-weight: 800; line-height: 1.15; cursor: pointer;">{{t.record}}</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <sc-if value="{{hasToast}}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="position: absolute; top: 68px; left: 12px; right: 12px; padding: 12px 14px; border-radius: 14px; background: #F7EEE4; color: #22180F; display: flex; align-items: center; gap: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.5);">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#17784E" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none;"><path d="M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M8 12.5l2.7 2.7L16 9.8"/></svg>
+      <span style="flex: 1; font-size: 16px; font-weight: 700; line-height: 1.3;">{{toast}}</span>
+    </div>
+  </sc-if>
+
+  <!-- Sheets -->
+  <sc-if value="{{sheetOpen}}" hint-placeholder-val="{{ false }}">
+    <button type="button" onClick="{{close}}" aria-label="{{t.close}}" style="position: absolute; inset: 0; border: none; padding: 0; background: rgba(8,5,3,0.74); cursor: pointer;"></button>
+    <div role="dialog" aria-modal="true" aria-label="{{sheetTitle}}" style="position: absolute; left: 0; right: 0; bottom: 0; max-height: 90%; overflow-y: auto; box-sizing: border-box; padding: 8px 16px 20px; border-radius: 22px 22px 0 0; background: #1F1812; border-top: 1px solid #4A3C30; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -16px 40px rgba(0,0,0,0.5);">
+      <div style="width: 44px; height: 5px; border-radius: 999px; background: #4A3C30; align-self: center; margin-bottom: 4px;"></div>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+          <div style="font-size: 22px; font-weight: 800; line-height: 1.2;">{{sheetTitle}}</div>
+          <div style="font-size: 16px; color: #CDBCA9; line-height: 1.35;">{{sheetSub}}</div>
+        </div>
+        <button type="button" onClick="{{close}}" aria-label="{{t.close}}" style="flex: none; width: 48px; height: 48px; border-radius: 12px; border: 1px solid #3D3127; background: #2E241B; color: #F7EEE4; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M18 6L6 18 M6 6l12 12"/></svg></button>
+      </div>
+
+      <!-- Size picker -->
+      <sc-if value="{{isSize}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px;">
+          <sc-for list="{{sizeRows}}" as="s" hint-placeholder-count="5">
+            <button type="button" onClick="{{s.pick}}" style="min-height: 60px; padding: 0 16px; border-radius: 14px; border: {{s.border}}; background: #241C15; color: #F7EEE4; font: inherit; display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer;">
+              <span style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 19px; font-weight: 800;">{{s.label}}</span><sc-if value="{{s.has}}" hint-placeholder-val="{{ false }}"><span style="height: 26px; padding: 0 9px; border-radius: 999px; background: #FF8F3F; color: #1C1006; font-size: 14px; font-weight: 800; display: inline-flex; align-items: center;">{{s.inOrder}}</span></sc-if></span>
+              <span style="font-size: 21px; font-weight: 800;">{{s.price}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- Server picker -->
+      <sc-if value="{{isServer}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px;">
+          <sc-for list="{{serverRows}}" as="s" hint-placeholder-count="5">
+            <button type="button" onClick="{{s.pick}}" aria-pressed="{{s.on}}" style="min-height: 60px; padding: 0 14px 0 10px; border-radius: 14px; border: {{s.border}}; background: #241C15; color: #F7EEE4; font: inherit; display: flex; align-items: center; gap: 12px; cursor: pointer;">
+              <span style="width: 40px; height: 40px; flex: none; border-radius: 999px; background: {{s.bg}}; color: #1C1006; font-size: 18px; font-weight: 800; display: flex; align-items: center; justify-content: center;">{{s.i}}</span>
+              <span style="flex: 1; text-align: left; font-size: 18px; font-weight: 700;">{{s.label}}</span>
+              <sc-if value="{{s.on}}" hint-placeholder-val="{{ false }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF8F3F" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg></sc-if>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- Table picker -->
+      <sc-if value="{{isTable}}" hint-placeholder-val="{{ false }}">
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding-top: 4px;">
+          <sc-for list="{{tableRows}}" as="s" hint-placeholder-count="12">
+            <button type="button" onClick="{{s.pick}}" aria-pressed="{{s.on}}" style="height: 56px; border-radius: 12px; border: {{s.border}}; background: {{s.bg}}; color: #F7EEE4; font: inherit; font-size: 20px; font-weight: 800; cursor: pointer;">{{s.label}}</button>
+          </sc-for>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+          <sc-for list="{{tableExtras}}" as="s" hint-placeholder-count="3">
+            <button type="button" onClick="{{s.pick}}" aria-pressed="{{s.on}}" style="min-height: 56px; padding: 4px 6px; border-radius: 12px; border: {{s.border}}; background: {{s.bg}}; color: #F7EEE4; font: inherit; font-size: 16px; font-weight: 700; line-height: 1.15; cursor: pointer;">{{s.label}}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- Payment method -->
+      <sc-if value="{{isPay}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 2px;"><span style="font-size: 17px; color: #CDBCA9;">{{t.total}}</span><span style="font-size: 34px; font-weight: 800;">{{totalLabel}}</span></div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;">
+          <button type="button" onClick="{{payCash}}" style="min-height: 88px; border-radius: 14px; border: 1px solid #4A3C30; background: #2E241B; color: #F7EEE4; font: inherit; font-size: 18px; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5DD39E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 6h20v12H2z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M6 12h.01 M18 12h.01"/></svg>{{t.cash}}</button>
+          <button type="button" onClick="{{payMpesa}}" style="min-height: 88px; border-radius: 14px; border: 1px solid #4A3C30; background: #2E241B; color: #F7EEE4; font: inherit; font-size: 18px; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; cursor: pointer;"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#5DD39E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2h10v20H7z M11 18h2"/></svg>{{t.mpesa}}</button>
+        </div>
+        <div style="font-size: 15px; line-height: 1.45; color: #AE9B87; padding: 2px;">{{t.payHint}}</div>
+        <button type="button" onClick="{{close}}" style="min-height: 48px; border: none; border-radius: 12px; background: transparent; color: #F7EEE4; font: inherit; font-size: 16px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; cursor: pointer;">{{t.cancel}}</button>
+      </sc-if>
+
+      <!-- This order -->
+      <sc-if value="{{isOrder}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 8px; padding-top: 4px;">
+          <sc-for list="{{lineRows}}" as="l" hint-placeholder-count="3">
+            <div style="min-height: 64px; padding: 8px 8px 8px 14px; box-sizing: border-box; border-radius: 14px; border: 1px solid #3D3127; background: #241C15; display: flex; align-items: center; gap: 8px;">
+              <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-size: 17px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{l.name}}</span>
+                <span style="font-size: 15px; color: #CDBCA9;">{{l.detail}}</span>
+              </div>
+              <button type="button" onClick="{{l.dec}}" aria-label="{{l.decAria}}" style="flex: none; width: 48px; height: 48px; border-radius: 12px; border: 1px solid #4A3C30; background: #2E241B; color: #F7EEE4; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+              <span style="width: 28px; text-align: center; font-size: 20px; font-weight: 800;">{{l.qty}}</span>
+              <button type="button" onClick="{{l.inc}}" aria-label="{{l.incAria}}" style="flex: none; width: 48px; height: 48px; border-radius: 12px; border: 1px solid #4A3C30; background: #2E241B; color: #F7EEE4; display: flex; align-items: center; justify-content: center; cursor: pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14 M5 12h14"/></svg></button>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; padding: 6px 2px;"><span style="font-size: 17px; color: #CDBCA9;">{{t.total}}</span><span style="font-size: 30px; font-weight: 800;">{{totalLabel}}</span></div>
+        <button type="button" onClick="{{clearOrder}}" style="min-height: 52px; border-radius: 14px; border: 2px solid #FF6B61; background: transparent; color: #FF9A92; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;">{{t.clearOrder}}</button>
+      </sc-if>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"language":{"editor":"enum","options":["en","sw"],"default":"en"},"sync":{"editor":"enum","options":["synced","waiting","offline"],"default":"synced"},"initialSheet":{"editor":null,"default":null},"$preview":{"width":360,"height":800}}'>
+var KAUNTA_T = {
+  en: {
+    switchUser: 'Switch user', orders: 'Open orders', search: 'Search drinks or food', clear: 'Clear search',
+    cats: { beer: 'Beer', spirits: 'Spirits', keg: 'Keg', soft: 'Soft drinks', food: 'Food' },
+    results: 'Results for', noResults: 'Nothing matches', noResultsHint: 'Try another spelling, or ask an admin to add it.',
+    from: 'from', sizes: 'sizes', out: 'Out of stock', left: function (n) { return n + ' left'; },
+    server: 'Server', me: 'Me', table: function (n) { return 'Table ' + n; }, counter: 'Counter', takeaway: 'Takeaway', noTable: 'No table',
+    items: function (n) { return n === 1 ? '1 item' : n + ' items'; }, emptyTray: 'Tap a drink to start an order', total: 'Total',
+    record: 'Record (pay later)', recordPaid: 'Record & paid',
+    pickSize: 'Pick a size', inOrder: function (n) { return n + ' in order'; }, close: 'Close',
+    whoServes: 'Who is serving?', serverHint: 'Stays selected for your next orders.',
+    tableTitle: 'Table or customer', tableHint: 'Add a nickname like “Mzee in blue” later, in Open orders.',
+    payTitle: 'How did they pay?', payHint: 'Add the last 4 characters of the M-Pesa code later, in the order. For a split bill, record it as pay later.', cash: 'Cash', mpesa: 'M-Pesa', cancel: 'Cancel',
+    orderTitle: 'This order', clearOrder: 'Clear this order', each: 'each', dec: 'Remove one', inc: 'Add one',
+    toastLater: function (no, label) { return 'Order ' + no + ' recorded · ' + label + ' · pay later'; },
+    toastPaid: function (no, m) { return 'Order ' + no + ' recorded · paid by ' + m; },
+    synced: 'Synced', waiting: '3 waiting', offline: 'Offline · 3 saved', openOrders: function (n) { return n + ' open orders'; }
+  },
+  sw: {
+    switchUser: 'Badilisha mtumiaji', orders: 'Oda wazi', search: 'Tafuta kinywaji au chakula', clear: 'Futa utafutaji',
+    cats: { beer: 'Bia', spirits: 'Pombe kali', keg: 'Keg', soft: 'Soda na maji', food: 'Chakula' },
+    results: 'Matokeo ya', noResults: 'Hakuna kinacholingana', noResultsHint: 'Jaribu tahajia nyingine, au mwombe msimamizi akiongeze.',
+    from: 'kuanzia', sizes: 'vipimo', out: 'Kimeisha', left: function (n) { return 'Vimebaki ' + n; },
+    server: 'Mhudumu', me: 'Mimi', table: function (n) { return 'Meza ' + n; }, counter: 'Kaunta', takeaway: 'Kubeba', noTable: 'Bila meza',
+    items: function (n) { return n === 1 ? 'Kitu 1' : 'Vitu ' + n; }, emptyTray: 'Gusa kinywaji kuanza oda', total: 'Jumla',
+    record: 'Rekodi (lipa baadaye)', recordPaid: 'Rekodi, amelipa',
+    pickSize: 'Chagua kipimo', inOrder: function (n) { return n + ' kwenye oda'; }, close: 'Funga',
+    whoServes: 'Nani anahudumia?', serverHint: 'Itabaki hivyo kwa oda zako zinazofuata.',
+    tableTitle: 'Meza au mteja', tableHint: 'Ongeza jina la utani kama “Mzee wa shati la bluu” baadaye, kwenye Oda wazi.',
+    payTitle: 'Amelipa vipi?', payHint: 'Ongeza herufi 4 za mwisho za msimbo wa M-Pesa baadaye, kwenye oda. Bili ya kugawanya, irekodi kama lipa baadaye.', cash: 'Pesa taslimu', mpesa: 'M-Pesa', cancel: 'Ghairi',
+    orderTitle: 'Oda hii', clearOrder: 'Futa oda hii', each: 'kila moja', dec: 'Toa kimoja', inc: 'Ongeza kimoja',
+    toastLater: function (no, label) { return 'Oda ' + no + ' imerekodiwa · ' + label + ' · atalipa baadaye'; },
+    toastPaid: function (no, m) { return 'Oda ' + no + ' imerekodiwa · amelipa kwa ' + m; },
+    synced: 'Imesawazishwa', waiting: '3 zinasubiri', offline: 'Nje ya mtandao · 3', openOrders: function (n) { return 'Oda wazi ' + n; }
+  }
+};
+// size: [label EN, label SW, price KES]
+var KAUNTA_PRODUCTS = [
+  { id: 'tusker', cat: 'beer', n: 'Tusker Lager', s: [['500ml', '500ml', 300]] },
+  { id: 'whitecap', cat: 'beer', n: 'White Cap', s: [['500ml', '500ml', 300]] },
+  { id: 'guinness', cat: 'beer', n: 'Guinness', s: [['500ml', '500ml', 330]] },
+  { id: 'pilsner', cat: 'beer', n: 'Pilsner', s: [['500ml', '500ml', 280]], left: 3 },
+  { id: 'tuskerlite', cat: 'beer', n: 'Tusker Lite', s: [['500ml', '500ml', 300]] },
+  { id: 'cider', cat: 'beer', n: 'Tusker Cider', s: [['500ml', '500ml', 320]], out: true },
+  { id: 'balozi', cat: 'beer', n: 'Balozi', s: [['500ml', '500ml', 280]] },
+  { id: 'guinnesscan', cat: 'beer', n: 'Guinness can', s: [['500ml', '500ml', 350]] },
+  { id: 'cane', cat: 'spirits', n: 'Kenya Cane', s: [['Tot', 'Tot', 80], ['250ml', '250ml', 350], ['350ml', '350ml', 450], ['750ml', '750ml', 900], ['1 Litre', 'Lita 1', 1200]] },
+  { id: 'smirnoff', cat: 'spirits', n: 'Smirnoff Vodka', s: [['Tot', 'Tot', 150], ['250ml', '250ml', 550], ['750ml', '750ml', 1600]] },
+  { id: 'gilbeys', cat: 'spirits', n: 'Gilbey’s Gin', s: [['Tot', 'Tot', 120], ['250ml', '250ml', 450], ['750ml', '750ml', 1300]] },
+  { id: 'hunters', cat: 'spirits', n: 'Hunter’s Choice', s: [['Tot', 'Tot', 100], ['250ml', '250ml', 400], ['750ml', '750ml', 1050]] },
+  { id: 'chrome', cat: 'spirits', n: 'Chrome Gin', s: [['250ml', '250ml', 300]], out: true },
+  { id: 'keg', cat: 'keg', n: 'Keg lager', nsw: 'Keg', s: [['Mug 500ml', 'Kikombe 500ml', 120], ['Jug 2L', 'Jagi 2L', 450]] },
+  { id: 'soda', cat: 'soft', n: 'Soda', s: [['300ml', '300ml', 70], ['500ml', '500ml', 100]] },
+  { id: 'water', cat: 'soft', n: 'Water', nsw: 'Maji', s: [['500ml', '500ml', 60], ['1 Litre', 'Lita 1', 100]] },
+  { id: 'juice', cat: 'soft', n: 'Juice', nsw: 'Juisi', s: [['500ml', '500ml', 150]] },
+  { id: 'tonic', cat: 'soft', n: 'Tonic water', nsw: 'Tonic', s: [['350ml', '350ml', 100]], left: 4 },
+  { id: 'nyama', cat: 'food', n: 'Nyama choma', s: [['¼ kg', '¼ kg', 400], ['½ kg', '½ kg', 750], ['1 kg', 'Kilo 1', 1400]] },
+  { id: 'kuku', cat: 'food', n: 'Kuku choma', s: [['Quarter', 'Robo', 450], ['Half', 'Nusu', 850]] },
+  { id: 'chips', cat: 'food', n: 'Chips', nsw: 'Chipsi', s: [['Plate', 'Sahani', 200]] },
+  { id: 'kachumbari', cat: 'food', n: 'Kachumbari', s: [['Plate', 'Sahani', 100]] },
+  { id: 'ugali', cat: 'food', n: 'Ugali', s: [['Plate', 'Sahani', 100]] },
+  { id: 'mutura', cat: 'food', n: 'Mutura', s: [['Piece', 'Kipande', 150]], out: true }
+];
+var KAUNTA_SERVERS = [
+  { id: 'me', n: 'Wanjiku', i: 'W', bg: '#FFB27A' },
+  { id: 'otieno', n: 'Otieno', i: 'O', bg: '#E9C46A' },
+  { id: 'akinyi', n: 'Akinyi', i: 'A', bg: '#F4A3A0' },
+  { id: 'kiprop', n: 'Kiprop', i: 'K', bg: '#9ED9B8' },
+  { id: 'mwangi', n: 'Mwangi', i: 'M', bg: '#A9C8F0' }
+];
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      cat: 'beer', q: '',
+      lines: [{ k: 'tusker|0', n: 2 }, { k: 'cane|2', n: 1 }, { k: 'soda|1', n: 2 }],
+      sheet: props.initialSheet || null,
+      server: 'me', table: '4', no: 48, open: 5, toast: null
+    };
+    if (props.initialSheet === 'size:cane') this.state.cat = 'spirits';
+  }
+  componentWillUnmount() { clearTimeout(this.tt); }
+  addLine(k) {
+    const lines = this.state.lines.map((l) => ({ ...l }));
+    const f = lines.find((l) => l.k === k);
+    if (f) f.n += 1; else lines.push({ k, n: 1 });
+    return lines;
+  }
+  bump(k, d) {
+    const lines = this.state.lines.map((l) => (l.k === k ? { ...l, n: l.n + d } : l)).filter((l) => l.n > 0);
+    this.setState({ lines, sheet: lines.length ? this.state.sheet : null });
+  }
+  showToast(text, extra) {
+    clearTimeout(this.tt);
+    this.setState({ toast: text, ...extra });
+    this.tt = setTimeout(() => this.setState({ toast: null }), 4000);
+  }
+  renderVals() {
+    const lang = this.props.language === 'sw' ? 'sw' : 'en';
+    const t = KAUNTA_T[lang];
+    const sw = lang === 'sw';
+    const st = this.state;
+    const fmt = (n) => 'KES ' + n.toLocaleString('en-US');
+    const nm = (p) => (sw && p.nsw) || p.n;
+    const sl = (s) => (sw ? s[1] : s[0]);
+    const byId = {};
+    KAUNTA_PRODUCTS.forEach((p) => { byId[p.id] = p; });
+    const q = st.q.trim().toLowerCase();
+    const searching = q.length > 0;
+    const list = searching
+      ? KAUNTA_PRODUCTS.filter((p) => p.n.toLowerCase().includes(q) || (p.nsw || '').toLowerCase().includes(q))
+      : KAUNTA_PRODUCTS.filter((p) => p.cat === st.cat);
+    const qtyOf = (id) => st.lines.filter((l) => l.k.split('|')[0] === id).reduce((a, l) => a + l.n, 0);
+
+    const tabs = ['beer', 'spirits', 'keg', 'soft', 'food'].map((c) => {
+      const on = !searching && st.cat === c;
+      return {
+        label: t.cats[c], on,
+        bg: on ? '#F7EEE4' : '#241C15', fg: on ? '#15100C' : '#F7EEE4', border: on ? '#F7EEE4' : '#3D3127',
+        pick: () => this.setState({ cat: c, q: '' })
+      };
+    });
+
+    const tiles = list.map((p) => {
+      const qty = qtyOf(p.id);
+      const multi = p.s.length > 1;
+      const min = Math.min.apply(null, p.s.map((s) => s[2]));
+      return {
+        name: nm(p), out: !!p.out, inStock: !p.out, has: qty > 0, qty, multi, single: !multi,
+        price: multi ? t.from + ' ' + fmt(min) : fmt(p.s[0][2]),
+        sizeLabel: multi ? p.s.length + ' ' + t.sizes : sl(p.s[0]),
+        low: !!p.left, noLow: !p.left, lowLabel: p.left ? t.left(p.left) : '',
+        border: qty > 0 ? '2px solid #FF8F3F' : '1px solid #3D3127',
+        bg: qty > 0 ? '#2E241B' : '#241C15',
+        aria: nm(p) + (qty > 0 ? ', ' + t.inOrder(qty) : ''),
+        tap: () => {
+          if (multi) this.setState({ sheet: 'size:' + p.id });
+          else this.setState({ lines: this.addLine(p.id + '|0') });
+        }
+      };
+    });
+
+    const lineRows = st.lines.map((l) => {
+      const parts = l.k.split('|');
+      const p = byId[parts[0]];
+      const s = p.s[+parts[1]];
+      return {
+        name: nm(p), size: sl(s), multi: p.s.length > 1, qty: l.n,
+        detail: sl(s) + ' · ' + fmt(s[2]) + ' ' + t.each + ' · ' + fmt(s[2] * l.n),
+        sum: s[2] * l.n,
+        inc: () => this.bump(l.k, 1), dec: () => this.bump(l.k, -1),
+        incAria: t.inc + ': ' + nm(p), decAria: t.dec + ': ' + nm(p)
+      };
+    });
+    const total = lineRows.reduce((a, l) => a + l.sum, 0);
+    const count = lineRows.reduce((a, l) => a + l.qty, 0);
+    const empty = count === 0;
+    const summary = empty ? t.emptyTray : lineRows.map((l) => l.name + (l.multi ? ' ' + l.size : '') + (l.qty > 1 ? ' ×' + l.qty : '')).join(' · ');
+
+    const srv = KAUNTA_SERVERS.find((s) => s.id === st.server) || KAUNTA_SERVERS[0];
+    const serverLabel = t.server + ': ' + (srv.id === 'me' ? t.me : srv.n);
+    const tableName = (v) => (v === 'counter' ? t.counter : v === 'takeaway' ? t.takeaway : v ? t.table(v) : t.noTable);
+    const tableLabel = tableName(st.table);
+    const orderNo = '#' + String(st.no).padStart(3, '0');
+
+    const sheet = st.sheet || '';
+    const isSize = sheet.indexOf('size:') === 0;
+    const sizeP = isSize ? byId[sheet.slice(5)] : null;
+    const sizeRows = sizeP ? sizeP.s.map((s, i) => {
+      const k = sizeP.id + '|' + i;
+      const ln = st.lines.find((l) => l.k === k);
+      const n = ln ? ln.n : 0;
+      return {
+        label: sl(s), price: fmt(s[2]), has: n > 0, inOrder: t.inOrder(n),
+        border: n > 0 ? '2px solid #FF8F3F' : '1px solid #3D3127',
+        pick: () => this.setState({ lines: this.addLine(k), sheet: null })
+      };
+    }) : [];
+    const serverRows = KAUNTA_SERVERS.map((s) => {
+      const on = s.id === st.server;
+      return {
+        label: s.id === 'me' ? t.me + ' (' + s.n + ')' : s.n, i: s.i, bg: s.bg, on,
+        border: on ? '2px solid #FF8F3F' : '1px solid #3D3127',
+        pick: () => this.setState({ server: s.id, sheet: null })
+      };
+    });
+    const tblBtn = (v, label) => {
+      const on = st.table === v;
+      return { label, on, border: on ? '2px solid #FF8F3F' : '1px solid #3D3127', bg: on ? '#2E241B' : '#241C15', pick: () => this.setState({ table: v, sheet: null }) };
+    };
+    const tableRows = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].map((v) => tblBtn(v, v));
+    const tableExtras = [tblBtn('counter', t.counter), tblBtn('takeaway', t.takeaway), tblBtn(null, t.noTable)];
+
+    let sheetTitle = '', sheetSub = '';
+    if (isSize && sizeP) { sheetTitle = nm(sizeP); sheetSub = t.pickSize; }
+    if (sheet === 'server') { sheetTitle = t.whoServes; sheetSub = t.serverHint; }
+    if (sheet === 'table') { sheetTitle = t.tableTitle; sheetSub = t.tableHint; }
+    if (sheet === 'pay') { sheetTitle = t.payTitle; sheetSub = orderNo + ' · ' + tableLabel + ' · ' + srv.n; }
+    if (sheet === 'order') { sheetTitle = t.orderTitle + ' · ' + orderNo; sheetSub = tableLabel + ' · ' + t.server + ': ' + srv.n; }
+
+    const finish = (msg) => this.showToast(msg, { lines: [], sheet: null, no: st.no + 1, table: null });
+    const sync = this.props.sync || 'synced';
+
+    return {
+      t,
+      syncSynced: sync === 'synced', syncWaiting: sync === 'waiting', syncOffline: sync === 'offline',
+      openCount: st.open, ordersAria: t.openOrders(st.open),
+      q: st.q, searching, onQ: (e) => this.setState({ q: e.target.value }), clearQ: () => this.setState({ q: '' }),
+      resultsLabel: t.results + ' “' + st.q.trim() + '”',
+      noResults: searching && tiles.length === 0,
+      tabs, tiles,
+      srv, serverLabel, tableLabel,
+      openServer: () => this.setState({ sheet: 'server' }),
+      openTable: () => this.setState({ sheet: 'table' }),
+      openOrder: () => { if (!empty) this.setState({ sheet: 'order' }); },
+      empty, notEmpty: !empty, countLabel: empty ? t.total : t.items(count), summary, totalLabel: fmt(total),
+      priBg: empty ? '#2E241B' : '#FF8F3F', priFg: empty ? '#AE9B87' : '#1C1006',
+      secFg: empty ? '#AE9B87' : '#F7EEE4', secIcon: empty ? '#AE9B87' : '#5DD39E',
+      record: () => { if (!empty) { this.setState({ open: st.open + 1 }); finish(t.toastLater(orderNo, tableLabel)); } },
+      recordPaid: () => { if (!empty) this.setState({ sheet: 'pay' }); },
+      payCash: () => finish(t.toastPaid(orderNo, t.cash.toLowerCase())),
+      payMpesa: () => finish(t.toastPaid(orderNo, t.mpesa)),
+      clearOrder: () => this.setState({ lines: [], sheet: null }),
+      hasToast: !!st.toast, toast: st.toast || '',
+      sheetOpen: !!sheet, sheetTitle, sheetSub, close: () => this.setState({ sheet: null }),
+      isSize, isServer: sheet === 'server', isTable: sheet === 'table', isPay: sheet === 'pay', isOrder: sheet === 'order',
+      sizeRows, serverRows, tableRows, tableExtras, lineRows
+    };
+  }
+}
+</script>
+</body>
+</html>

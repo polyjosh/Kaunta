@@ -1,0 +1,1170 @@
+{
+  "_note": "Sample data matching the designs. Totals are internally consistent and asserted by tools that generated this file. 'local' times are Africa/Nairobi on business day Tue 10 Nov 2026 (runs 06:00–06:00); 'now' is 02:14 on Wed 11 Nov local for admin screens; counter screens (open orders, order detail, void) are a snapshot at 22:20 the same evening, so open-order created times use that clock.",
+  "bar": {
+    "id": "bar_baraka",
+    "name": "Baraka Pub",
+    "timezone": "Africa/Nairobi",
+    "day_start": "06:00",
+    "self_void_minutes": 5,
+    "ageing_minutes": 30,
+    "pin_attempts": 5,
+    "lockout_minutes": 5,
+    "keg_foam_allowance_cups": 0,
+    "currency": "KES"
+  },
+  "categories": [
+    {
+      "id": "beer",
+      "name_en": "Beer",
+      "name_sw": "Bia",
+      "sort": 1
+    },
+    {
+      "id": "spirits",
+      "name_en": "Spirits",
+      "name_sw": "Pombe kali",
+      "sort": 2
+    },
+    {
+      "id": "keg",
+      "name_en": "Keg",
+      "name_sw": "Keg",
+      "sort": 3
+    },
+    {
+      "id": "soft",
+      "name_en": "Soft drinks",
+      "name_sw": "Soda na maji",
+      "sort": 4
+    },
+    {
+      "id": "food",
+      "name_en": "Food",
+      "name_sw": "Chakula",
+      "sort": 5
+    }
+  ],
+  "people": [
+    {
+      "id": "p_njeri",
+      "name": "Njeri",
+      "initial": "N",
+      "colour": "#F4A3A0",
+      "role": "owner",
+      "login": "password"
+    },
+    {
+      "id": "p_wanjiku",
+      "name": "Wanjiku",
+      "initial": "W",
+      "colour": "#FFB27A",
+      "role": "counter",
+      "login": "pin",
+      "demo_pin": "2580"
+    },
+    {
+      "id": "p_otieno",
+      "name": "Otieno",
+      "initial": "O",
+      "colour": "#E9C46A",
+      "role": "counter",
+      "login": "pin",
+      "pin_locked_until": "2026-11-10T23:14:00Z"
+    },
+    {
+      "id": "p_akinyi",
+      "name": "Akinyi",
+      "initial": "A",
+      "colour": "#F4A3A0",
+      "role": "counter",
+      "login": "pin"
+    },
+    {
+      "id": "p_kiprop",
+      "name": "Kiprop",
+      "initial": "K",
+      "colour": "#9ED9B8",
+      "role": "counter",
+      "login": "pin"
+    },
+    {
+      "id": "p_mwangi",
+      "name": "Mwangi",
+      "initial": "M",
+      "colour": "#A9C8F0",
+      "role": "counter",
+      "login": "pin"
+    },
+    {
+      "id": "p_chebet",
+      "name": "Chebet",
+      "initial": "C",
+      "colour": "#D3B8FF",
+      "role": "admin",
+      "login": "pin"
+    },
+    {
+      "id": "p_juma",
+      "name": "Juma",
+      "initial": "J",
+      "colour": "#C9D98E",
+      "role": "server",
+      "login": "none"
+    }
+  ],
+  "devices": [
+    {
+      "id": "d_counter1",
+      "name": "Counter 1",
+      "model": "Tecno Spark",
+      "paired_at": "2026-11-02T09:00:00Z",
+      "paired_by": "p_njeri",
+      "revoked_at": null
+    },
+    {
+      "id": "d_counter2",
+      "name": "Counter 2",
+      "model": "itel A70",
+      "paired_at": "2026-11-02T09:10:00Z",
+      "paired_by": "p_njeri",
+      "revoked_at": null
+    },
+    {
+      "id": "d_old",
+      "name": "Old counter phone",
+      "model": "unknown",
+      "paired_at": "2026-09-01T09:00:00Z",
+      "paired_by": "p_njeri",
+      "revoked_at": "2026-10-28T12:00:00Z",
+      "revoked_reason": "Phone lost"
+    }
+  ],
+  "products": [
+    {
+      "id": "tusker",
+      "category_id": "beer",
+      "name": "Tusker Lager",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": 24,
+      "low_stock_at": 6,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "tusker_0",
+          "label_en": "500ml",
+          "label_sw": "500ml",
+          "deduct": 1,
+          "price_kes": 300,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "whitecap",
+      "category_id": "beer",
+      "name": "White Cap",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": 30,
+      "low_stock_at": 6,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "whitecap_0",
+          "label_en": "500ml",
+          "label_sw": "500ml",
+          "deduct": 1,
+          "price_kes": 300,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "guinness",
+      "category_id": "beer",
+      "name": "Guinness",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": 18,
+      "low_stock_at": 6,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "guinness_0",
+          "label_en": "500ml",
+          "label_sw": "500ml",
+          "deduct": 1,
+          "price_kes": 330,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "pilsner",
+      "category_id": "beer",
+      "name": "Pilsner",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": -4,
+      "low_stock_at": 6,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "pilsner_0",
+          "label_en": "500ml",
+          "label_sw": "500ml",
+          "deduct": 1,
+          "price_kes": 280,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "tuskerlite",
+      "category_id": "beer",
+      "name": "Tusker Lite",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": 20,
+      "low_stock_at": 6,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "tuskerlite_0",
+          "label_en": "500ml",
+          "label_sw": "500ml",
+          "deduct": 1,
+          "price_kes": 300,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "cider",
+      "category_id": "beer",
+      "name": "Tusker Cider",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": 0,
+      "low_stock_at": null,
+      "manual_out_of_stock": true,
+      "sizes": [
+        {
+          "id": "cider_0",
+          "label_en": "500ml",
+          "label_sw": "500ml",
+          "deduct": 1,
+          "price_kes": 320,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "balozi",
+      "category_id": "beer",
+      "name": "Balozi",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": 22,
+      "low_stock_at": null,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "balozi_0",
+          "label_en": "500ml",
+          "label_sw": "500ml",
+          "deduct": 1,
+          "price_kes": 280,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "guinnesscan",
+      "category_id": "beer",
+      "name": "Guinness can",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": 12,
+      "low_stock_at": null,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "guinnesscan_0",
+          "label_en": "500ml",
+          "label_sw": "500ml",
+          "deduct": 1,
+          "price_kes": 350,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "cane",
+      "category_id": "spirits",
+      "name": "Kenya Cane",
+      "name_sw": null,
+      "stock_mode": "ml",
+      "stock_qty": 4850,
+      "low_stock_at": 1500,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "cane_0",
+          "label_en": "Tot",
+          "label_sw": "Tot",
+          "deduct": 30,
+          "price_kes": 80,
+          "enabled": true,
+          "sort": 0
+        },
+        {
+          "id": "cane_1",
+          "label_en": "250ml",
+          "label_sw": "250ml",
+          "deduct": 250,
+          "price_kes": 350,
+          "enabled": true,
+          "sort": 1
+        },
+        {
+          "id": "cane_2",
+          "label_en": "350ml",
+          "label_sw": "350ml",
+          "deduct": 350,
+          "price_kes": 450,
+          "enabled": true,
+          "sort": 2
+        },
+        {
+          "id": "cane_3",
+          "label_en": "750ml",
+          "label_sw": "750ml",
+          "deduct": 750,
+          "price_kes": 900,
+          "enabled": true,
+          "sort": 3
+        },
+        {
+          "id": "cane_4",
+          "label_en": "1 Litre",
+          "label_sw": "Lita 1",
+          "deduct": 1000,
+          "price_kes": 1200,
+          "enabled": true,
+          "sort": 4
+        }
+      ]
+    },
+    {
+      "id": "smirnoff",
+      "category_id": "spirits",
+      "name": "Smirnoff Vodka",
+      "name_sw": null,
+      "stock_mode": "ml",
+      "stock_qty": 3000,
+      "low_stock_at": 1000,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "smirnoff_0",
+          "label_en": "Tot",
+          "label_sw": "Tot",
+          "deduct": 30,
+          "price_kes": 150,
+          "enabled": true,
+          "sort": 0
+        },
+        {
+          "id": "smirnoff_1",
+          "label_en": "250ml",
+          "label_sw": "250ml",
+          "deduct": 250,
+          "price_kes": 550,
+          "enabled": true,
+          "sort": 1
+        },
+        {
+          "id": "smirnoff_2",
+          "label_en": "750ml",
+          "label_sw": "750ml",
+          "deduct": 750,
+          "price_kes": 1600,
+          "enabled": true,
+          "sort": 2
+        }
+      ]
+    },
+    {
+      "id": "gilbeys",
+      "category_id": "spirits",
+      "name": "Gilbey’s Gin",
+      "name_sw": null,
+      "stock_mode": "ml",
+      "stock_qty": 2600,
+      "low_stock_at": 1000,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "gilbeys_0",
+          "label_en": "Tot",
+          "label_sw": "Tot",
+          "deduct": 30,
+          "price_kes": 120,
+          "enabled": true,
+          "sort": 0
+        },
+        {
+          "id": "gilbeys_1",
+          "label_en": "250ml",
+          "label_sw": "250ml",
+          "deduct": 250,
+          "price_kes": 450,
+          "enabled": true,
+          "sort": 1
+        },
+        {
+          "id": "gilbeys_2",
+          "label_en": "750ml",
+          "label_sw": "750ml",
+          "deduct": 750,
+          "price_kes": 1300,
+          "enabled": true,
+          "sort": 2
+        }
+      ]
+    },
+    {
+      "id": "hunters",
+      "category_id": "spirits",
+      "name": "Hunter’s Choice",
+      "name_sw": null,
+      "stock_mode": "ml",
+      "stock_qty": 2100,
+      "low_stock_at": 1000,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "hunters_0",
+          "label_en": "Tot",
+          "label_sw": "Tot",
+          "deduct": 30,
+          "price_kes": 100,
+          "enabled": true,
+          "sort": 0
+        },
+        {
+          "id": "hunters_1",
+          "label_en": "250ml",
+          "label_sw": "250ml",
+          "deduct": 250,
+          "price_kes": 400,
+          "enabled": true,
+          "sort": 1
+        },
+        {
+          "id": "hunters_2",
+          "label_en": "750ml",
+          "label_sw": "750ml",
+          "deduct": 750,
+          "price_kes": 1050,
+          "enabled": true,
+          "sort": 2
+        }
+      ]
+    },
+    {
+      "id": "chrome",
+      "category_id": "spirits",
+      "name": "Chrome Gin",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": 0,
+      "low_stock_at": null,
+      "manual_out_of_stock": true,
+      "sizes": [
+        {
+          "id": "chrome_0",
+          "label_en": "250ml",
+          "label_sw": "250ml",
+          "deduct": 1,
+          "price_kes": 300,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "keg",
+      "category_id": "keg",
+      "name": "Keg lager",
+      "name_sw": "Keg",
+      "stock_mode": "ml",
+      "stock_qty": null,
+      "low_stock_at": null,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "keg_0",
+          "label_en": "Mug 500ml",
+          "label_sw": "Kikombe 500ml",
+          "deduct": 500,
+          "price_kes": 120,
+          "enabled": true,
+          "sort": 0
+        },
+        {
+          "id": "keg_1",
+          "label_en": "Jug 2L",
+          "label_sw": "Jagi 2L",
+          "deduct": 2000,
+          "price_kes": 450,
+          "enabled": true,
+          "sort": 1
+        }
+      ]
+    },
+    {
+      "id": "soda",
+      "category_id": "soft",
+      "name": "Soda",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": 31,
+      "low_stock_at": null,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "soda_0",
+          "label_en": "300ml",
+          "label_sw": "300ml",
+          "deduct": 1,
+          "price_kes": 70,
+          "enabled": true,
+          "sort": 0
+        },
+        {
+          "id": "soda_1",
+          "label_en": "500ml",
+          "label_sw": "500ml",
+          "deduct": 1,
+          "price_kes": 100,
+          "enabled": true,
+          "sort": 1
+        }
+      ]
+    },
+    {
+      "id": "water",
+      "category_id": "soft",
+      "name": "Water",
+      "name_sw": "Maji",
+      "stock_mode": "count",
+      "stock_qty": 40,
+      "low_stock_at": null,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "water_0",
+          "label_en": "500ml",
+          "label_sw": "500ml",
+          "deduct": 1,
+          "price_kes": 60,
+          "enabled": true,
+          "sort": 0
+        },
+        {
+          "id": "water_1",
+          "label_en": "1 Litre",
+          "label_sw": "Lita 1",
+          "deduct": 1,
+          "price_kes": 100,
+          "enabled": true,
+          "sort": 1
+        }
+      ]
+    },
+    {
+      "id": "juice",
+      "category_id": "soft",
+      "name": "Juice",
+      "name_sw": "Juisi",
+      "stock_mode": "count",
+      "stock_qty": 15,
+      "low_stock_at": null,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "juice_0",
+          "label_en": "500ml",
+          "label_sw": "500ml",
+          "deduct": 1,
+          "price_kes": 150,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "tonic",
+      "category_id": "soft",
+      "name": "Tonic water",
+      "name_sw": "Tonic",
+      "stock_mode": "count",
+      "stock_qty": 4,
+      "low_stock_at": 6,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "tonic_0",
+          "label_en": "350ml",
+          "label_sw": "350ml",
+          "deduct": 1,
+          "price_kes": 100,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "nyama",
+      "category_id": "food",
+      "name": "Nyama choma",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": null,
+      "low_stock_at": null,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "nyama_0",
+          "label_en": "¼ kg",
+          "label_sw": "¼ kg",
+          "deduct": 1,
+          "price_kes": 400,
+          "enabled": true,
+          "sort": 0
+        },
+        {
+          "id": "nyama_1",
+          "label_en": "½ kg",
+          "label_sw": "½ kg",
+          "deduct": 1,
+          "price_kes": 750,
+          "enabled": true,
+          "sort": 1
+        },
+        {
+          "id": "nyama_2",
+          "label_en": "1 kg",
+          "label_sw": "Kilo 1",
+          "deduct": 1,
+          "price_kes": 1400,
+          "enabled": true,
+          "sort": 2
+        }
+      ]
+    },
+    {
+      "id": "kuku",
+      "category_id": "food",
+      "name": "Kuku choma",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": null,
+      "low_stock_at": null,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "kuku_0",
+          "label_en": "Quarter",
+          "label_sw": "Robo",
+          "deduct": 1,
+          "price_kes": 450,
+          "enabled": true,
+          "sort": 0
+        },
+        {
+          "id": "kuku_1",
+          "label_en": "Half",
+          "label_sw": "Nusu",
+          "deduct": 1,
+          "price_kes": 850,
+          "enabled": true,
+          "sort": 1
+        }
+      ]
+    },
+    {
+      "id": "chips",
+      "category_id": "food",
+      "name": "Chips",
+      "name_sw": "Chipsi",
+      "stock_mode": "count",
+      "stock_qty": null,
+      "low_stock_at": null,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "chips_0",
+          "label_en": "Plate",
+          "label_sw": "Sahani",
+          "deduct": 1,
+          "price_kes": 200,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "kachumbari",
+      "category_id": "food",
+      "name": "Kachumbari",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": null,
+      "low_stock_at": null,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "kachumbari_0",
+          "label_en": "Plate",
+          "label_sw": "Sahani",
+          "deduct": 1,
+          "price_kes": 100,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "ugali",
+      "category_id": "food",
+      "name": "Ugali",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": null,
+      "low_stock_at": null,
+      "manual_out_of_stock": false,
+      "sizes": [
+        {
+          "id": "ugali_0",
+          "label_en": "Plate",
+          "label_sw": "Sahani",
+          "deduct": 1,
+          "price_kes": 100,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    },
+    {
+      "id": "mutura",
+      "category_id": "food",
+      "name": "Mutura",
+      "name_sw": null,
+      "stock_mode": "count",
+      "stock_qty": 0,
+      "low_stock_at": null,
+      "manual_out_of_stock": true,
+      "sizes": [
+        {
+          "id": "mutura_0",
+          "label_en": "Piece",
+          "label_sw": "Kipande",
+          "deduct": 1,
+          "price_kes": 150,
+          "enabled": true,
+          "sort": 0
+        }
+      ]
+    }
+  ],
+  "kegs": [
+    {
+      "id": "k07",
+      "product_id": "keg",
+      "code": "K-07",
+      "volume_ml": 50000,
+      "cup_ml": 500,
+      "status": "finished",
+      "tapped_at": "2026-11-09T15:20:00Z",
+      "finished_at": "2026-11-10T20:08:00Z",
+      "finished_by": "p_otieno",
+      "recorded_by_server": {
+        "p_otieno": {
+          "mugs": 31,
+          "jugs": 2
+        },
+        "p_akinyi": {
+          "mugs": 24,
+          "jugs": 1
+        },
+        "p_kiprop": {
+          "mugs": 20,
+          "jugs": 1
+        }
+      }
+    },
+    {
+      "id": "k08",
+      "product_id": "keg",
+      "code": "K-08",
+      "volume_ml": 50000,
+      "cup_ml": 500,
+      "status": "active",
+      "tapped_at": "2026-11-10T20:10:00Z",
+      "recorded_since_tap": {
+        "mugs": 30,
+        "jugs": 2
+      }
+    },
+    {
+      "id": "k09",
+      "product_id": "keg",
+      "code": "K-09",
+      "volume_ml": 50000,
+      "cup_ml": 500,
+      "status": "queued",
+      "delivery_note": "DN-20418"
+    }
+  ],
+  "open_orders": [
+    {
+      "short_no": "#041",
+      "label": "Mzee in blue",
+      "server_id": "p_akinyi",
+      "recorded_by": "p_akinyi",
+      "device_id": "d_counter2",
+      "business_day": "2026-11-10",
+      "status": "open",
+      "created_at_local": "21:34",
+      "lines": [
+        {
+          "size_id": "tusker_0",
+          "qty": 3,
+          "unit_price_kes": 300
+        },
+        {
+          "size_id": "nyama_1",
+          "qty": 1,
+          "unit_price_kes": 750
+        },
+        {
+          "size_id": "cane_2",
+          "qty": 1,
+          "unit_price_kes": 450
+        },
+        {
+          "size_id": "chips_0",
+          "qty": 1,
+          "unit_price_kes": 200
+        }
+      ],
+      "payments": [],
+      "total_kes": 2300,
+      "due_kes": 2300
+    },
+    {
+      "short_no": "#039",
+      "label": "Table 2",
+      "server_id": "p_otieno",
+      "recorded_by": "p_otieno",
+      "device_id": "d_counter1",
+      "business_day": "2026-11-10",
+      "status": "open",
+      "created_at_local": "21:42",
+      "lines": [
+        {
+          "size_id": "guinness_0",
+          "qty": 1,
+          "unit_price_kes": 330
+        },
+        {
+          "size_id": "nyama_1",
+          "qty": 1,
+          "unit_price_kes": 750
+        },
+        {
+          "size_id": "tusker_0",
+          "qty": 1,
+          "unit_price_kes": 300
+        },
+        {
+          "size_id": "ugali_0",
+          "qty": 1,
+          "unit_price_kes": 100
+        }
+      ],
+      "payments": [],
+      "total_kes": 1480,
+      "due_kes": 1480
+    },
+    {
+      "short_no": "#044",
+      "label": "Table 9",
+      "server_id": "p_kiprop",
+      "recorded_by": "p_wanjiku",
+      "device_id": "d_counter1",
+      "business_day": "2026-11-10",
+      "status": "open",
+      "created_at_local": "21:58",
+      "lines": [
+        {
+          "size_id": "tusker_0",
+          "qty": 2,
+          "unit_price_kes": 300
+        },
+        {
+          "size_id": "cane_1",
+          "qty": 1,
+          "unit_price_kes": 350
+        },
+        {
+          "size_id": "soda_1",
+          "qty": 2,
+          "unit_price_kes": 100
+        },
+        {
+          "size_id": "kachumbari_0",
+          "qty": 1,
+          "unit_price_kes": 100
+        }
+      ],
+      "payments": [
+        {
+          "method": "cash",
+          "amount_kes": 400,
+          "mpesa_ref_last4": null,
+          "at_local": "22:05",
+          "recorded_by": "p_wanjiku"
+        }
+      ],
+      "total_kes": 1250,
+      "due_kes": 850
+    },
+    {
+      "short_no": "#047",
+      "label": "Table 4",
+      "server_id": "p_wanjiku",
+      "recorded_by": "p_wanjiku",
+      "device_id": "d_counter1",
+      "business_day": "2026-11-10",
+      "status": "open",
+      "created_at_local": "22:08",
+      "lines": [
+        {
+          "size_id": "tusker_0",
+          "qty": 2,
+          "unit_price_kes": 300
+        },
+        {
+          "size_id": "cane_2",
+          "qty": 1,
+          "unit_price_kes": 450
+        },
+        {
+          "size_id": "soda_1",
+          "qty": 2,
+          "unit_price_kes": 100
+        }
+      ],
+      "payments": [],
+      "total_kes": 1250,
+      "due_kes": 1250
+    },
+    {
+      "short_no": "#048",
+      "label": "Counter",
+      "server_id": "p_wanjiku",
+      "recorded_by": "p_wanjiku",
+      "device_id": "d_counter1",
+      "business_day": "2026-11-10",
+      "status": "open",
+      "created_at_local": "22:17",
+      "lines": [
+        {
+          "size_id": "tusker_0",
+          "qty": 2,
+          "unit_price_kes": 300
+        }
+      ],
+      "payments": [],
+      "total_kes": 600,
+      "due_kes": 600
+    }
+  ],
+  "shifts": [
+    {
+      "person_id": "p_mwangi",
+      "device_id": "d_counter2",
+      "opened_local": "16:00",
+      "closed_local": "20:00",
+      "float_kes": 2000,
+      "cash_sales_kes": 6820,
+      "expenses": [],
+      "counted_kes": 8820,
+      "expected_kes": 8820,
+      "result_kes": 0
+    },
+    {
+      "person_id": "p_wanjiku",
+      "device_id": "d_counter1",
+      "opened_local": "18:00",
+      "closed_local": "02:14",
+      "float_kes": 2000,
+      "cash_sales_kes": 11950,
+      "expenses": [
+        {
+          "label": "Ice",
+          "amount_kes": 700
+        },
+        {
+          "label": "Airtime",
+          "amount_kes": 500
+        }
+      ],
+      "counted_kes": 12450,
+      "mpesa_recorded_kes": 18400,
+      "expected_kes": 12750,
+      "result_kes": -300
+    },
+    {
+      "person_id": "p_akinyi",
+      "device_id": "d_counter2",
+      "opened_local": "20:00",
+      "closed_local": null,
+      "float_kes": 2000,
+      "cash_sales_kes": 12800,
+      "expenses": [],
+      "counted_kes": null,
+      "expected_kes": 14800,
+      "result_kes": null
+    }
+  ],
+  "approvals": [
+    {
+      "kind": "void",
+      "order": "#039",
+      "target": "guinness_0 ×1",
+      "amount_kes": 330,
+      "reason": "changed",
+      "requested_by": "p_otieno",
+      "requested_local": "02:09",
+      "device_id": "d_counter1"
+    },
+    {
+      "kind": "void",
+      "order": "#041",
+      "target": "whole order",
+      "amount_kes": 2300,
+      "reason": "mistake",
+      "note": "duplicate of #042",
+      "requested_by": "p_akinyi",
+      "requested_local": "01:48",
+      "device_id": "d_counter2"
+    },
+    {
+      "kind": "write_off",
+      "target": "tusker_0 ×2",
+      "amount_kes": 600,
+      "reason": "spilled",
+      "requested_by": "p_otieno",
+      "requested_local": "21:40",
+      "device_id": "d_counter1"
+    },
+    {
+      "kind": "price_mismatch",
+      "order": "#036",
+      "target": "tusker_0 ×1",
+      "recorded_price_kes": 300,
+      "server_price_kes": 320,
+      "amount_kes": 20,
+      "requested_by": "system",
+      "device_id": "d_counter2"
+    },
+    {
+      "kind": "comp",
+      "order": "#046",
+      "target": "cane_0 ×1",
+      "amount_kes": 80,
+      "reason": "Regular customer’s birthday",
+      "requested_by": "p_kiprop",
+      "requested_local": "01:30",
+      "device_id": "d_counter2"
+    }
+  ],
+  "day_close": {
+    "business_day": "2026-11-10",
+    "recorded_mpesa_kes": 48400,
+    "till_total_kes_example": 47650,
+    "mpesa_without_code": [
+      {
+        "order": "#046",
+        "amount_kes": 750,
+        "by": "p_kiprop"
+      },
+      {
+        "order": "#022",
+        "amount_kes": 600,
+        "by": "p_mwangi"
+      }
+    ]
+  },
+  "today_summary": {
+    "served_kes": 86450,
+    "collected_kes": 79970,
+    "money_at_risk_kes": 6480,
+    "cash_kes": 31570,
+    "mpesa_kes": 48400,
+    "by_server": {
+      "p_otieno": {
+        "served_kes": 24300,
+        "collected_kes": 22820,
+        "not_paid_kes": 1480
+      },
+      "p_akinyi": {
+        "served_kes": 21850,
+        "collected_kes": 19550,
+        "not_paid_kes": 2300
+      },
+      "p_wanjiku": {
+        "served_kes": 19600,
+        "collected_kes": 17750,
+        "not_paid_kes": 1850
+      },
+      "p_kiprop": {
+        "served_kes": 14900,
+        "collected_kes": 14050,
+        "not_paid_kes": 850
+      },
+      "p_mwangi": {
+        "served_kes": 5800,
+        "collected_kes": 5800,
+        "not_paid_kes": 0
+      }
+    },
+    "by_hour_kes": {
+      "16": 2100,
+      "17": 3400,
+      "18": 5800,
+      "19": 7900,
+      "20": 10200,
+      "21": 12600,
+      "22": 14300,
+      "23": 12050,
+      "00": 9400,
+      "01": 6200,
+      "02": 2500
+    }
+  }
+}

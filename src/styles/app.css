@@ -1,0 +1,99 @@
+@import '../../kaunta-handoff/design/tokens.css';
+
+/* Additions to the handoff tokens. Night values are taken from Components.dc.html. */
+:root,
+:root[data-theme='night'] {
+  --k-paid-line: #1f4a38;
+  --k-pending-line: #24406a;
+  --k-offline-line: #34404a;
+  --k-warning-line: #5a4818;
+  --k-chip-font: 16px;
+  --k-warning-card: #2a2312;
+}
+
+:root[data-theme='day'] {
+  --k-paid-line: color-mix(in srgb, var(--k-paid-fg) 30%, var(--k-paid-bg));
+  --k-pending-line: color-mix(in srgb, var(--k-pending-fg) 30%, var(--k-pending-bg));
+  --k-offline-line: color-mix(in srgb, var(--k-offline-fg) 30%, var(--k-offline-bg));
+  --k-warning-line: color-mix(in srgb, var(--k-warning-fg) 30%, var(--k-warning-bg));
+  --k-chip-font: 15px;
+  --k-warning-card: var(--k-warning-bg);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 3px solid var(--k-ember);
+  outline-offset: 2px;
+}
+
+/* Tones: one colour family per meaning. Ember is not a tone. */
+.k-tone-paid { --tone-bg: var(--k-paid-bg); --tone-fg: var(--k-paid-fg); --tone-line: var(--k-paid-line); }
+.k-tone-pending { --tone-bg: var(--k-pending-bg); --tone-fg: var(--k-pending-fg); --tone-line: var(--k-pending-line); }
+.k-tone-warning { --tone-bg: var(--k-warning-bg); --tone-fg: var(--k-warning-fg); --tone-line: var(--k-warning-line); }
+.k-tone-error { --tone-bg: var(--k-error-bg); --tone-fg: var(--k-error-fg); --tone-line: var(--k-error-fg); }
+.k-tone-written-off { --tone-bg: var(--k-written-off-bg); --tone-fg: var(--k-written-off-fg); --tone-line: var(--k-written-off-fg); }
+.k-tone-neutral { --tone-bg: var(--k-neutral-bg); --tone-fg: var(--k-neutral-fg); --tone-line: var(--k-line-strong); }
+.k-tone-offline { --tone-bg: var(--k-offline-bg); --tone-fg: var(--k-offline-fg); --tone-line: var(--k-offline-line); }
+
+.k-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--k-r-pill);
+  background: var(--tone-bg);
+  color: var(--tone-fg);
+  font-size: var(--k-chip-font);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.k-chip svg,
+.k-sync-pill svg {
+  flex: none;
+}
+
+/* 40px tall as designed; the ::before stretches the tap area to the 48px minimum. */
+.k-sync-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px 0 10px;
+  border: 1px solid var(--tone-line);
+  border-radius: var(--k-r-pill);
+  background: var(--tone-bg);
+  color: var(--tone-fg);
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.k-sync-pill::before {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+}

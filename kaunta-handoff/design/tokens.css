@@ -1,0 +1,72 @@
+/* Kaunta design tokens. Counter routes use data-theme="night"; admin defaults to "day". */
+:root,
+:root[data-theme="night"] {
+  --k-font: Manrope, system-ui, sans-serif;
+
+  --k-bg: #15100C;
+  --k-counter: #1F1812;
+  --k-tile: #241C15;
+  --k-raised: #2E241B;
+  --k-line: #3D3127;
+  --k-line-strong: #4A3C30;
+  --k-text: #F7EEE4;
+  --k-text-2: #CDBCA9;
+  --k-text-3: #AE9B87;
+  --k-ember: #FF8F3F;
+  --k-ember-ink: #FF8F3F;
+  --k-on-ember: #1C1006;
+
+  --k-paid: #5DD39E;        --k-paid-bg: #133226;        --k-paid-fg: #7BE3B3;
+  --k-pending: #7CB8FF;     --k-pending-bg: #172A42;     --k-pending-fg: #A6CEFF;
+  --k-warning: #F2C94C;     --k-warning-bg: #3A2E0E;     --k-warning-fg: #F6D777;   --k-on-warning: #241A02;
+  --k-error: #FF6B61;       --k-error-bg: #3D1A17;       --k-error-fg: #FF9A92;
+  --k-written-off: #C29BFF; --k-written-off-bg: #2A1F3D; --k-written-off-fg: #D3B8FF;
+  --k-neutral-bg: #2E241B;  --k-neutral-fg: #D9CCBE;
+  --k-offline: #A3B3C2;     --k-offline-bg: #222A31;     --k-offline-fg: #B9C7D3;
+  --k-scrim: rgba(8, 5, 3, 0.74);
+  --k-toast-bg: #F7EEE4;    --k-toast-fg: #22180F;
+
+  --k-r-input: 10px; --k-r-card: 14px; --k-r-sheet: 20px; --k-r-pill: 999px;
+  --k-touch-min: 48px; --k-touch-row: 56px; --k-touch-primary: 64px; --k-touch-pin: 72px;
+  --k-s1: 4px; --k-s2: 8px; --k-s3: 12px; --k-s4: 16px; --k-s5: 24px; --k-s6: 32px; --k-s7: 48px; --k-s8: 64px;
+
+  color-scheme: dark;
+}
+
+:root[data-theme="day"] {
+  --k-bg: #FAF6F1;
+  --k-counter: #FFFFFF;
+  --k-tile: #FFFFFF;
+  --k-raised: #F3ECE3;
+  --k-line: #E2D6C8;
+  --k-line-strong: #D6C8B8;
+  --k-text: #22180F;
+  --k-text-2: #5A4A3B;
+  --k-text-3: #75634F;
+  --k-ember: #F07E2A;
+  --k-ember-ink: #A84B0C;
+  --k-on-ember: #1C1006;
+
+  --k-paid: #17784E;        --k-paid-bg: #E3F5EC;        --k-paid-fg: #17784E;
+  --k-pending: #1F5FAF;     --k-pending-bg: #E4EEFB;     --k-pending-fg: #1F5FAF;
+  --k-warning: #8A6200;     --k-warning-bg: #FBF1D3;     --k-warning-fg: #8A6200;   --k-on-warning: #FFFFFF;
+  --k-error: #B3261E;       --k-error-bg: #FCE6E4;       --k-error-fg: #B3261E;
+  --k-written-off: #6C3FC0; --k-written-off-bg: #EFE7FB; --k-written-off-fg: #6C3FC0;
+  --k-neutral-bg: #EEE7DF;  --k-neutral-fg: #5A4A3B;
+  --k-offline: #4A5A68;     --k-offline-bg: #E6ECF1;     --k-offline-fg: #4A5A68;
+  --k-scrim: rgba(34, 24, 15, 0.45);
+  --k-toast-bg: #22180F;    --k-toast-fg: #F7EEE4;
+
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background: var(--k-bg);
+  color: var(--k-text);
+  font-family: var(--k-font);
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.k-money { font-variant-numeric: tabular-nums; }

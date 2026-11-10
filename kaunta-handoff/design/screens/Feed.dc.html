@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta admin: live sales</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; box-sizing: border-box; background: #FAF6F1; color: #22180F; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums;">
+  <dc-import name="AdminNav" active="feed" hint-size="100%,118px"></dc-import>
+  <main style="max-width: 1240px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px;">
+      <h1 style="margin: 0; font-size: 32px; font-weight: 800;">Sales</h1>
+      <span style="height: 34px; padding: 0 12px 0 10px; border-radius: 999px; background: #E3F5EC; color: #17784E; display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700;"><span style="width: 10px; height: 10px; border-radius: 999px; background: #17784E;"></span>Live · new rows appear as counters sync</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+      <sc-for list="{{kinds}}" as="k" hint-placeholder-count="5">
+        <button type="button" onClick="{{k.pick}}" aria-pressed="{{k.on}}" style="min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid {{k.border}}; background: {{k.bg}}; color: {{k.fg}}; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;">{{k.label}}</button>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+      <section style="flex: 999 1 560px; min-width: 0; background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; overflow: hidden;">
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 14px 18px; border-bottom: 1px solid #EFE6DB;">
+            <span style="width: 48px; font-size: 15px; font-weight: 700; color: #75634F;">{{r.time}}</span>
+            <span style="flex: none; height: 30px; padding: 0 10px 0 6px; border-radius: 999px; background: {{r.bg}}; color: {{r.fg}}; display: inline-flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 700; white-space: nowrap;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{r.d}}"/></svg>{{r.kindLabel}}</span>
+            <span style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 16px; font-weight: 700;">{{r.what}}</span><span style="font-size: 14px; color: #75634F;">{{r.who}}</span></span>
+            <span style="font-size: 18px; font-weight: 800; white-space: nowrap;">{{r.amount}}</span>
+          </div>
+        </sc-for>
+        <div style="padding: 14px 18px; font-size: 15px; color: #75634F;">Showing the latest 8 · <a href="Audit.dc.html">full history in the audit log</a></div>
+      </section>
+
+      <section style="flex: 1 1 380px; min-width: 0; background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px;">
+        <h2 style="margin: 0; font-size: 20px; font-weight: 800;">By server · today</h2>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; min-width: 360px; border-collapse: collapse; font-size: 15px;">
+            <thead><tr style="text-align: right; color: #5A4A3B;"><th scope="col" style="text-align: left; padding: 8px 6px; font-weight: 700;">Server</th><th scope="col" style="padding: 8px 6px; font-weight: 700;">Served</th><th scope="col" style="padding: 8px 6px; font-weight: 700;">Collected</th><th scope="col" style="padding: 8px 6px; font-weight: 700;">Not paid</th></tr></thead>
+            <tbody>
+              <sc-for list="{{servers}}" as="s" hint-placeholder-count="5">
+                <tr style="border-top: 1px solid #EFE6DB; text-align: right;"><th scope="row" style="text-align: left; padding: 12px 6px; font-weight: 800;">{{s.n}}<div style="font-size: 13px; font-weight: 500; color: #75634F;">{{s.orders}}</div></th><td style="padding: 12px 6px; font-weight: 700;">{{s.served}}</td><td style="padding: 12px 6px;">{{s.collected}}</td><td style="padding: 12px 6px; font-weight: 800; color: {{s.openFg}};">{{s.open}}</td></tr>
+              </sc-for>
+              <tr style="border-top: 2px solid #22180F; text-align: right;"><th scope="row" style="text-align: left; padding: 12px 6px; font-weight: 800;">Total</th><td style="padding: 12px 6px; font-weight: 800;">86,450</td><td style="padding: 12px 6px; font-weight: 800;">79,970</td><td style="padding: 12px 6px; font-weight: 800; color: #8A6200;">6,480</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="font-size: 14px; line-height: 1.45; color: #5A4A3B;">Amounts in KES. “Not paid” is money still on that server’s open orders. Sales are credited to the <b>server</b>, and the person who <b>recorded</b> them is shown on every row.</div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { kind: 'all' }; }
+  renderVals() {
+    const I = {
+      paid: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M8 12.5l2.7 2.7L16 9.8', served: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M12 7v5l3 2',
+      void: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M4.9 4.9l14.2 14.2', warn: 'M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z M12 9v4 M12 17h.01'
+    };
+    const K = { paid: ['Paid', '#E3F5EC', '#17784E', I.paid], served: ['Served · pending', '#E4EEFB', '#1F5FAF', I.served], void: ['Voided', '#EEE7DF', '#5A4A3B', I.void], review: ['Needs review', '#FBF1D3', '#8A6200', I.warn] };
+    const all = [
+      ['02:14', 'paid', '#050 Table 1 · M-Pesa …QK7P', 'Server Mwangi · recorded by Wanjiku · Counter 1', 'KES 1,320'],
+      ['02:11', 'served', '#048 Counter · Tusker ×2', 'Server Wanjiku · recorded by Wanjiku · Counter 1', 'KES 600'],
+      ['02:09', 'review', 'Void requested · #039 Guinness ×1', 'Server Otieno · past the 5-min window', 'KES 330'],
+      ['02:06', 'paid', '#049 Mzee wa kofia · Cash', 'Server Akinyi · recorded by Akinyi · Counter 2', 'KES 900'],
+      ['02:02', 'served', '#047 Table 4 · 5 items', 'Server Wanjiku · recorded by Wanjiku · Counter 1', 'KES 1,250'],
+      ['01:57', 'void', '#045 Soda 300ml ×1 · self-void, entered by mistake', 'Kiprop · within 5 min', 'KES 70'],
+      ['01:55', 'paid', '#046 Table 7 · Cash 500 + M-Pesa 750', 'Server Kiprop · recorded by Kiprop · Counter 2', 'KES 1,250'],
+      ['01:51', 'review', 'Price mismatch · #036 offline sale', 'Tusker sold at KES 300, the price is KES 320 · Counter 2', 'KES 20']
+    ];
+    const kind = this.state.kind;
+    const rows = all.filter((r) => kind === 'all' || r[1] === kind).map((r) => ({ time: r[0], kindLabel: K[r[1]][0], bg: K[r[1]][1], fg: K[r[1]][2], d: K[r[1]][3], what: r[2], who: r[3], amount: r[4] }));
+    const mk = (id, label) => { const on = kind === id; return { label, on, bg: on ? '#22180F' : '#FFFFFF', fg: on ? '#FFFFFF' : '#22180F', border: on ? '#22180F' : '#D6C8B8', pick: () => this.setState({ kind: id }) }; };
+    const kinds = [mk('all', 'Everything'), mk('served', 'Served'), mk('paid', 'Paid'), mk('void', 'Voids'), mk('review', 'Needs review')];
+    const f = (n) => n.toLocaleString('en-US');
+    const servers = [['Otieno', 24300, 22820, 1480, 19], ['Akinyi', 21850, 19550, 2300, 17], ['Wanjiku', 19600, 17750, 1850, 16], ['Kiprop', 14900, 14050, 850, 12], ['Mwangi', 5800, 5800, 0, 6]]
+      .map((s) => ({ n: s[0], served: f(s[1]), collected: f(s[2]), open: s[3] ? f(s[3]) : '—', openFg: s[3] ? '#8A6200' : '#75634F', orders: s[4] + ' orders' }));
+    return { rows, kinds, servers };
+  }
+}
+</script>
+</body>
+</html>

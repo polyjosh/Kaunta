@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta counter: login</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position: relative; width: 360px; height: 800px; overflow: hidden; background: #15100C; color: #F7EEE4; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums; display: flex; flex-direction: column;">
+  <div style="height: 60px; flex: none; box-sizing: border-box; padding: 0 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #3D3127; background: #1F1812;">
+    <svg width="28" height="28" viewBox="0 0 48 48" fill="none" stroke="#FF8F3F" stroke-width="4.5" stroke-linecap="round" aria-hidden="true"><path d="M10 10v28M18 10v28M26 10v28M34 10v28M5 33L41 15"/></svg>
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;"><span style="font-size: 17px; font-weight: 800;">Baraka Pub</span><span style="font-size: 14px; color: #AE9B87;">{{t.device}}</span></div>
+    <div style="height: 36px; padding: 0 10px 0 8px; border-radius: 999px; border: 1px solid #1F4A38; background: #133226; color: #7BE3B3; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H7a5 5 0 1 1 1-9.9A6 6 0 0 1 19.4 10 4.5 4.5 0 0 1 17.5 19z M9 14l2 2 4-4"/></svg>{{t.synced}}</div>
+  </div>
+
+  <sc-if value="{{isNames}}" hint-placeholder-val="{{ true }}">
+    <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 24px 12px 16px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="display: flex; flex-direction: column; gap: 4px; padding: 0 4px;"><h1 style="margin: 0; font-size: 26px; font-weight: 800;">{{t.who}}</h1><div style="font-size: 16px; color: #CDBCA9;">{{t.whoHint}}</div></div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+        <sc-for list="{{staff}}" as="p" hint-placeholder-count="6">
+          <button type="button" onClick="{{p.pick}}" style="height: 120px; border-radius: 16px; border: 1px solid #3D3127; background: #241C15; color: #F7EEE4; font: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; cursor: pointer;"><span style="width: 56px; height: 56px; border-radius: 999px; background: {{p.bg}}; color: #1C1006; font-size: 24px; font-weight: 800; display: flex; align-items: center; justify-content: center;">{{p.i}}</span><span style="font-size: 18px; font-weight: 700;">{{p.n}}</span></button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="flex: none; padding: 8px 12px 18px;"><button type="button" style="width: 100%; min-height: 52px; border-radius: 14px; border: 1px solid #4A3C30; background: transparent; color: #F7EEE4; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;">{{t.admin}}</button></div>
+  </sc-if>
+
+  <sc-if value="{{isPin}}" hint-placeholder-val="{{ false }}">
+    <div style="flex: 1; min-height: 0; padding: 12px 12px 18px; display: flex; flex-direction: column; gap: 14px;">
+      <button type="button" onClick="{{back}}" style="align-self: flex-start; min-height: 48px; padding: 0 14px 0 8px; border: none; border-radius: 12px; background: transparent; color: #CDBCA9; font: inherit; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>{{t.notMe}}</button>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+        <span style="width: 64px; height: 64px; border-radius: 999px; background: {{who.bg}}; color: #1C1006; font-size: 28px; font-weight: 800; display: flex; align-items: center; justify-content: center;">{{who.i}}</span>
+        <div style="font-size: 22px; font-weight: 800;">{{who.n}}</div>
+        <div style="font-size: 16px; color: #CDBCA9;">{{t.enterPin}}</div>
+      </div>
+      <div aria-live="polite" style="display: flex; justify-content: center; gap: 20px; padding: 6px 0;">
+        <sc-for list="{{dots}}" as="d" hint-placeholder-count="4"><span style="width: 18px; height: 18px; box-sizing: border-box; border-radius: 999px; background: {{d.bg}}; border: 2px solid {{d.border}};"></span></sc-for>
+      </div>
+      <div style="min-height: 24px; text-align: center; font-size: 16px; font-weight: 700; color: #F6D777;">{{msg}}</div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: auto;">
+        <sc-for list="{{keys}}" as="k" hint-placeholder-count="12">
+          <button type="button" onClick="{{k.press}}" aria-label="{{k.aria}}" style="height: 72px; border-radius: 14px; border: none; background: {{k.bg}}; color: #F7EEE4; font: inherit; font-size: 28px; font-weight: 700; cursor: pointer;">{{k.t}}</button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isLocked}}" hint-placeholder-val="{{ false }}">
+    <div style="flex: 1; min-height: 0; padding: 32px 16px 18px; display: flex; flex-direction: column; gap: 14px;">
+      <div style="background: #241C15; border: 1px solid #3D3127; border-radius: 18px; padding: 32px 22px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 14px;">
+        <span style="width: 72px; height: 72px; border-radius: 999px; background: #3A2E0E; color: #F2C94C; display: flex; align-items: center; justify-content: center;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11h14v10H5z M8 11V7a4 4 0 0 1 8 0v4 M12 15v2"/></svg></span>
+        <div style="font-size: 15px; font-weight: 700; color: #F6D777;">{{t.lockedChip}}</div>
+        <div style="font-size: 40px; font-weight: 800; letter-spacing: -0.02em;">4:52</div>
+        <div style="font-size: 17px; line-height: 1.45; color: #CDBCA9;">{{t.lockedBody}}</div>
+      </div>
+      <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+        <button type="button" onClick="{{back}}" style="min-height: 56px; border-radius: 14px; border: 1px solid #4A3C30; background: #2E241B; color: #F7EEE4; font: inherit; font-size: 17px; font-weight: 700; cursor: pointer;">{{t.another}}</button>
+        <button type="button" style="min-height: 52px; border-radius: 14px; border: none; background: transparent; color: #F7EEE4; font: inherit; font-size: 16px; font-weight: 700; text-decoration: underline; text-underline-offset: 4px; cursor: pointer;">{{t.adminUnlock}}</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"language":{"editor":"enum","options":["en","sw"],"default":"en"},"view":{"editor":"enum","options":["names","pin","locked"],"default":"names"},"$preview":{"width":360,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { view: props.view || 'names', who: props.view === 'locked' ? 'otieno' : 'wanjiku', pin: props.view === 'pin' ? '25' : '', wrong: props.view === 'pin' ? 2 : 0, ok: false };
+  }
+  renderVals() {
+    const sw = this.props.language === 'sw';
+    const t = sw ? {
+      device: 'Kaunta 1 · kifaa cha pamoja', synced: 'Imesawazishwa', who: 'Nani yuko kaunta?', whoHint: 'Gusa jina lako, kisha weka PIN.', admin: 'Ingia kama msimamizi',
+      notMe: 'Si mimi', enterPin: 'Weka PIN yako ya tarakimu 4', lockedChip: 'Imefungwa · PIN imekosewa mara 5', lockedBody: 'PIN ya Otieno imekosewa mara 5. Subiri muda uishe, au mwombe msimamizi aifungue.', another: 'Chagua jina lingine', adminUnlock: 'Msimamizi afungue',
+      wrong: (n) => 'PIN si sahihi · majaribio ' + n + ' yamebaki', welcome: 'Karibu!'
+    } : {
+      device: 'Counter 1 · shared device', synced: 'Synced', who: 'Who is at the counter?', whoHint: 'Tap your name, then enter your PIN.', admin: 'Admin login',
+      notMe: 'Not me', enterPin: 'Enter your 4-digit PIN', lockedChip: 'Locked · 5 wrong PINs', lockedBody: 'Otieno’s PIN was wrong 5 times. Wait for the timer, or ask an admin to unlock it.', another: 'Choose another name', adminUnlock: 'Admin unlock',
+      wrong: (n) => 'Wrong PIN · ' + n + ' tries left', welcome: 'Welcome!'
+    };
+    const staff = [
+      { id: 'wanjiku', n: 'Wanjiku', i: 'W', bg: '#FFB27A' }, { id: 'otieno', n: 'Otieno', i: 'O', bg: '#E9C46A' },
+      { id: 'akinyi', n: 'Akinyi', i: 'A', bg: '#F4A3A0' }, { id: 'kiprop', n: 'Kiprop', i: 'K', bg: '#9ED9B8' },
+      { id: 'mwangi', n: 'Mwangi', i: 'M', bg: '#A9C8F0' }, { id: 'chebet', n: 'Chebet', i: 'C', bg: '#D3B8FF' }
+    ].map((p) => ({ ...p, pick: () => this.setState({ view: 'pin', who: p.id, pin: '', wrong: 0, ok: false }) }));
+    const st = this.state;
+    const who = staff.find((p) => p.id === st.who) || staff[0];
+    const press = (d) => {
+      if (st.ok) return;
+      if (d === 'del') { this.setState({ pin: st.pin.slice(0, -1) }); return; }
+      const pin = st.pin + d;
+      if (pin.length < 4) { this.setState({ pin }); return; }
+      if (pin === '2580') { this.setState({ pin, ok: true }); return; }
+      const wrong = st.wrong + 1;
+      this.setState(wrong >= 5 ? { view: 'locked', pin: '', wrong } : { pin: '', wrong });
+    };
+    const dots = [0, 1, 2, 3].map((i) => ({ bg: i < st.pin.length ? '#F7EEE4' : 'transparent', border: i < st.pin.length ? '#F7EEE4' : '#AE9B87' }));
+    const keys = ['1','2','3','4','5','6','7','8','9'].map((k) => ({ t: k, aria: k, bg: '#2E241B', press: () => press(k) }));
+    keys.push({ t: '', aria: '', bg: 'transparent', press: () => {} });
+    keys.push({ t: '0', aria: '0', bg: '#2E241B', press: () => press('0') });
+    keys.push({ t: '⌫', aria: sw ? 'Futa tarakimu ya mwisho' : 'Delete last digit', bg: 'transparent', press: () => press('del') });
+    const msg = st.ok ? t.welcome : st.wrong > 0 ? t.wrong(5 - st.wrong) : '';
+    return {
+      t, staff, who, dots, keys, msg,
+      isNames: st.view === 'names', isPin: st.view === 'pin', isLocked: st.view === 'locked',
+      back: () => this.setState({ view: 'names', pin: '', wrong: 0, ok: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

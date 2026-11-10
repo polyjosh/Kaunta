@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta admin: top bar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<header style="width: 100%; box-sizing: border-box; background: #FFFFFF; border-bottom: 1px solid #E2D6C8; color: #22180F; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums;">
+  <div style="max-width: 1240px; margin: 0 auto; padding: 12px 16px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px;">
+    <div style="display: flex; align-items: center; gap: 10px; flex: 1 1 auto; min-width: 0;">
+      <svg width="30" height="30" viewBox="0 0 48 48" fill="none" stroke="#E0681A" stroke-width="4.5" stroke-linecap="round" aria-hidden="true"><path d="M10 10v28M18 10v28M26 10v28M34 10v28M5 33L41 15"/></svg>
+      <div style="display: flex; flex-direction: column; min-width: 0;"><span style="font-size: 18px; font-weight: 800;">Baraka Pub</span><span style="font-size: 14px; color: #75634F;">{{t.day}}</span></div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="height: 34px; padding: 0 10px 0 8px; border-radius: 999px; background: #E3F5EC; color: #17784E; display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H7a5 5 0 1 1 1-9.9A6 6 0 0 1 19.4 10 4.5 4.5 0 0 1 17.5 19z M9 14l2 2 4-4"/></svg>{{t.devices}}</span>
+      <button type="button" aria-label="{{t.account}}" style="width: 44px; height: 44px; border-radius: 999px; border: none; background: #F4A3A0; color: #1C1006; font: inherit; font-size: 17px; font-weight: 800; cursor: pointer;">N</button>
+    </div>
+  </div>
+  <nav aria-label="{{t.nav}}" style="max-width: 1240px; margin: 0 auto; padding: 6px 8px 0; display: flex; gap: 2px; overflow-x: auto;">
+    <sc-for list="{{links}}" as="l" hint-placeholder-count="9">
+      <a href="{{l.href}}" aria-current="{{l.current}}" style="flex: none; min-height: 48px; padding: 0 12px; box-sizing: border-box; display: flex; align-items: center; gap: 6px; font-size: 16px; font-weight: 700; text-decoration: none; color: {{l.fg}}; border-bottom: 3px solid {{l.line}};">{{l.label}}<sc-if value="{{l.hasBadge}}" hint-placeholder-val="{{ false }}"><span style="min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: #8A6200; color: #FFFFFF; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;">{{l.badge}}</span></sc-if></a>
+    </sc-for>
+  </nav>
+</header>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"active":{"editor":"enum","options":["today","feed","products","stock","kegs","approvals","recon","staff","audit"],"default":"today"},"language":{"editor":"enum","options":["en","sw"],"default":"en"},"$preview":{"width":1280,"height":140}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sw = this.props.language === 'sw';
+    const active = this.props.active || 'today';
+    const t = sw
+      ? { day: 'Siku ya biashara: Jumanne 10 Nov · 06:00 hadi 06:00', devices: 'Vifaa 2 vimesawazishwa', account: 'Akaunti ya Njeri', nav: 'Menyu ya msimamizi' }
+      : { day: 'Business day: Tue 10 Nov · 06:00 to 06:00', devices: '2 devices synced', account: 'Njeri’s account', nav: 'Admin menu' };
+    const L = [
+      ['today', 'Today', 'Leo', 'Today.dc.html'], ['feed', 'Sales', 'Mauzo', 'Feed.dc.html'],
+      ['approvals', 'Approvals', 'Idhini', 'Approvals.dc.html', 5], ['recon', 'Reconcile', 'Hesabu', 'Recon.dc.html'],
+      ['products', 'Products', 'Bidhaa', 'Product.dc.html'], ['stock', 'Stock', 'Stoo', 'Stock.dc.html'],
+      ['kegs', 'Kegs', 'Keg', 'Kegs.dc.html'], ['staff', 'Staff & devices', 'Wafanyakazi', 'Staff.dc.html'],
+      ['audit', 'Audit log', 'Kumbukumbu', 'Audit.dc.html']
+    ];
+    const links = L.map((l) => {
+      const on = l[0] === active;
+      return { label: sw ? l[2] : l[1], href: l[3], current: on ? 'page' : 'false', fg: on ? '#22180F' : '#5A4A3B', line: on ? '#E0681A' : 'transparent', hasBadge: !!l[4], badge: l[4] || '' };
+    });
+    return { t, links };
+  }
+}
+</script>
+</body>
+</html>

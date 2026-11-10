@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta admin: add stock</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; box-sizing: border-box; background: #FAF6F1; color: #22180F; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums;">
+  <dc-import name="AdminNav" active="stock" hint-size="100%,118px"></dc-import>
+  <main style="max-width: 1240px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px;">
+      <h1 style="margin: 0; font-size: 32px; font-weight: 800;">Add stock</h1>
+      <span style="font-size: 15px; color: #5A4A3B;">Enter what arrived the way it arrived. Kaunta works out the totals.</span>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+      <section style="flex: 999 1 600px; min-width: 0; background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+          <label style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-weight: 700;">Supplier <span style="font-weight: 500; color: #75634F; margin-top: -4px;">optional</span><input type="text" value="Kamau Distributors" style="height: 48px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #D6C8B8; font: inherit; font-size: 16px; color: #22180F;"></label>
+          <label style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-weight: 700;">Delivery note no. <span style="font-weight: 500; color: #75634F; margin-top: -4px;">optional</span><input type="text" value="DN-20418" style="height: 48px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #D6C8B8; font: inherit; font-size: 16px; color: #22180F;"></label>
+          <div style="flex: 1 1 160px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-weight: 700;">Received by<div style="height: 48px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; background: #F3ECE3; display: flex; align-items: center; font-weight: 600;">Njeri · today 16:05</div></div>
+        </div>
+
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 14px; border-radius: 14px; border: 1px solid #E2D6C8; background: #FFFCF8;">
+            <div style="flex: 1 1 200px; min-width: 0; display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 17px; font-weight: 800;">{{r.name}}</span><span style="font-size: 14px; color: #5A4A3B;">{{r.container}}</span></div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button type="button" onClick="{{r.dec}}" aria-label="{{r.decAria}}" style="width: 48px; height: 48px; border-radius: 12px; border: 1px solid #D6C8B8; background: #FFFFFF; color: #22180F; font: inherit; font-size: 22px; font-weight: 700; cursor: pointer;">−</button>
+              <span style="min-width: 56px; text-align: center; font-size: 22px; font-weight: 800;">× {{r.qty}}</span>
+              <button type="button" onClick="{{r.inc}}" aria-label="{{r.incAria}}" style="width: 48px; height: 48px; border-radius: 12px; border: 1px solid #D6C8B8; background: #FFFFFF; color: #22180F; font: inherit; font-size: 22px; font-weight: 700; cursor: pointer;">+</button>
+            </div>
+            <div style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 2px; text-align: right;"><span style="font-size: 18px; font-weight: 800;">= {{r.total}}</span><span style="font-size: 14px; color: {{r.afterFg}}; font-weight: {{r.afterW}};">{{r.after}}</span></div>
+          </div>
+        </sc-for>
+        <button type="button" style="align-self: flex-start; min-height: 48px; padding: 0 16px; border-radius: 12px; border: 1px dashed #C9B6A2; background: #FFFFFF; color: #22180F; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;">+ Add a product</button>
+      </section>
+
+      <aside style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+        <section style="background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 800;">This delivery</h2>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="4"><div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px;"><span style="color: #5A4A3B;">{{r.name}}</span><span style="font-weight: 700;">{{r.total}}</span></div></sc-for>
+          <div style="padding: 12px 14px; border-radius: 12px; background: #E3F5EC; color: #145F3E; font-size: 14px; line-height: 1.45;"><b>Pilsner goes back above zero</b>, from −4 to 21. The −4 flag on Today will clear.</div>
+          <div style="padding: 12px 14px; border-radius: 12px; background: #E4EEFB; color: #173F73; font-size: 14px; line-height: 1.45;">The keg goes into the <b>keg queue</b>. It becomes active when the current one is marked finished. <a href="Kegs.dc.html" style="color: #1F5FAF;">See kegs</a></div>
+          <button type="button" style="min-height: 56px; border-radius: 14px; border: none; background: #F07E2A; color: #1C1006; font: inherit; font-size: 17px; font-weight: 800; cursor: pointer;">Add to stock</button>
+          <div style="font-size: 14px; color: #75634F;">Recorded in the audit log with your name and the delivery note.</div>
+        </section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { q: [3, 1, 1, 2] }; }
+  renderVals() {
+    const f = (n) => n.toLocaleString('en-US');
+    const defs = [
+      { name: 'Kenya Cane', container: '750ml bottle', per: 750, unit: 'ml', now: 4850 },
+      { name: 'Pilsner', container: 'Crate of 25 bottles (500ml)', per: 25, unit: 'bottles', now: -4 },
+      { name: 'Keg lager', container: '50L keg · about 100 mugs of 500ml', per: 50000, unit: 'ml', now: null },
+      { name: 'Soda 300ml', container: 'Crate of 24 bottles', per: 24, unit: 'bottles', now: 31 }
+    ];
+    const rows = defs.map((d, i) => {
+      const qty = this.state.q[i];
+      const add = qty * d.per;
+      const set = (n) => { const q = this.state.q.slice(); q[i] = Math.max(0, n); this.setState({ q }); };
+      const total = d.unit === 'ml' && add >= 1000 ? f(add / 1000) + ' L (' + f(add) + ' ml)' : f(add) + ' ' + d.unit;
+      const after = d.now === null ? 'Added to the keg queue' : 'Now ' + f(d.now) + ' → ' + f(d.now + add) + ' ' + d.unit;
+      return {
+        name: d.name, container: d.container, qty, total, after,
+        afterFg: d.now !== null && d.now < 0 ? '#17784E' : '#5A4A3B', afterW: d.now !== null && d.now < 0 ? 800 : 500,
+        inc: () => set(qty + 1), dec: () => set(qty - 1), incAria: 'One more ' + d.container, decAria: 'One less ' + d.container
+      };
+    });
+    return { rows };
+  }
+}
+</script>
+</body>
+</html>

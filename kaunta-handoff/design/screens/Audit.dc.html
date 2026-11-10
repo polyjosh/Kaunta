@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta admin: audit log</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; box-sizing: border-box; background: #FAF6F1; color: #22180F; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums;">
+  <dc-import name="AdminNav" active="audit" hint-size="100%,118px"></dc-import>
+  <main style="max-width: 1040px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px;">
+      <h1 style="margin: 0; font-size: 32px; font-weight: 800;">Audit log</h1>
+      <span style="font-size: 15px; color: #5A4A3B; display: flex; align-items: center; gap: 6px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 11h14v10H5z M8 11V7a4 4 0 0 1 8 0v4"/></svg>Read-only. Nothing here can be changed or deleted.</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700;">Day<select style="height: 44px; padding: 0 10px; border-radius: 10px; border: 1px solid #D6C8B8; background: #FFFFFF; font: inherit; font-size: 15px; color: #22180F;"><option>Tue 10 Nov (today)</option><option>Mon 9 Nov</option></select></label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700;">Person<select style="height: 44px; padding: 0 10px; border-radius: 10px; border: 1px solid #D6C8B8; background: #FFFFFF; font: inherit; font-size: 15px; color: #22180F;"><option>Everyone</option><option>Njeri</option><option>Wanjiku</option><option>Otieno</option><option>Akinyi</option><option>Kiprop</option></select></label>
+      <label style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700;">Device<select style="height: 44px; padding: 0 10px; border-radius: 10px; border: 1px solid #D6C8B8; background: #FFFFFF; font: inherit; font-size: 15px; color: #22180F;"><option>All devices</option><option>Counter 1</option><option>Counter 2</option><option>Admin browser</option></select></label>
+      <label style="flex: 1 1 200px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 700;">Search<input type="search" placeholder="Order number, product, M-Pesa code" style="height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; border: 1px solid #D6C8B8; background: #FFFFFF; font: inherit; font-size: 15px; color: #22180F;"></label>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+      <sc-for list="{{kinds}}" as="k" hint-placeholder-count="7">
+        <button type="button" onClick="{{k.pick}}" aria-pressed="{{k.on}}" style="min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1px solid {{k.border}}; background: {{k.bg}}; color: {{k.fg}}; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;">{{k.label}}</button>
+      </sc-for>
+    </div>
+
+    <ol style="list-style: none; margin: 0; padding: 0; background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; overflow: hidden;">
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="12">
+        <li style="display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 14px 18px; border-bottom: 1px solid #EFE6DB;">
+          <span style="width: 56px; flex: none; font-size: 15px; font-weight: 800;">{{r.time}}</span>
+          <span style="flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 16px; font-weight: 700;">{{r.what}}</span>
+            <sc-if value="{{r.hasChange}}" hint-placeholder-val="{{ false }}"><span style="font-size: 14px; color: #3F3226;"><span style="text-decoration: line-through; color: #75634F;">{{r.before}}</span> → <b>{{r.after}}</b></span></sc-if>
+            <span style="font-size: 14px; color: #75634F;">{{r.who}} · {{r.device}}</span>
+          </span>
+          <span style="flex: none; align-self: flex-start; height: 28px; padding: 0 10px; border-radius: 999px; background: {{r.bg}}; color: {{r.fg}}; display: inline-flex; align-items: center; font-size: 13px; font-weight: 700;">{{r.kindLabel}}</span>
+        </li>
+      </sc-for>
+    </ol>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;"><span style="font-size: 14px; color: #5A4A3B;">{{countLabel}}</span><button type="button" style="min-height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #D6C8B8; background: #FFFFFF; color: #22180F; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;">Download as CSV</button></div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { k: 'all' }; }
+  renderVals() {
+    const K = { sale: ['Sale', '#E4EEFB', '#1F5FAF'], pay: ['Payment', '#E3F5EC', '#17784E'], void: ['Void / write-off', '#EEE7DF', '#5A4A3B'], price: ['Product & price', '#FFF3E8', '#A84B0C'], stock: ['Stock', '#EFE7FB', '#6C3FC0'], login: ['Login & device', '#E6ECF1', '#4A5A68'], shift: ['Shift', '#FBF1D3', '#8A6200'] };
+    const all = [
+      ['02:14', 'shift', 'Shift closed · short KES 300', 'Expected KES 12,750', 'Counted KES 12,450', 'Wanjiku', 'Counter 1'],
+      ['02:14', 'pay', 'Payment on #050 Table 1 · M-Pesa …QK7P · KES 1,320', '', '', 'Wanjiku', 'Counter 1'],
+      ['02:11', 'sale', 'Order #048 recorded · Counter · KES 600 · server Wanjiku', '', '', 'Wanjiku', 'Counter 1 · saved offline 02:02, synced 02:11'],
+      ['02:09', 'void', 'Void requested · #039 Guinness ×1 · “Customer changed their mind”', '', '', 'Otieno', 'Counter 1'],
+      ['02:09', 'login', 'PIN locked after 5 wrong tries', '', '', 'Otieno', 'Counter 1'],
+      ['01:57', 'void', 'Self-void · #045 Soda 300ml ×1 · within 5 min · “Entered by mistake”', '', '', 'Kiprop', 'Counter 2'],
+      ['01:51', 'price', 'Price mismatch flagged · #036 Tusker', 'Sold at KES 300', 'Price KES 320', 'System', 'Counter 2 sync'],
+      ['21:40', 'void', 'Write-off reported · Tusker ×2 · broken', 'Stock 26', 'Stock 24', 'Otieno', 'Counter 1'],
+      ['19:30', 'price', 'Price changed · Tusker Lager 500ml', 'KES 300', 'KES 320', 'Njeri', 'Admin browser'],
+      ['18:00', 'shift', 'Shift opened · float KES 2,000', '', '', 'Wanjiku', 'Counter 1'],
+      ['16:05', 'stock', 'Stock added · DN-20418 · Kamau Distributors · 4 lines', '', '', 'Njeri', 'Admin browser'],
+      ['16:00', 'login', 'Logged in', '', '', 'Mwangi', 'Counter 2']
+    ];
+    const k = this.state.k;
+    const rows = all.filter((r) => k === 'all' || r[1] === k).map((r) => ({ time: r[0], kindLabel: K[r[1]][0], bg: K[r[1]][1], fg: K[r[1]][2], what: r[2], before: r[3], after: r[4], hasChange: !!r[3], who: r[5], device: r[6] }));
+    const mk = (id, label) => { const on = k === id; return { label, on, bg: on ? '#22180F' : '#FFFFFF', fg: on ? '#FFFFFF' : '#22180F', border: on ? '#22180F' : '#D6C8B8', pick: () => this.setState({ k: id }) }; };
+    const kinds = [mk('all', 'Everything'), mk('sale', 'Sales'), mk('pay', 'Payments'), mk('void', 'Voids & write-offs'), mk('price', 'Products & prices'), mk('stock', 'Stock'), mk('login', 'Logins & devices'), mk('shift', 'Shifts')];
+    return { rows, kinds, countLabel: 'Showing ' + rows.length + ' of 412 events today, newest first' };
+  }
+}
+</script>
+</body>
+</html>

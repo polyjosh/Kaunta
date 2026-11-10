@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta admin: approvals</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; box-sizing: border-box; background: #FAF6F1; color: #22180F; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums;">
+  <dc-import name="AdminNav" active="approvals" hint-size="100%,118px"></dc-import>
+  <main style="max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px;">
+      <h1 style="margin: 0; font-size: 32px; font-weight: 800;">Approvals</h1>
+      <span style="font-size: 15px; color: #5A4A3B;">{{summary}}</span>
+    </div>
+    <sc-for list="{{items}}" as="a" hint-placeholder-count="5">
+      <article style="background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;">
+          <span style="height: 30px; padding: 0 10px 0 6px; border-radius: 999px; background: {{a.bg}}; color: {{a.fg}}; display: inline-flex; align-items: center; gap: 5px; font-size: 14px; font-weight: 800;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{a.d}}"/></svg>{{a.kind}}</span>
+          <h2 style="flex: 1 1 240px; margin: 0; font-size: 19px; font-weight: 800;">{{a.title}}</h2>
+          <span style="font-size: 22px; font-weight: 800;">{{a.amount}}</span>
+        </div>
+        <dl style="margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px 16px; font-size: 15px;">
+          <sc-for list="{{a.facts}}" as="f" hint-placeholder-count="3"><div><dt style="color: #75634F; font-size: 14px;">{{f.k}}</dt><dd style="margin: 0; font-weight: 700;">{{f.v}}</dd></div></sc-for>
+        </dl>
+        <div style="padding: 10px 12px; border-radius: 10px; background: #F3ECE3; font-size: 14px; line-height: 1.45; color: #3F3226;">{{a.effect}}</div>
+        <sc-if value="{{a.open}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <button type="button" onClick="{{a.approve}}" style="min-height: 48px; padding: 0 20px; border-radius: 14px; border: none; background: #F07E2A; color: #1C1006; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer;">{{a.yes}}</button>
+            <button type="button" onClick="{{a.reject}}" style="min-height: 48px; padding: 0 20px; border-radius: 14px; border: 1px solid #D6C8B8; background: #FFFFFF; color: #22180F; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;">{{a.no}}</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{a.decided}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: {{a.decFg}};"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{a.decD}}"/></svg>{{a.decLabel}}<button type="button" onClick="{{a.undo}}" style="margin-left: 8px; min-height: 44px; padding: 0 10px; border: none; background: transparent; color: #A84B0C; font: inherit; font-size: 15px; font-weight: 700; text-decoration: underline; cursor: pointer;">Undo</button></div>
+        </sc-if>
+      </article>
+    </sc-for>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { d: {} }; }
+  renderVals() {
+    const I = {
+      ban: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M4.9 4.9l14.2 14.2',
+      archive: 'M3 4h18v4H3z M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8 M9 13h6',
+      warn: 'M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z M12 9v4 M12 17h.01',
+      gift: 'M3 8h18v4H3z M5 12v9h14v-9 M12 8v13 M12 8c-2-4-6-4-6-1s6 1 6 1zm0 0c2-4 6-4 6-1s-6 1-6 1z',
+      check: 'M20 6L9 17l-5-5', x: 'M18 6L6 18 M6 6l12 12'
+    };
+    const T = { void: ['Void', '#EEE7DF', '#5A4A3B', I.ban], wo: ['Write-off', '#EFE7FB', '#6C3FC0', I.archive], price: ['Price mismatch', '#FBF1D3', '#8A6200', I.warn], comp: ['Comp', '#EFE7FB', '#6C3FC0', I.gift] };
+    const raw = [
+      { id: 1, t: 'void', title: '#039 Table 2 · Guinness 500ml ×1', amount: 'KES 330', facts: [['Asked by', 'Otieno · 02:09 · Counter 1'], ['Recorded', '22:06, past the 5-min window'], ['Reason', 'Customer changed their mind']], effect: 'Approving takes KES 330 off #039 and puts 1 Guinness back in stock.', yes: 'Approve void', no: 'Reject' },
+      { id: 2, t: 'void', title: '#041 Mzee in blue · whole order', amount: 'KES 2,300', facts: [['Asked by', 'Akinyi · 01:48 · Counter 2'], ['Recorded', '21:28 · 6 items'], ['Reason', 'Entered by mistake, a duplicate of #042']], effect: 'Approving cancels #041 and puts its 6 items back in stock. #042 has the same items and is paid.', yes: 'Approve void', no: 'Reject' },
+      { id: 3, t: 'wo', title: 'Tusker Lager 500ml ×2 · broken', amount: 'KES 600', facts: [['Reported by', 'Otieno · 21:40 · Counter 1'], ['Reason', 'Spilled or broken'], ['Stock', 'Already taken off: 2 bottles']], effect: 'Approving keeps it as a loss of KES 600 at selling price. Rejecting means the 2 bottles must be found or charged.', yes: 'Approve write-off', no: 'Reject' },
+      { id: 4, t: 'price', title: '#036 Table 6 · Tusker sold at the old price', amount: 'KES 20', facts: [['Sold', '19:52 on Counter 2 while offline'], ['Price', 'KES 300 recorded · KES 320 since 19:30'], ['Server', 'Kiprop']], effect: 'Accepting keeps the sale at KES 300. Marking it short records KES 20 lost on this order.', yes: 'Accept KES 300', no: 'Mark KES 20 short' },
+      { id: 5, t: 'comp', title: 'Table 7 · Kenya Cane Tot ×1 on the house', amount: 'KES 80', facts: [['Asked by', 'Kiprop · 01:30 · Counter 2'], ['Reason', 'Regular customer’s birthday'], ['Order', '#046, now paid']], effect: 'Approving gives it free: KES 80 is written off and the tot comes out of stock.', yes: 'Approve comp', no: 'Reject' }
+    ];
+    const d = this.state.d;
+    const set = (id, v) => { const n = { ...d }; if (v === null) delete n[id]; else n[id] = v; this.setState({ d: n }); };
+    const items = raw.map((r) => {
+      const dec = d[r.id];
+      const t = T[r.t];
+      return {
+        kind: t[0], bg: t[1], fg: t[2], d: t[3], title: r.title, amount: r.amount, effect: r.effect, yes: r.yes, no: r.no,
+        facts: r.facts.map((f) => ({ k: f[0], v: f[1] })),
+        open: !dec, decided: !!dec,
+        decLabel: dec === 'yes' ? r.yes.replace('Approve', 'Approved').replace('Accept', 'Accepted') + ' · Njeri · now' : (r.no === 'Reject' ? 'Rejected' : 'Marked KES 20 short') + ' · Njeri · now',
+        decFg: dec === 'yes' ? '#17784E' : '#B3261E', decD: dec === 'yes' ? I.check : I.x,
+        approve: () => set(r.id, 'yes'), reject: () => set(r.id, 'no'), undo: () => set(r.id, null)
+      };
+    });
+    const left = raw.filter((r) => !d[r.id]).length;
+    return { items, summary: left ? left + ' waiting · voids, write-offs, comps and offline price mismatches' : 'All done. Nothing is waiting.' };
+  }
+}
+</script>
+</body>
+</html>

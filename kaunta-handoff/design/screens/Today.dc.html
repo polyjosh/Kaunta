@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta admin: today</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; box-sizing: border-box; background: #FAF6F1; color: #22180F; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums;">
+  <dc-import name="AdminNav" active="today" language="{{lang}}" hint-size="100%,118px"></dc-import>
+  <main style="max-width: 1240px; margin: 0 auto; padding: 24px 16px 48px; display: flex; flex-direction: column; gap: 20px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px;">
+      <h1 style="margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -0.015em;">{{t.title}}</h1>
+      <div style="font-size: 15px; color: #5A4A3B;">{{t.asOf}}</div>
+    </div>
+
+    <section style="background: #15100C; color: #F7EEE4; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-size: 24px; font-weight: 800; line-height: 1.2;">{{t.q}}</div>
+        <div style="font-size: 17px; line-height: 1.45; color: #CDBCA9; max-width: 720px;">{{t.a}}</div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+        <div style="flex: 1 1 220px; padding: 16px; border-radius: 14px; background: #241C15; border: 1px solid #3D3127; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 16px; font-weight: 700; color: #CDBCA9;">{{t.served}}</span><span style="font-size: 34px; font-weight: 800; letter-spacing: -0.02em;">KES 86,450</span><span style="font-size: 14px; color: #AE9B87;">{{t.servedSub}}</span></div>
+        <div style="flex: 1 1 220px; padding: 16px; border-radius: 14px; background: #241C15; border: 1px solid #3D3127; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 16px; font-weight: 700; color: #CDBCA9;">{{t.collected}}</span><span style="font-size: 34px; font-weight: 800; letter-spacing: -0.02em;">KES 79,970</span><span style="font-size: 14px; color: #AE9B87;">{{t.collectedSub}}</span></div>
+        <a href="Approvals.dc.html" style="flex: 1 1 220px; padding: 16px; border-radius: 14px; background: #3A2E0E; border: 2px solid #F2C94C; color: #F7EEE4; text-decoration: none; display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 16px; font-weight: 800; color: #F6D777; display: flex; align-items: center; gap: 6px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z M12 9v4 M12 17h.01"/></svg>{{t.risk}}</span><span style="font-size: 34px; font-weight: 800; letter-spacing: -0.02em;">KES 6,480</span><span style="font-size: 14px; color: #E9DCC4;">{{t.riskSub}}</span></a>
+      </div>
+    </section>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch;">
+      <section style="flex: 1 1 320px; min-width: 0; background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+        <h2 style="margin: 0; font-size: 20px; font-weight: 800;">{{t.how}}</h2>
+        <div style="height: 14px; border-radius: 999px; overflow: hidden; display: flex; background: #F3ECE3;" role="img" aria-label="{{t.splitAria}}"><div style="width: 39.5%; background: #17784E;"></div><div style="width: 2px; background: #FFFFFF;"></div><div style="flex: 1; background: #1F5FAF;"></div></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;"><span style="display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700;"><span style="width: 14px; height: 14px; border-radius: 4px; background: #17784E;"></span>{{t.cash}}</span><span style="font-size: 22px; font-weight: 800;">KES 31,570</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;"><span style="display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 700;"><span style="width: 14px; height: 14px; border-radius: 4px; background: #1F5FAF;"></span>M-Pesa</span><span style="font-size: 22px; font-weight: 800;">KES 48,400</span></div>
+        <div style="font-size: 14px; line-height: 1.45; color: #5A4A3B; padding-top: 10px; border-top: 1px solid #EFE6DB;">{{t.howNote}}</div>
+        <a href="Recon.dc.html" style="font-size: 16px; font-weight: 700; color: #A84B0C;">{{t.reconcile}}</a>
+      </section>
+
+      <section style="flex: 2 1 460px; min-width: 0; background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px;"><h2 style="margin: 0; font-size: 20px; font-weight: 800;">{{t.attention}}</h2><span style="font-size: 15px; color: #75634F;">{{t.attentionCount}}</span></div>
+        <sc-for list="{{flags}}" as="f" hint-placeholder-count="5">
+          <a href="{{f.href}}" style="display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 12px; box-sizing: border-box; border-radius: 12px; background: {{f.bg}}; color: #22180F; text-decoration: none;">
+            <span style="width: 36px; height: 36px; flex: none; border-radius: 999px; background: #FFFFFF; color: {{f.fg}}; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{f.d}}"/></svg></span>
+            <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 16px; font-weight: 800;">{{f.title}}</span><span style="font-size: 14px; line-height: 1.4; color: #5A4A3B;">{{f.body}}</span></span>
+            <span style="flex: none; font-size: 15px; font-weight: 800; color: {{f.fg}};">{{f.cta}} →</span>
+          </a>
+        </sc-for>
+      </section>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+      <section style="flex: 2 1 460px; min-width: 0; background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px;"><h2 style="margin: 0; font-size: 20px; font-weight: 800;">{{t.byHour}}</h2><span style="font-size: 14px; color: #75634F;">{{t.peak}}</span></div>
+        <div role="img" aria-label="{{t.byHourAria}}" style="height: 180px; display: flex; align-items: flex-end; gap: 6px; padding-bottom: 4px; border-bottom: 1px solid #E2D6C8;">
+          <sc-for list="{{hours}}" as="h" hint-placeholder-count="11">
+            <div style="flex: 1; height: {{h.pct}}; background: {{h.bg}}; border-radius: 6px 6px 0 0; min-width: 0;"></div>
+          </sc-for>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <sc-for list="{{hours}}" as="h" hint-placeholder-count="11"><div style="flex: 1; min-width: 0; text-align: center; font-size: 12px; color: #75634F;">{{h.label}}</div></sc-for>
+        </div>
+      </section>
+      <section style="flex: 1 1 300px; min-width: 0; background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 10px;">
+        <h2 style="margin: 0; font-size: 20px; font-weight: 800;">{{t.byServer}}</h2>
+        <sc-for list="{{servers}}" as="s" hint-placeholder-count="5">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; justify-content: space-between; font-size: 16px;"><span style="font-weight: 700;">{{s.n}}</span><span style="font-weight: 800;">{{s.amount}}</span></div>
+            <div style="height: 8px; border-radius: 999px; background: #F3ECE3; overflow: hidden;"><div style="width: {{s.pct}}; height: 8px; background: #E0681A;"></div></div>
+          </div>
+        </sc-for>
+        <a href="Feed.dc.html" style="margin-top: 4px; font-size: 16px; font-weight: 700; color: #A84B0C;">{{t.seeAll}}</a>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"language":{"editor":"enum","options":["en","sw"],"default":"en"},"$preview":{"width":1280,"height":1500}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sw = this.props.language === 'sw';
+    const t = sw ? {
+      title: 'Leo', asOf: 'Hadi sasa, saa 02:14 · siku ya biashara inafungwa saa 06:00',
+      q: 'Je, nimepoteza pesa leo?', a: 'Bado haijulikani. KES 6,480 bado iko kwenye oda 5 wazi, na mambo 5 yanakusubiri hapa chini.',
+      served: 'Mauzo yaliyohudumiwa', servedSub: 'Kila kitu kilichorekodiwa kama kimehudumiwa', collected: 'Pesa iliyopokelewa', collectedSub: 'Taslimu + M-Pesa iliyothibitishwa',
+      risk: 'Pesa iliyo hatarini', riskSub: 'Mauzo − pesa iliyopokelewa · oda 5 wazi',
+      how: 'Ililipwa vipi', cash: 'Pesa taslimu', splitAria: 'Taslimu asilimia 39.5, M-Pesa asilimia 60.5', howNote: 'M-Pesa hapa ni kiasi kilichorekodiwa na wafanyakazi. Linganisha na jumla ya Till wakati wa kufunga siku.', reconcile: 'Fanya hesabu ya siku →',
+      attention: 'Yanahitaji umakini wako', attentionCount: 'mambo 5',
+      byHour: 'Mauzo kwa saa', peak: 'Saa yenye mauzo mengi: 22:00 · KES 14,300', byHourAria: 'Mauzo kwa saa kuanzia 16:00 hadi 02:00, juu kabisa saa 22:00', byServer: 'Kwa mhudumu', seeAll: 'Ona mauzo yote →'
+    } : {
+      title: 'Today', asOf: 'So far, up to 02:14 · the business day closes at 06:00',
+      q: 'Did I lose money today?', a: 'Not clear yet. KES 6,480 is still on 5 open orders, and 5 things below need you.',
+      served: 'Sales served', servedSub: 'Everything recorded as served', collected: 'Sales collected', collectedSub: 'Cash + M-Pesa confirmed',
+      risk: 'Money at risk', riskSub: 'Served − collected · 5 open orders',
+      how: 'How it was paid', cash: 'Cash', splitAria: 'Cash 39.5 percent, M-Pesa 60.5 percent', howNote: 'M-Pesa here is what staff recorded. Check it against the till total when you close the day.', reconcile: 'Reconcile the day →',
+      attention: 'Needs your attention', attentionCount: '5 items',
+      byHour: 'Sales by hour', peak: 'Busiest hour: 22:00 · KES 14,300', byHourAria: 'Sales per hour from 16:00 to 02:00, highest at 22:00', byServer: 'By server', seeAll: 'See all sales →'
+    };
+    const I = {
+      box: 'M21 8l-9-5-9 5v8l9 5 9-5z M3 8l9 5 9-5 M12 13v8',
+      ban: 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M4.9 4.9l14.2 14.2',
+      archive: 'M3 4h18v4H3z M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8 M9 13h6',
+      warn: 'M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z M12 9v4 M12 17h.01',
+      keg: 'M6 3h12l1 4v10l-1 4H6l-1-4V7z M5 7h14 M5 17h14'
+    };
+    const flags = (sw ? [
+      ['Pilsner iko −4 chupa', 'Imeuzwa zaidi ya iliyokuwepo. Ongeza stoo au hesabu rafu.', 'Ongeza stoo', 'Stock.dc.html', 'box', 'err'],
+      ['Ufutaji 2 unakusubiri · KES 2,630', '#039 Guinness ×1 (Otieno) · #041 oda nzima (Akinyi)', 'Kagua', 'Approvals.dc.html', 'ban', 'warn'],
+      ['Hasara 1 leo · KES 600', 'Tusker 2 zimevunjika · iliripotiwa na Otieno saa 21:40', 'Kagua', 'Approvals.dc.html', 'archive', 'wo'],
+      ['Bei 1 haiendani · mauzo ya nje ya mtandao', '#036 iliuza Tusker KES 300, bei mpya ni KES 320', 'Amua', 'Approvals.dc.html', 'warn', 'warn'],
+      ['Keg imeisha ikiwa pungufu vikombe 9', 'Keg #K-07: vikombe 100 vilitarajiwa, 91 vimerekodiwa · takriban KES 1,080', 'Ona keg', 'Kegs.dc.html', 'keg', 'err']
+    ] : [
+      ['Pilsner is at −4 bottles', 'More was sold than the shelf had. Add stock or count the shelf.', 'Add stock', 'Stock.dc.html', 'box', 'err'],
+      ['2 voids waiting for you · KES 2,630', '#039 Guinness ×1 (Otieno) · #041 whole order (Akinyi)', 'Review', 'Approvals.dc.html', 'ban', 'warn'],
+      ['1 write-off today · KES 600', '2 × Tusker broken · reported by Otieno at 21:40', 'Review', 'Approvals.dc.html', 'archive', 'wo'],
+      ['1 price mismatch from an offline sale', '#036 sold Tusker at KES 300; the price is now KES 320', 'Decide', 'Approvals.dc.html', 'warn', 'warn'],
+      ['Keg finished 9 cups short', 'Keg #K-07: 100 cups expected, 91 recorded · about KES 1,080', 'See keg', 'Kegs.dc.html', 'keg', 'err']
+    ]).map((f) => {
+      const tone = { err: ['#FCE6E4', '#B3261E'], warn: ['#FBF1D3', '#8A6200'], wo: ['#EFE7FB', '#6C3FC0'] }[f[5]];
+      return { title: f[0], body: f[1], cta: f[2], href: f[3], d: I[f[4]], bg: tone[0], fg: tone[1] };
+    });
+    const hv = [['16', 2100], ['17', 3400], ['18', 5800], ['19', 7900], ['20', 10200], ['21', 12600], ['22', 14300], ['23', 12050], ['00', 9400], ['01', 6200], ['02', 2500]];
+    const hours = hv.map((h) => ({ label: h[0], pct: Math.round((h[1] / 14300) * 100) + '%', bg: h[0] === '22' ? '#E0681A' : h[0] === '02' ? '#F3C9A6' : '#F0A56C' }));
+    const sv = [['Otieno', 24300], ['Akinyi', 21850], ['Wanjiku', 19600], ['Kiprop', 14900], ['Mwangi', 5800]];
+    const servers = sv.map((s) => ({ n: s[0], amount: 'KES ' + s[1].toLocaleString('en-US'), pct: Math.round((s[1] / 24300) * 100) + '%' }));
+    return { t, lang: sw ? 'sw' : 'en', flags, hours, servers };
+  }
+}
+</script>
+</body>
+</html>

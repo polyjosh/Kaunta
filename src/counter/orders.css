@@ -1,0 +1,1132 @@
+/* Open orders, order detail and the payment sheets. Loaded after counter.css. */
+
+/* Back bar (screens one step in from Sell) */
+.c-back-icon {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  margin-left: -4px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.c-topbar-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.c-topbar-title h1 {
+  font-size: 20px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.c-topbar-title > span {
+  font-size: 14px;
+  color: var(--k-text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 36px drawn, as in the inner-screen designs; the tap area still reaches 48px. */
+.c-topbar.is-compact .k-sync-pill {
+  height: 36px;
+  padding: 0 10px 0 8px;
+  gap: 6px;
+  font-size: 15px;
+}
+
+.c-topbar.is-compact .k-sync-pill svg {
+  width: 18px;
+  height: 18px;
+}
+
+.c-topbar.is-compact .k-sync-pill::before {
+  inset: -6px 0;
+}
+
+/* "Table 9 #044": the label gives way first; the order number always shows. */
+.c-title-split {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+}
+
+.c-title-split .c-title-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.c-title-split .c-order-no {
+  flex: none;
+  font-weight: 700;
+}
+
+.c-bottom {
+  flex: none;
+  padding: 12px 12px 14px;
+  border-top: 1px solid var(--k-line);
+  background: var(--k-counter);
+}
+
+.c-bottom .c-btn {
+  width: 100%;
+  font-size: 18px;
+}
+
+/* Open orders */
+.c-orders-summary {
+  flex: none;
+  padding: 14px 16px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.c-orders-summary span {
+  font-size: 16px;
+  color: var(--k-text-2);
+}
+
+.c-orders-summary strong {
+  font-size: 26px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.c-tab[aria-pressed='true'] {
+  border-color: var(--k-text);
+  background: var(--k-text);
+  color: var(--k-bg) !important;
+}
+
+.c-order-list {
+  padding: 2px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.c-order-card {
+  flex: none;
+  padding: 14px 16px;
+  border-radius: var(--k-r-card);
+  border: 1px solid var(--k-line);
+  background: var(--k-tile);
+  color: var(--k-text);
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Ageing: yellow border and a filled chip. Never red: it is not an error. */
+.c-order-card.is-old {
+  padding: 13px 15px;
+  border: 2px solid var(--k-warning);
+  background: var(--k-warning-card);
+}
+
+.c-order-card-top,
+.c-order-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.c-order-card-top strong {
+  font-size: 19px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.c-order-card-amount {
+  flex: none;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.c-order-card-meta {
+  min-width: 0;
+  font-size: 16px;
+  color: var(--k-text-2);
+}
+
+.c-time-chip {
+  flex: none;
+  height: 30px;
+  padding: 0 10px 0 6px;
+  border-radius: var(--k-r-pill);
+  background: var(--k-pending-bg);
+  color: var(--k-pending-fg);
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.c-time-chip.is-old {
+  background: var(--k-warning);
+  color: var(--k-on-warning);
+}
+
+.c-progress {
+  display: block;
+  height: 8px;
+  border-radius: var(--k-r-pill);
+  background: var(--k-line);
+  overflow: hidden;
+}
+
+.c-progress > span {
+  display: block;
+  height: 100%;
+  background: var(--k-pending);
+}
+
+.c-progress-lg {
+  height: 10px;
+}
+
+.c-empty {
+  padding: 56px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.c-empty strong {
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.c-empty p {
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--k-text-2);
+}
+
+/* Order detail */
+.c-order-detail {
+  padding: 12px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.c-order-no {
+  color: var(--k-text-3);
+}
+
+.c-who-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.c-who-chip {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: var(--k-r-pill);
+  border: 1px solid var(--k-line-strong);
+  background: var(--k-raised);
+  font-size: 16px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.c-who-chip .c-avatar {
+  margin-left: -6px;
+}
+
+.c-due-card {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--k-line);
+  background: var(--k-tile);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.c-due-top,
+.c-due-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.c-due-bottom {
+  align-items: center;
+}
+
+.c-due-top span {
+  font-size: 16px;
+  color: var(--k-text-2);
+}
+
+.c-due-top strong {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.c-due-bottom > span:first-child {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.c-section-head {
+  padding: 4px 4px 6px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--k-text-2);
+}
+
+.c-detail-line {
+  min-height: 64px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--k-raised);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.c-detail-line.is-voided {
+  color: var(--k-text-3);
+  text-decoration: line-through;
+}
+
+.c-detail-qty {
+  flex: none;
+  width: 36px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--k-ember);
+}
+
+.c-detail-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c-detail-text strong {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.c-detail-text span {
+  font-size: 16px;
+  color: var(--k-text-3);
+}
+
+.c-detail-sum {
+  flex: none;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.c-detail-total {
+  padding: 12px 4px 4px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 17px;
+}
+
+.c-detail-total span {
+  color: var(--k-text-2);
+}
+
+.c-detail-total strong {
+  font-weight: 800;
+}
+
+.c-payments {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.c-payment-row {
+  padding: 12px;
+  border-radius: var(--k-r-card);
+  background: var(--k-paid-bg);
+  color: var(--k-paid-fg);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.c-payment-row svg {
+  flex: none;
+}
+
+.c-payment-row span {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.c-payment-row strong {
+  flex: none;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* Payment and split sheets */
+.c-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.c-field-label {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--k-text-2);
+}
+
+.c-optional {
+  font-weight: 500;
+  color: var(--k-text-3);
+}
+
+.c-field-hint {
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--k-text-3);
+}
+
+.c-sheet-lead {
+  font-size: 16px;
+  color: var(--k-text-2);
+}
+
+.c-choice-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.c-choice-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.c-choice-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.c-choice {
+  min-height: 64px;
+  padding: 4px 6px;
+  border-radius: var(--k-r-card);
+  border: 1px solid var(--k-line);
+  background: var(--k-tile);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.c-choice span {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--k-text-2);
+}
+
+.c-choice strong {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.c-choice-method {
+  min-height: 56px;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.c-choice[aria-pressed='true'],
+.c-choice[aria-checked='true'] {
+  border: 2px solid var(--k-ember);
+  background: var(--k-raised);
+}
+
+.c-split-row {
+  min-height: 56px;
+  padding: 0 14px;
+  border-radius: var(--k-r-card);
+  border: 1px solid var(--k-line);
+  background: var(--k-tile);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.c-split-row strong {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.c-split-row.is-editing {
+  border: 2px solid var(--k-ember);
+}
+
+.c-numpad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.c-numpad button {
+  height: var(--k-touch-row);
+  border: none;
+  border-radius: var(--k-r-input);
+  background: var(--k-raised);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.c-code-input {
+  height: 60px;
+  padding: 0 16px;
+  border-radius: var(--k-r-card);
+  border: 2px solid var(--k-line-strong);
+  background: var(--k-tile);
+  color: var(--k-text);
+  font: inherit;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  outline: none;
+}
+
+.c-code-input:focus {
+  border-color: var(--k-ember);
+}
+
+.c-code-input::placeholder {
+  color: var(--k-text-3);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: none;
+}
+
+.c-code-input[aria-invalid='true'] {
+  border-color: var(--k-warning);
+}
+
+.c-split-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.c-split-btn {
+  min-height: 72px;
+  padding: 4px;
+  border-radius: var(--k-r-card);
+  border: 1px solid var(--k-line);
+  background: var(--k-tile);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.c-split-btn strong {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.c-split-btn span {
+  font-size: 15px;
+  color: var(--k-text-2);
+}
+
+/* Toast variants */
+.c-toast {
+  pointer-events: auto;
+}
+
+.c-toast > span {
+  flex: 1;
+}
+
+.c-toast.is-warning {
+  background: var(--k-warning-bg);
+  color: var(--k-warning-fg);
+}
+
+.c-toast.is-offline {
+  background: var(--k-offline-bg);
+  color: var(--k-text);
+}
+
+.c-toast.is-offline svg {
+  color: var(--k-offline-fg);
+}
+
+.c-toast small {
+  display: block;
+  margin-top: 2px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/* "Adding to Table 9 #044" bar in the Sell tray */
+.c-adding {
+  min-height: 44px;
+  padding: 0 4px 0 14px;
+  border-radius: var(--k-r-pill);
+  border: 1px solid var(--k-line-strong);
+  background: var(--k-raised);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.c-adding > span {
+  flex: 1;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.c-adding .c-icon-btn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  background: transparent;
+}
+
+.c-order-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.c-move-note {
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--k-warning-fg);
+}
+
+.c-toast.is-warning svg {
+  color: currentColor;
+}
+
+.c-screen .c-toast button {
+  flex: none;
+  min-height: 44px;
+  min-width: 64px;
+  padding: 0 12px;
+  border: none;
+  border-radius: var(--k-r-input);
+  background: #e9dfd3;
+  color: var(--k-toast-fg);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* Shared: banners, radio rows, footnotes */
+.c-banner {
+  padding: 14px;
+  border-radius: var(--k-r-card);
+  background: var(--tone-bg);
+  color: var(--k-text);
+  display: flex;
+  gap: 12px;
+}
+
+.c-banner svg {
+  flex: none;
+  color: var(--tone-fg);
+}
+
+.c-banner > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.c-banner strong {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.c-banner.k-tone-warning strong {
+  color: var(--tone-fg);
+}
+
+.c-banner p {
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.c-footnote {
+  padding: 0 4px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--k-text-3);
+}
+
+.c-center {
+  text-align: center;
+}
+
+.c-bottom-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.c-radio {
+  min-height: var(--k-touch-row);
+  padding: 6px 14px;
+  border-radius: var(--k-r-card);
+  border: 1px solid var(--k-line);
+  background: var(--k-tile);
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.c-radio-tall {
+  min-height: 64px;
+}
+
+.c-radio[aria-checked='true'] {
+  padding: 5px 13px;
+  border: 2px solid var(--k-ember);
+  background: var(--k-raised);
+}
+
+.c-radio-dot {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--k-r-pill);
+  border: 2px solid var(--k-text-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.c-radio[aria-checked='true'] .c-radio-dot {
+  border-color: var(--k-ember);
+}
+
+.c-radio[aria-checked='true'] .c-radio-dot::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: var(--k-r-pill);
+  background: var(--k-ember);
+}
+
+.c-radio-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c-radio-text strong {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.c-radio-text span {
+  font-size: 14px;
+  color: var(--k-text-3);
+}
+
+.c-radio-amount {
+  flex: none;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* Void */
+.c-void,
+.c-shift,
+.c-sync {
+  padding: 14px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.c-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c-void-btn {
+  min-height: var(--k-touch-primary);
+  border: 2px solid var(--k-line);
+  background: var(--k-raised);
+  color: var(--k-text-3) !important;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* Destructive: outlined red, never filled. To an admin: yellow. */
+.c-void-btn.is-void {
+  border-color: var(--k-error);
+  background: transparent;
+  color: var(--k-error-fg) !important;
+}
+
+.c-void-btn.is-admin {
+  border-color: var(--k-warning);
+  color: var(--k-warning-fg) !important;
+}
+
+.c-void-link {
+  color: var(--k-error-fg) !important;
+}
+
+.c-line-menu {
+  flex: none;
+  width: 44px;
+  height: 48px;
+  margin-right: -4px;
+  border: none;
+  border-radius: var(--k-r-input);
+  background: transparent;
+  color: var(--k-text-2) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.k-chip-sm {
+  height: 30px;
+  padding: 0 10px 0 6px;
+  font-size: 15px;
+}
+
+/* Shift close */
+.c-settle-card {
+  padding: 14px;
+  border-radius: var(--k-r-card);
+  border: 1px solid var(--k-line);
+  background: var(--k-tile);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.c-settle-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.c-settle-top strong {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.c-settle-top > span {
+  flex: none;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.c-settle-card p {
+  font-size: 16px;
+  color: var(--k-text-2);
+}
+
+.c-settle-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.c-settle-actions button {
+  min-height: var(--k-touch-min);
+  padding: 2px 4px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.c-screen .c-settle-pay {
+  border: none;
+  background: var(--k-ember);
+  color: var(--k-on-ember);
+  font-weight: 800;
+}
+
+.c-screen .c-settle-void {
+  border: 2px solid var(--k-error);
+  background: transparent;
+  color: var(--k-error-fg);
+}
+
+.c-settle-hand {
+  border: 1px solid var(--k-line-strong);
+  background: var(--k-raised);
+}
+
+.c-btn-blocked {
+  min-height: var(--k-touch-primary);
+  border: 1px dashed var(--k-line-strong);
+  background: var(--k-counter);
+  color: var(--k-text-3) !important;
+}
+
+.c-breakdown {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--k-r-card);
+  border: 1px solid var(--k-line);
+  background: var(--k-tile);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 16px;
+}
+
+.c-breakdown > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.c-breakdown dt {
+  color: var(--k-text-2);
+}
+
+.c-breakdown dd {
+  margin: 0;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.c-breakdown-total {
+  padding-top: 6px;
+  border-top: 1px solid var(--k-line);
+}
+
+.c-breakdown-total dt,
+.c-breakdown-total dd {
+  color: var(--k-text);
+  font-weight: 800;
+}
+
+.c-amount-display {
+  height: 68px;
+  padding: 0 16px;
+  border-radius: var(--k-r-card);
+  border: 2px solid var(--k-ember);
+  background: var(--k-tile);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.c-amount-display span {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--k-text-3);
+}
+
+.c-amount-display strong {
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.c-result {
+  padding: 12px 14px;
+  border-radius: var(--k-r-card);
+  background: var(--tone-bg);
+  color: var(--tone-fg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.c-result span {
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.c-result strong {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+/* Pairing */
+.c-pair .c-pin-who {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.c-pair .c-pin-who h1 {
+  font-size: 26px;
+}
+
+.c-pair .c-pin-who p {
+  max-width: 300px;
+  line-height: 1.45;
+}
+
+.c-pair-loading {
+  padding: 64px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  color: var(--k-text-2);
+}
+
+.c-pair-loading p {
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+/* Sync */
+.c-send-now {
+  margin-top: 4px;
+  min-height: 52px;
+  padding: 0 24px;
+  border: none;
+  border-radius: var(--k-r-card);
+  background: var(--k-text);
+  color: var(--k-bg) !important;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.c-send-now:disabled {
+  opacity: 0.6;
+}
+
+.c-sync-hero {
+  padding: 20px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--tone-line);
+  background: var(--tone-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.c-sync-hero svg {
+  color: var(--tone-fg);
+}
+
+.c-sync-hero strong {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.c-sync-hero p {
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.c-review-card {
+  padding: 14px;
+  border-radius: var(--k-r-card);
+  border: 2px solid var(--k-warning);
+  background: var(--k-warning-card);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.c-review-card > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.c-review-card strong {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.c-review-card p {
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.c-sync-row {
+  min-height: 64px;
+  padding: 10px 14px;
+  border-radius: var(--k-r-card);
+  border: 1px solid var(--k-line);
+  background: var(--k-tile);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.c-sync-row > div {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c-sync-row strong {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.c-sync-row > div span {
+  font-size: 14px;
+  color: var(--k-text-3);
+}

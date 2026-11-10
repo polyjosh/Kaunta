@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta counter: close shift</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position: relative; width: 360px; height: 800px; overflow: hidden; background: #15100C; color: #F7EEE4; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums; display: flex; flex-direction: column;">
+  <div style="height: 60px; flex: none; box-sizing: border-box; padding: 0 8px; display: flex; align-items: center; gap: 6px; background: #1F1812; border-bottom: 1px solid #3D3127;">
+    <a href="Sell.dc.html" aria-label="Back to Sell" style="width: 48px; height: 48px; color: #F7EEE4; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></a>
+    <div style="flex: 1; display: flex; flex-direction: column;"><h1 style="margin: 0; font-size: 20px; font-weight: 800;">Close shift</h1><span style="font-size: 14px; color: #AE9B87;">Wanjiku · Counter 1 · 18:00 – 02:14</span></div>
+  </div>
+
+  <sc-if value="{{blocked}}" hint-placeholder-val="{{ true }}">
+    <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 14px 12px 16px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; gap: 12px; padding: 14px; border-radius: 14px; background: #3A2E0E; color: #F6E3A6;">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F2C94C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none;"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z M12 9v4 M12 17h.01"/></svg>
+        <div style="display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 17px; font-weight: 800; color: #F6D777;">3 orders are still open</span><span style="font-size: 15px; line-height: 1.4;">Settle each one before you count the cash: take payment, void it, or hand it over to the next shift.</span></div>
+      </div>
+      <sc-for list="{{open}}" as="o" hint-placeholder-count="3">
+        <div style="padding: 14px; border-radius: 14px; border: 1px solid #3D3127; background: #241C15; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px;"><span style="font-size: 18px; font-weight: 800;">{{o.label}} <span style="color: #AE9B87; font-weight: 700;">{{o.no}}</span></span><span style="font-size: 20px; font-weight: 800;">{{o.amount}}</span></div>
+          <div style="font-size: 15px; color: #CDBCA9;">{{o.meta}}</div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+            <a href="OrderPay.dc.html" style="min-height: 48px; border-radius: 12px; background: #FF8F3F; color: #1C1006; font-size: 16px; font-weight: 800; text-decoration: none; display: flex; align-items: center; justify-content: center;">Pay</a>
+            <a href="Void.dc.html" style="min-height: 48px; border-radius: 12px; border: 2px solid #FF6B61; color: #FF9A92; font-size: 16px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">Void</a>
+            <button type="button" style="min-height: 48px; border-radius: 12px; border: 1px solid #4A3C30; background: #2E241B; color: #F7EEE4; font: inherit; font-size: 16px; font-weight: 700; line-height: 1.1; cursor: pointer;">Hand over</button>
+          </div>
+        </div>
+      </sc-for>
+      <div style="font-size: 14px; line-height: 1.45; color: #AE9B87; padding: 0 4px;">Handed-over orders move to the next person who logs in on this counter, and the handover is recorded in the audit log.</div>
+    </div>
+    <div style="flex: none; padding: 12px 12px 14px; background: #1F1812; border-top: 1px solid #3D3127;">
+      <button type="button" disabled style="width: 100%; min-height: 64px; border-radius: 14px; border: 1px dashed #4A3C30; background: #1F1812; color: #AE9B87; font: inherit; font-size: 17px; font-weight: 700;">Count cash · settle 3 orders first</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{counting}}" hint-placeholder-val="{{ false }}">
+    <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 12px 12px 12px; display: flex; flex-direction: column; gap: 10px;">
+      <div style="padding: 12px 14px; border-radius: 14px; background: #241C15; border: 1px solid #3D3127; display: flex; flex-direction: column; gap: 6px; font-size: 16px;">
+        <div style="display: flex; justify-content: space-between;"><span style="color: #CDBCA9;">Float at start</span><span style="font-weight: 700;">KES 2,000</span></div>
+        <div style="display: flex; justify-content: space-between;"><span style="color: #CDBCA9;">+ Cash sales</span><span style="font-weight: 700;">KES 11,950</span></div>
+        <div style="display: flex; justify-content: space-between;"><span style="color: #CDBCA9;">− Expenses paid from till</span><span style="font-weight: 700;">KES 1,200</span></div>
+        <div style="display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px solid #3D3127;"><span style="font-weight: 800;">Expected in the drawer</span><span style="font-weight: 800;">{{expectedLabel}}</span></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-size: 16px; font-weight: 700; color: #CDBCA9;">Cash counted</div>
+        <div aria-live="polite" style="height: 68px; box-sizing: border-box; border-radius: 14px; border: 2px solid #FF8F3F; background: #241C15; padding: 0 16px; display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 20px; font-weight: 700; color: #AE9B87;">KES</span><span style="font-size: 34px; font-weight: 800;">{{countedLabel}}</span></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-radius: 14px; background: {{resBg}}; color: {{resFg}};">
+        <span style="display: flex; align-items: center; gap: 8px; font-size: 18px; font-weight: 800;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{resIcon}}"/></svg>{{resLabel}}</span>
+        <span style="font-size: 22px; font-weight: 800;">{{resAmount}}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;">
+        <sc-for list="{{keys}}" as="k" hint-placeholder-count="12">
+          <button type="button" onClick="{{k.press}}" aria-label="{{k.aria}}" style="height: 52px; border-radius: 10px; border: none; background: #2E241B; color: #F7EEE4; font: inherit; font-size: 22px; font-weight: 700; cursor: pointer;">{{k.t}}</button>
+        </sc-for>
+      </div>
+    </div>
+    <div style="flex: none; padding: 10px 12px 14px; background: #1F1812; border-top: 1px solid #3D3127; display: flex; flex-direction: column; gap: 6px;">
+      <button type="button" style="width: 100%; min-height: 64px; border: none; border-radius: 14px; background: #FF8F3F; color: #1C1006; font: inherit; font-size: 18px; font-weight: 800; cursor: pointer;">Close shift &amp; hand over cash</button>
+      <div style="font-size: 14px; color: #AE9B87; text-align: center;">M-Pesa this shift: KES 18,400 recorded · an admin checks it against the till</div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"step":{"editor":"enum","options":["blocked","count"],"default":"blocked"},"$preview":{"width":360,"height":800}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { counted: '12450' }; }
+  renderVals() {
+    const fmt = (n) => 'KES ' + n.toLocaleString('en-US');
+    const expected = 2000 + 11950 - 1200;
+    const counted = parseInt(this.state.counted || '0', 10);
+    const diff = counted - expected;
+    const press = (k) => {
+      let c = this.state.counted;
+      if (k === 'del') c = c.slice(0, -1); else if (c.length < 7) c = (c === '0' ? '' : c) + k;
+      this.setState({ counted: c });
+    };
+    const keys = ['1','2','3','4','5','6','7','8','9','00','0','⌫'].map((k) => ({ t: k, aria: k === '⌫' ? 'Delete last digit' : k, press: () => press(k === '⌫' ? 'del' : k) }));
+    const check = 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M8 12.5l2.7 2.7L16 9.8';
+    const x = 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M15 9l-6 6 M9 9l6 6';
+    const up = 'M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0z M12 16V8 M8.5 11.5L12 8l3.5 3.5';
+    const res = diff === 0 ? { resLabel: 'Matches', resAmount: fmt(0), resBg: '#133226', resFg: '#7BE3B3', resIcon: check }
+      : diff < 0 ? { resLabel: 'Short', resAmount: fmt(-diff), resBg: '#3D1A17', resFg: '#FF9A92', resIcon: x }
+      : { resLabel: 'Over', resAmount: fmt(diff), resBg: '#172A42', resFg: '#A6CEFF', resIcon: up };
+    return {
+      blocked: this.props.step !== 'count', counting: this.props.step === 'count',
+      open: [
+        { no: '#041', label: 'Mzee in blue', amount: 'KES 2,300', meta: 'Akinyi · 6 items · open 46 min' },
+        { no: '#044', label: 'Table 9', amount: 'KES 850 left', meta: 'Kiprop · KES 400 of 1,250 paid' },
+        { no: '#047', label: 'Table 4', amount: 'KES 1,250', meta: 'Wanjiku · 5 items · open 12 min' }
+      ],
+      expectedLabel: fmt(expected), countedLabel: counted.toLocaleString('en-US'), keys, ...res
+    };
+  }
+}
+</script>
+</body>
+</html>

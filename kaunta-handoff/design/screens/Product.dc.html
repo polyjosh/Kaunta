@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kaunta admin: edit product</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 100vh; box-sizing: border-box; background: #FAF6F1; color: #22180F; font-family: Manrope, system-ui, sans-serif; font-variant-numeric: tabular-nums;">
+  <dc-import name="AdminNav" active="products" hint-size="100%,118px"></dc-import>
+  <main style="max-width: 1240px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;"><a href="Product.dc.html" style="font-size: 15px; font-weight: 700; color: #A84B0C;">← Products</a><h1 style="margin: 0; font-size: 32px; font-weight: 800;">Kenya Cane</h1></div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" style="min-height: 48px; padding: 0 18px; border-radius: 14px; border: 1px solid #D6C8B8; background: #FFFFFF; color: #22180F; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;">Cancel</button>
+        <button type="button" style="min-height: 48px; padding: 0 22px; border-radius: 14px; border: none; background: #F07E2A; color: #1C1006; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer;">Save changes</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+      <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 18px;">
+        <section style="background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 800;">Basics</h2>
+          <div style="display: flex; flex-wrap: wrap; gap: 14px;">
+            <label style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-weight: 700;">Name<input type="text" value="Kenya Cane" style="height: 48px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #D6C8B8; background: #FFFFFF; font: inherit; font-size: 17px; font-weight: 600; color: #22180F;"></label>
+            <label style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-weight: 700;">Name in Kiswahili <span style="font-weight: 500; color: #75634F; margin-top: -4px;">optional, shown when the counter is in Kiswahili</span><input type="text" placeholder="Same as name" style="height: 48px; box-sizing: border-box; padding: 0 14px; border-radius: 10px; border: 1px solid #D6C8B8; background: #FFFFFF; font: inherit; font-size: 17px; color: #22180F;"></label>
+            <label style="flex: 1 1 220px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; font-weight: 700;">Category<select style="height: 48px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; border: 1px solid #D6C8B8; background: #FFFFFF; font: inherit; font-size: 17px; color: #22180F;"><option>Beer</option><option selected>Spirits</option><option>Keg</option><option>Soft drinks</option><option>Food</option></select></label>
+          </div>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 800;">How stock is counted</h2>
+          <div role="radiogroup" aria-label="Stock mode" style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <sc-for list="{{modes}}" as="m" hint-placeholder-count="2">
+              <button type="button" role="radio" aria-checked="{{m.on}}" onClick="{{m.pick}}" style="flex: 1 1 260px; min-height: 72px; padding: 12px 14px; border-radius: 14px; border: {{m.border}}; background: {{m.bg}}; color: #22180F; font: inherit; text-align: left; display: flex; gap: 12px; align-items: flex-start; cursor: pointer;">
+                <span style="width: 22px; height: 22px; margin-top: 2px; flex: none; box-sizing: border-box; border-radius: 999px; border: 2px solid {{m.ring}}; display: flex; align-items: center; justify-content: center;"><span style="width: 10px; height: 10px; border-radius: 999px; background: {{m.dot}};"></span></span>
+                <span style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 17px; font-weight: 800;">{{m.label}}</span><span style="font-size: 14px; line-height: 1.4; color: #5A4A3B;">{{m.hint}}</span></span>
+              </button>
+            </sc-for>
+          </div>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap;"><h2 style="margin: 0; font-size: 20px; font-weight: 800;">Sizes and prices</h2><span style="font-size: 14px; color: #75634F;">{{deductHint}}</span></div>
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; min-width: 520px; border-collapse: collapse; font-size: 16px;">
+              <thead><tr style="color: #5A4A3B; text-align: left;"><th scope="col" style="padding: 8px; font-weight: 700;">Label on counter</th><th scope="col" style="padding: 8px; font-weight: 700;">{{deductCol}}</th><th scope="col" style="padding: 8px; font-weight: 700;">Price (KES)</th><th scope="col" style="padding: 8px; font-weight: 700;">Sold</th></tr></thead>
+              <tbody>
+                <sc-for list="{{sizes}}" as="s" hint-placeholder-count="5">
+                  <tr style="border-top: 1px solid #EFE6DB;">
+                    <td style="padding: 8px;"><input type="text" value="{{s.label}}" aria-label="Size label" style="width: 100%; min-width: 110px; height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; border: 1px solid #D6C8B8; font: inherit; font-size: 16px; font-weight: 700; color: #22180F;"></td>
+                    <td style="padding: 8px;"><input type="text" inputmode="numeric" value="{{s.deduct}}" aria-label="Deduction" style="width: 100px; height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; border: 1px solid #D6C8B8; font: inherit; font-size: 16px; color: #22180F; text-align: right;"></td>
+                    <td style="padding: 8px;"><input type="text" inputmode="numeric" value="{{s.price}}" aria-label="Price" style="width: 110px; height: 44px; box-sizing: border-box; padding: 0 12px; border-radius: 10px; border: 1px solid #D6C8B8; font: inherit; font-size: 16px; font-weight: 700; color: #22180F; text-align: right;"></td>
+                    <td style="padding: 8px;"><button type="button" role="switch" aria-checked="{{s.on}}" aria-label="{{s.aria}}" onClick="{{s.toggle}}" style="min-height: 44px; padding: 0 8px 0 4px; border: none; background: transparent; font: inherit; display: flex; align-items: center; gap: 8px; cursor: pointer;"><span style="width: 48px; height: 28px; box-sizing: border-box; border-radius: 999px; background: {{s.track}}; padding: 3px; display: flex; justify-content: {{s.justify}};"><span style="width: 22px; height: 22px; border-radius: 999px; background: #FFFFFF;"></span></span><span style="font-size: 15px; font-weight: 700; color: {{s.fg}};">{{s.state}}</span></button></td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <button type="button" style="align-self: flex-start; min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px dashed #C9B6A2; background: #FFFFFF; color: #22180F; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;">+ Add a size</button>
+          <div style="padding: 12px 14px; border-radius: 12px; background: #E4EEFB; color: #173F73; font-size: 14px; line-height: 1.45;"><b>New prices apply to new orders.</b> Counters that are offline get them when they next sync. A sale recorded at the old price while offline is kept as recorded and shows up in Approvals as a price mismatch.</div>
+        </section>
+
+        <section style="background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between;">
+          <div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 4px;"><h2 style="margin: 0; font-size: 18px; font-weight: 800;">Archive this product</h2><span style="font-size: 14px; line-height: 1.45; color: #5A4A3B;">Hides it from every counter. Its sales history and audit log stay. You can restore it later.</span></div>
+          <button type="button" style="min-height: 48px; padding: 0 18px; border-radius: 14px; border: 2px solid #B3261E; background: transparent; color: #B3261E; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer;">Archive Kenya Cane</button>
+        </section>
+      </div>
+
+      <aside style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 18px;">
+        <section style="background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 800;">In stock</h2>
+          <div style="font-size: 32px; font-weight: 800;">{{stockBig}}</div>
+          <div style="font-size: 15px; color: #5A4A3B;">{{stockSmall}}</div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;"><a href="Stock.dc.html" style="min-height: 44px; padding: 0 14px; border-radius: 12px; background: #F07E2A; color: #1C1006; font-size: 15px; font-weight: 800; text-decoration: none; display: inline-flex; align-items: center;">Add stock</a><button type="button" style="min-height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid #D6C8B8; background: #FFFFFF; color: #22180F; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;">Count shelf</button></div>
+        </section>
+        <section style="background: #FFFFFF; border: 1px solid #E2D6C8; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 800;">Out of stock</h2>
+          <button type="button" role="switch" aria-checked="{{oos}}" onClick="{{toggleOos}}" style="min-height: 48px; padding: 0; border: none; background: transparent; font: inherit; display: flex; align-items: center; gap: 12px; text-align: left; cursor: pointer;"><span style="width: 52px; height: 30px; flex: none; box-sizing: border-box; border-radius: 999px; background: {{oosTrack}}; padding: 3px; display: flex; justify-content: {{oosJustify}};"><span style="width: 24px; height: 24px; border-radius: 999px; background: #FFFFFF;"></span></span><span style="font-size: 16px; font-weight: 700; color: #22180F;">{{oosLabel}}</span></button>
+          <div style="font-size: 14px; line-height: 1.45; color: #5A4A3B;">Use this when the shelf is empty even though the count says otherwise. Counters grey the tile out and show “Out of stock”.</div>
+          <div style="font-size: 15px; font-weight: 700; color: #5A4A3B;">On the counter</div>
+          <div style="width: 164px; height: 100px; box-sizing: border-box; padding: 12px; border-radius: 14px; border: {{tileBorder}}; background: {{tileBg}}; color: {{tileFg}}; display: flex; flex-direction: column; justify-content: space-between;"><span style="font-size: 17px; font-weight: 700;">Kenya Cane</span><span style="font-size: 15px; font-weight: 800;">{{tileSub}}</span></div>
+        </section>
+        <section style="background: #F3ECE3; border-radius: 16px; padding: 16px 20px; font-size: 14px; line-height: 1.5; color: #5A4A3B;">Last changed 9 Nov, 15:20 by Njeri: Tot price 70 → 80. <a href="Audit.dc.html">History</a></section>
+      </aside>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { mode: 'ml', off: { 4: false }, oos: false }; }
+  renderVals() {
+    const st = this.state;
+    const ml = st.mode === 'ml';
+    const radio = (on) => ({ on, border: on ? '2px solid #E0681A' : '1px solid #D6C8B8', bg: on ? '#FFF3E8' : '#FFFFFF', ring: on ? '#E0681A' : '#75634F', dot: on ? '#E0681A' : 'transparent' });
+    const modes = [
+      { id: 'count', label: 'Count', hint: 'Bottles, cans or pieces. Each sale takes away a number. Good for beer, soda and food.' },
+      { id: 'ml', label: 'Millilitres', hint: 'One pool of liquid. Each size takes away its millilitres. Good for spirits sold by the tot and by the bottle.' }
+    ].map((m) => ({ ...m, ...radio(st.mode === m.id), pick: () => this.setState({ mode: m.id }) }));
+    const raw = [['Tot', 30, 1, 80], ['250ml', 250, 1, 350], ['350ml', 350, 1, 450], ['750ml', 750, 1, 900], ['1 Litre', 1000, 1, 1200]];
+    const sizes = raw.map((s, i) => {
+      const on = st.off[i] !== true;
+      return {
+        label: s[0], deduct: ml ? String(s[1]) : String(s[2]), price: s[3].toLocaleString('en-US'), on,
+        aria: 'Sell ' + s[0], track: on ? '#17784E' : '#C9B6A2', justify: on ? 'flex-end' : 'flex-start', state: on ? 'On' : 'Off', fg: on ? '#17784E' : '#5A4A3B',
+        toggle: () => { const off = { ...st.off }; off[i] = on; this.setState({ off }); }
+      };
+    });
+    return {
+      modes, sizes,
+      deductCol: ml ? 'Takes away (ml)' : 'Takes away (count)',
+      deductHint: ml ? 'A tot is 30 ml here. Change it to match your measure.' : 'Each sale takes away this many items.',
+      stockBig: ml ? '4,850 ml' : '6 bottles', stockSmall: ml ? 'About 6½ × 750ml bottles · alert below 1,500 ml' : 'Alert below 2 bottles',
+      oos: st.oos, toggleOos: () => this.setState({ oos: !st.oos }),
+      oosTrack: st.oos ? '#B3261E' : '#C9B6A2', oosJustify: st.oos ? 'flex-end' : 'flex-start', oosLabel: st.oos ? 'Marked out of stock' : 'Available on counters',
+      tileBorder: st.oos ? '1px dashed #4A3C30' : '1px solid #3D3127', tileBg: st.oos ? '#15100C' : '#241C15', tileFg: st.oos ? '#AE9B87' : '#F7EEE4', tileSub: st.oos ? 'Out of stock' : 'from KES 80'
+    };
+  }
+}
+</script>
+</body>
+</html>

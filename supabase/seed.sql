@@ -1,0 +1,1407 @@
+-- Generated from kaunta-handoff/data/seed.json by supabase/seedSql.ts. Do not edit by hand:
+-- run `npm run seed:sql` after changing the seed, and `npm test` checks the two agree.
+
+insert into public.bar
+select * from jsonb_populate_recordset(null::public.bar, $seed$[
+ {
+  "id": "bar_baraka",
+  "name": "Baraka Pub",
+  "timezone": "Africa/Nairobi",
+  "day_start": "06:00",
+  "self_void_minutes": 5,
+  "ageing_minutes": 30,
+  "pin_attempts": 5,
+  "lockout_minutes": 5,
+  "keg_foam_allowance_cups": 0,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ }
+]$seed$);
+
+insert into public.categories
+select * from jsonb_populate_recordset(null::public.categories, $seed$[
+ {
+  "id": "beer",
+  "name_en": "Beer",
+  "name_sw": "Bia",
+  "sort": 1,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "spirits",
+  "name_en": "Spirits",
+  "name_sw": "Pombe kali",
+  "sort": 2,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "keg",
+  "name_en": "Keg",
+  "name_sw": "Keg",
+  "sort": 3,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "soft",
+  "name_en": "Soft drinks",
+  "name_sw": "Soda na maji",
+  "sort": 4,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "food",
+  "name_en": "Food",
+  "name_sw": "Chakula",
+  "sort": 5,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ }
+]$seed$);
+
+insert into public.people
+select * from jsonb_populate_recordset(null::public.people, $seed$[
+ {
+  "id": "p_njeri",
+  "name": "Njeri",
+  "initial": "N",
+  "colour": "#F4A3A0",
+  "role": "owner",
+  "login": "password",
+  "pin_hash": null,
+  "pin_locked_until": null,
+  "failed_pin_attempts": 0,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "p_wanjiku",
+  "name": "Wanjiku",
+  "initial": "W",
+  "colour": "#FFB27A",
+  "role": "counter",
+  "login": "pin",
+  "pin_hash": "pbkdf2-sha256$100000$VA36YLBkRSYPFLQKtx9xEw==$wMe1XIItuH9W8PXkcGcwHX+g9/QJTZzu03v4l3SGw9Q=",
+  "pin_locked_until": null,
+  "failed_pin_attempts": 0,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "p_otieno",
+  "name": "Otieno",
+  "initial": "O",
+  "colour": "#E9C46A",
+  "role": "counter",
+  "login": "pin",
+  "pin_hash": null,
+  "pin_locked_until": null,
+  "failed_pin_attempts": 0,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "p_akinyi",
+  "name": "Akinyi",
+  "initial": "A",
+  "colour": "#F4A3A0",
+  "role": "counter",
+  "login": "pin",
+  "pin_hash": null,
+  "pin_locked_until": null,
+  "failed_pin_attempts": 0,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "p_kiprop",
+  "name": "Kiprop",
+  "initial": "K",
+  "colour": "#9ED9B8",
+  "role": "counter",
+  "login": "pin",
+  "pin_hash": null,
+  "pin_locked_until": null,
+  "failed_pin_attempts": 0,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "p_mwangi",
+  "name": "Mwangi",
+  "initial": "M",
+  "colour": "#A9C8F0",
+  "role": "counter",
+  "login": "pin",
+  "pin_hash": null,
+  "pin_locked_until": null,
+  "failed_pin_attempts": 0,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "p_chebet",
+  "name": "Chebet",
+  "initial": "C",
+  "colour": "#D3B8FF",
+  "role": "admin",
+  "login": "pin",
+  "pin_hash": null,
+  "pin_locked_until": null,
+  "failed_pin_attempts": 0,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "p_juma",
+  "name": "Juma",
+  "initial": "J",
+  "colour": "#C9D98E",
+  "role": "server",
+  "login": "none",
+  "pin_hash": null,
+  "pin_locked_until": null,
+  "failed_pin_attempts": 0,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ }
+]$seed$);
+
+insert into public.devices
+select * from jsonb_populate_recordset(null::public.devices, $seed$[
+ {
+  "token_hash": null,
+  "last_sync_at": null,
+  "id": "d_counter1",
+  "name": "Counter 1",
+  "model": "Tecno Spark",
+  "paired_at": "2026-11-02T09:00:00Z",
+  "paired_by": "p_njeri",
+  "revoked_at": null,
+  "revoked_reason": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "token_hash": null,
+  "last_sync_at": null,
+  "id": "d_counter2",
+  "name": "Counter 2",
+  "model": "itel A70",
+  "paired_at": "2026-11-02T09:10:00Z",
+  "paired_by": "p_njeri",
+  "revoked_at": null,
+  "revoked_reason": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "token_hash": null,
+  "last_sync_at": null,
+  "id": "d_old",
+  "name": "Old counter phone",
+  "model": "unknown",
+  "paired_at": "2026-09-01T09:00:00Z",
+  "paired_by": "p_njeri",
+  "revoked_at": "2026-10-28T12:00:00Z",
+  "revoked_reason": "Phone lost",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ }
+]$seed$);
+
+insert into public.products
+select * from jsonb_populate_recordset(null::public.products, $seed$[
+ {
+  "sort": 0,
+  "id": "tusker",
+  "category_id": "beer",
+  "name": "Tusker Lager",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": 24,
+  "low_stock_at": 6,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 1,
+  "id": "whitecap",
+  "category_id": "beer",
+  "name": "White Cap",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": 30,
+  "low_stock_at": 6,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 2,
+  "id": "guinness",
+  "category_id": "beer",
+  "name": "Guinness",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": 18,
+  "low_stock_at": 6,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 3,
+  "id": "pilsner",
+  "category_id": "beer",
+  "name": "Pilsner",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": -4,
+  "low_stock_at": 6,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 4,
+  "id": "tuskerlite",
+  "category_id": "beer",
+  "name": "Tusker Lite",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": 20,
+  "low_stock_at": 6,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 5,
+  "id": "cider",
+  "category_id": "beer",
+  "name": "Tusker Cider",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": 0,
+  "low_stock_at": null,
+  "manual_out_of_stock": true,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 6,
+  "id": "balozi",
+  "category_id": "beer",
+  "name": "Balozi",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": 22,
+  "low_stock_at": null,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 7,
+  "id": "guinnesscan",
+  "category_id": "beer",
+  "name": "Guinness can",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": 12,
+  "low_stock_at": null,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 8,
+  "id": "cane",
+  "category_id": "spirits",
+  "name": "Kenya Cane",
+  "name_sw": null,
+  "stock_mode": "ml",
+  "stock_qty": 4850,
+  "low_stock_at": 1500,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 9,
+  "id": "smirnoff",
+  "category_id": "spirits",
+  "name": "Smirnoff Vodka",
+  "name_sw": null,
+  "stock_mode": "ml",
+  "stock_qty": 3000,
+  "low_stock_at": 1000,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 10,
+  "id": "gilbeys",
+  "category_id": "spirits",
+  "name": "Gilbey’s Gin",
+  "name_sw": null,
+  "stock_mode": "ml",
+  "stock_qty": 2600,
+  "low_stock_at": 1000,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 11,
+  "id": "hunters",
+  "category_id": "spirits",
+  "name": "Hunter’s Choice",
+  "name_sw": null,
+  "stock_mode": "ml",
+  "stock_qty": 2100,
+  "low_stock_at": 1000,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 12,
+  "id": "chrome",
+  "category_id": "spirits",
+  "name": "Chrome Gin",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": 0,
+  "low_stock_at": null,
+  "manual_out_of_stock": true,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 13,
+  "id": "keg",
+  "category_id": "keg",
+  "name": "Keg lager",
+  "name_sw": "Keg",
+  "stock_mode": "ml",
+  "stock_qty": null,
+  "low_stock_at": null,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 14,
+  "id": "soda",
+  "category_id": "soft",
+  "name": "Soda",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": 31,
+  "low_stock_at": null,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 15,
+  "id": "water",
+  "category_id": "soft",
+  "name": "Water",
+  "name_sw": "Maji",
+  "stock_mode": "count",
+  "stock_qty": 40,
+  "low_stock_at": null,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 16,
+  "id": "juice",
+  "category_id": "soft",
+  "name": "Juice",
+  "name_sw": "Juisi",
+  "stock_mode": "count",
+  "stock_qty": 15,
+  "low_stock_at": null,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 17,
+  "id": "tonic",
+  "category_id": "soft",
+  "name": "Tonic water",
+  "name_sw": "Tonic",
+  "stock_mode": "count",
+  "stock_qty": 4,
+  "low_stock_at": 6,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 18,
+  "id": "nyama",
+  "category_id": "food",
+  "name": "Nyama choma",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": null,
+  "low_stock_at": null,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 19,
+  "id": "kuku",
+  "category_id": "food",
+  "name": "Kuku choma",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": null,
+  "low_stock_at": null,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 20,
+  "id": "chips",
+  "category_id": "food",
+  "name": "Chips",
+  "name_sw": "Chipsi",
+  "stock_mode": "count",
+  "stock_qty": null,
+  "low_stock_at": null,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 21,
+  "id": "kachumbari",
+  "category_id": "food",
+  "name": "Kachumbari",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": null,
+  "low_stock_at": null,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 22,
+  "id": "ugali",
+  "category_id": "food",
+  "name": "Ugali",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": null,
+  "low_stock_at": null,
+  "manual_out_of_stock": false,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "sort": 23,
+  "id": "mutura",
+  "category_id": "food",
+  "name": "Mutura",
+  "name_sw": null,
+  "stock_mode": "count",
+  "stock_qty": 0,
+  "low_stock_at": null,
+  "manual_out_of_stock": true,
+  "archived_at": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ }
+]$seed$);
+
+insert into public.sizes
+select * from jsonb_populate_recordset(null::public.sizes, $seed$[
+ {
+  "id": "tusker_0",
+  "label_en": "500ml",
+  "label_sw": "500ml",
+  "deduct": 1,
+  "price_kes": 300,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "tusker",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "whitecap_0",
+  "label_en": "500ml",
+  "label_sw": "500ml",
+  "deduct": 1,
+  "price_kes": 300,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "whitecap",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "guinness_0",
+  "label_en": "500ml",
+  "label_sw": "500ml",
+  "deduct": 1,
+  "price_kes": 330,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "guinness",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "pilsner_0",
+  "label_en": "500ml",
+  "label_sw": "500ml",
+  "deduct": 1,
+  "price_kes": 280,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "pilsner",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "tuskerlite_0",
+  "label_en": "500ml",
+  "label_sw": "500ml",
+  "deduct": 1,
+  "price_kes": 300,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "tuskerlite",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "cider_0",
+  "label_en": "500ml",
+  "label_sw": "500ml",
+  "deduct": 1,
+  "price_kes": 320,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "cider",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "balozi_0",
+  "label_en": "500ml",
+  "label_sw": "500ml",
+  "deduct": 1,
+  "price_kes": 280,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "balozi",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "guinnesscan_0",
+  "label_en": "500ml",
+  "label_sw": "500ml",
+  "deduct": 1,
+  "price_kes": 350,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "guinnesscan",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "cane_0",
+  "label_en": "Tot",
+  "label_sw": "Tot",
+  "deduct": 30,
+  "price_kes": 80,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "cane",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "cane_1",
+  "label_en": "250ml",
+  "label_sw": "250ml",
+  "deduct": 250,
+  "price_kes": 350,
+  "enabled": true,
+  "sort": 1,
+  "product_id": "cane",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "cane_2",
+  "label_en": "350ml",
+  "label_sw": "350ml",
+  "deduct": 350,
+  "price_kes": 450,
+  "enabled": true,
+  "sort": 2,
+  "product_id": "cane",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "cane_3",
+  "label_en": "750ml",
+  "label_sw": "750ml",
+  "deduct": 750,
+  "price_kes": 900,
+  "enabled": true,
+  "sort": 3,
+  "product_id": "cane",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "cane_4",
+  "label_en": "1 Litre",
+  "label_sw": "Lita 1",
+  "deduct": 1000,
+  "price_kes": 1200,
+  "enabled": true,
+  "sort": 4,
+  "product_id": "cane",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "smirnoff_0",
+  "label_en": "Tot",
+  "label_sw": "Tot",
+  "deduct": 30,
+  "price_kes": 150,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "smirnoff",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "smirnoff_1",
+  "label_en": "250ml",
+  "label_sw": "250ml",
+  "deduct": 250,
+  "price_kes": 550,
+  "enabled": true,
+  "sort": 1,
+  "product_id": "smirnoff",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "smirnoff_2",
+  "label_en": "750ml",
+  "label_sw": "750ml",
+  "deduct": 750,
+  "price_kes": 1600,
+  "enabled": true,
+  "sort": 2,
+  "product_id": "smirnoff",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "gilbeys_0",
+  "label_en": "Tot",
+  "label_sw": "Tot",
+  "deduct": 30,
+  "price_kes": 120,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "gilbeys",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "gilbeys_1",
+  "label_en": "250ml",
+  "label_sw": "250ml",
+  "deduct": 250,
+  "price_kes": 450,
+  "enabled": true,
+  "sort": 1,
+  "product_id": "gilbeys",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "gilbeys_2",
+  "label_en": "750ml",
+  "label_sw": "750ml",
+  "deduct": 750,
+  "price_kes": 1300,
+  "enabled": true,
+  "sort": 2,
+  "product_id": "gilbeys",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "hunters_0",
+  "label_en": "Tot",
+  "label_sw": "Tot",
+  "deduct": 30,
+  "price_kes": 100,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "hunters",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "hunters_1",
+  "label_en": "250ml",
+  "label_sw": "250ml",
+  "deduct": 250,
+  "price_kes": 400,
+  "enabled": true,
+  "sort": 1,
+  "product_id": "hunters",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "hunters_2",
+  "label_en": "750ml",
+  "label_sw": "750ml",
+  "deduct": 750,
+  "price_kes": 1050,
+  "enabled": true,
+  "sort": 2,
+  "product_id": "hunters",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "chrome_0",
+  "label_en": "250ml",
+  "label_sw": "250ml",
+  "deduct": 1,
+  "price_kes": 300,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "chrome",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "keg_0",
+  "label_en": "Mug 500ml",
+  "label_sw": "Kikombe 500ml",
+  "deduct": 500,
+  "price_kes": 120,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "keg",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "keg_1",
+  "label_en": "Jug 2L",
+  "label_sw": "Jagi 2L",
+  "deduct": 2000,
+  "price_kes": 450,
+  "enabled": true,
+  "sort": 1,
+  "product_id": "keg",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "soda_0",
+  "label_en": "300ml",
+  "label_sw": "300ml",
+  "deduct": 1,
+  "price_kes": 70,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "soda",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "soda_1",
+  "label_en": "500ml",
+  "label_sw": "500ml",
+  "deduct": 1,
+  "price_kes": 100,
+  "enabled": true,
+  "sort": 1,
+  "product_id": "soda",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "water_0",
+  "label_en": "500ml",
+  "label_sw": "500ml",
+  "deduct": 1,
+  "price_kes": 60,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "water",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "water_1",
+  "label_en": "1 Litre",
+  "label_sw": "Lita 1",
+  "deduct": 1,
+  "price_kes": 100,
+  "enabled": true,
+  "sort": 1,
+  "product_id": "water",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "juice_0",
+  "label_en": "500ml",
+  "label_sw": "500ml",
+  "deduct": 1,
+  "price_kes": 150,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "juice",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "tonic_0",
+  "label_en": "350ml",
+  "label_sw": "350ml",
+  "deduct": 1,
+  "price_kes": 100,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "tonic",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "nyama_0",
+  "label_en": "¼ kg",
+  "label_sw": "¼ kg",
+  "deduct": 1,
+  "price_kes": 400,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "nyama",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "nyama_1",
+  "label_en": "½ kg",
+  "label_sw": "½ kg",
+  "deduct": 1,
+  "price_kes": 750,
+  "enabled": true,
+  "sort": 1,
+  "product_id": "nyama",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "nyama_2",
+  "label_en": "1 kg",
+  "label_sw": "Kilo 1",
+  "deduct": 1,
+  "price_kes": 1400,
+  "enabled": true,
+  "sort": 2,
+  "product_id": "nyama",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "kuku_0",
+  "label_en": "Quarter",
+  "label_sw": "Robo",
+  "deduct": 1,
+  "price_kes": 450,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "kuku",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "kuku_1",
+  "label_en": "Half",
+  "label_sw": "Nusu",
+  "deduct": 1,
+  "price_kes": 850,
+  "enabled": true,
+  "sort": 1,
+  "product_id": "kuku",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "chips_0",
+  "label_en": "Plate",
+  "label_sw": "Sahani",
+  "deduct": 1,
+  "price_kes": 200,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "chips",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "kachumbari_0",
+  "label_en": "Plate",
+  "label_sw": "Sahani",
+  "deduct": 1,
+  "price_kes": 100,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "kachumbari",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "ugali_0",
+  "label_en": "Plate",
+  "label_sw": "Sahani",
+  "deduct": 1,
+  "price_kes": 100,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "ugali",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "mutura_0",
+  "label_en": "Piece",
+  "label_sw": "Kipande",
+  "deduct": 1,
+  "price_kes": 150,
+  "enabled": true,
+  "sort": 0,
+  "product_id": "mutura",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ }
+]$seed$);
+
+insert into public.kegs
+select * from jsonb_populate_recordset(null::public.kegs, $seed$[
+ {
+  "id": "k07",
+  "product_id": "keg",
+  "code": "K-07",
+  "volume_ml": 50000,
+  "cup_ml": 500,
+  "status": "finished",
+  "tapped_at": "2026-11-09T15:20:00Z",
+  "finished_at": "2026-11-10T20:08:00Z",
+  "finished_by": "p_otieno",
+  "recorded_ml_baseline": 45500,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "k08",
+  "product_id": "keg",
+  "code": "K-08",
+  "volume_ml": 50000,
+  "cup_ml": 500,
+  "status": "active",
+  "tapped_at": "2026-11-10T20:10:00Z",
+  "finished_at": null,
+  "finished_by": null,
+  "recorded_ml_baseline": 19000,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "k09",
+  "product_id": "keg",
+  "code": "K-09",
+  "volume_ml": 50000,
+  "cup_ml": 500,
+  "status": "queued",
+  "tapped_at": null,
+  "finished_at": null,
+  "finished_by": null,
+  "recorded_ml_baseline": 0,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ }
+]$seed$);
+
+insert into public.orders
+select * from jsonb_populate_recordset(null::public.orders, $seed$[
+ {
+  "handover_pending": false,
+  "id": "o_041",
+  "short_no": "#041",
+  "short_no_provisional": false,
+  "label": "Mzee in blue",
+  "server_id": "p_akinyi",
+  "recorded_by": "p_akinyi",
+  "device_id": "d_counter2",
+  "business_day": "2026-11-10",
+  "status": "open",
+  "created_at": "2026-11-10T18:34:00.000Z",
+  "synced_at": "2026-11-10T18:34:00.000Z",
+  "handed_over_to": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "handover_pending": false,
+  "id": "o_039",
+  "short_no": "#039",
+  "short_no_provisional": false,
+  "label": "Table 2",
+  "server_id": "p_otieno",
+  "recorded_by": "p_otieno",
+  "device_id": "d_counter1",
+  "business_day": "2026-11-10",
+  "status": "open",
+  "created_at": "2026-11-10T18:42:00.000Z",
+  "synced_at": "2026-11-10T18:42:00.000Z",
+  "handed_over_to": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "handover_pending": false,
+  "id": "o_044",
+  "short_no": "#044",
+  "short_no_provisional": false,
+  "label": "Table 9",
+  "server_id": "p_kiprop",
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "business_day": "2026-11-10",
+  "status": "open",
+  "created_at": "2026-11-10T18:58:00.000Z",
+  "synced_at": "2026-11-10T18:58:00.000Z",
+  "handed_over_to": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "handover_pending": false,
+  "id": "o_047",
+  "short_no": "#047",
+  "short_no_provisional": false,
+  "label": "Table 4",
+  "server_id": "p_wanjiku",
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "business_day": "2026-11-10",
+  "status": "open",
+  "created_at": "2026-11-10T19:08:00.000Z",
+  "synced_at": "2026-11-10T19:08:00.000Z",
+  "handed_over_to": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "handover_pending": false,
+  "id": "o_048",
+  "short_no": "#048",
+  "short_no_provisional": false,
+  "label": "Counter",
+  "server_id": "p_wanjiku",
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "business_day": "2026-11-10",
+  "status": "open",
+  "created_at": "2026-11-10T19:17:00.000Z",
+  "synced_at": "2026-11-10T19:17:00.000Z",
+  "handed_over_to": null,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ }
+]$seed$);
+
+insert into public.lines
+select * from jsonb_populate_recordset(null::public.lines, $seed$[
+ {
+  "id": "o_041_l0",
+  "order_id": "o_041",
+  "product_id": "tusker",
+  "size_id": "tusker_0",
+  "qty": 3,
+  "unit_price_kes": 300,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_akinyi",
+  "device_id": "d_counter2",
+  "created_at": "2026-11-10T18:34:00.000Z",
+  "synced_at": "2026-11-10T18:34:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_041_l1",
+  "order_id": "o_041",
+  "product_id": "nyama",
+  "size_id": "nyama_1",
+  "qty": 1,
+  "unit_price_kes": 750,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_akinyi",
+  "device_id": "d_counter2",
+  "created_at": "2026-11-10T18:34:00.000Z",
+  "synced_at": "2026-11-10T18:34:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_041_l2",
+  "order_id": "o_041",
+  "product_id": "cane",
+  "size_id": "cane_2",
+  "qty": 1,
+  "unit_price_kes": 450,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_akinyi",
+  "device_id": "d_counter2",
+  "created_at": "2026-11-10T18:34:00.000Z",
+  "synced_at": "2026-11-10T18:34:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_041_l3",
+  "order_id": "o_041",
+  "product_id": "chips",
+  "size_id": "chips_0",
+  "qty": 1,
+  "unit_price_kes": 200,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_akinyi",
+  "device_id": "d_counter2",
+  "created_at": "2026-11-10T18:34:00.000Z",
+  "synced_at": "2026-11-10T18:34:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_039_l0",
+  "order_id": "o_039",
+  "product_id": "guinness",
+  "size_id": "guinness_0",
+  "qty": 1,
+  "unit_price_kes": 330,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_otieno",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T18:42:00.000Z",
+  "synced_at": "2026-11-10T18:42:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_039_l1",
+  "order_id": "o_039",
+  "product_id": "nyama",
+  "size_id": "nyama_1",
+  "qty": 1,
+  "unit_price_kes": 750,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_otieno",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T18:42:00.000Z",
+  "synced_at": "2026-11-10T18:42:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_039_l2",
+  "order_id": "o_039",
+  "product_id": "tusker",
+  "size_id": "tusker_0",
+  "qty": 1,
+  "unit_price_kes": 300,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_otieno",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T18:42:00.000Z",
+  "synced_at": "2026-11-10T18:42:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_039_l3",
+  "order_id": "o_039",
+  "product_id": "ugali",
+  "size_id": "ugali_0",
+  "qty": 1,
+  "unit_price_kes": 100,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_otieno",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T18:42:00.000Z",
+  "synced_at": "2026-11-10T18:42:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_044_l0",
+  "order_id": "o_044",
+  "product_id": "tusker",
+  "size_id": "tusker_0",
+  "qty": 2,
+  "unit_price_kes": 300,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T18:58:00.000Z",
+  "synced_at": "2026-11-10T18:58:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_044_l1",
+  "order_id": "o_044",
+  "product_id": "cane",
+  "size_id": "cane_1",
+  "qty": 1,
+  "unit_price_kes": 350,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T18:58:00.000Z",
+  "synced_at": "2026-11-10T18:58:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_044_l2",
+  "order_id": "o_044",
+  "product_id": "soda",
+  "size_id": "soda_1",
+  "qty": 2,
+  "unit_price_kes": 100,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T18:58:00.000Z",
+  "synced_at": "2026-11-10T18:58:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_044_l3",
+  "order_id": "o_044",
+  "product_id": "kachumbari",
+  "size_id": "kachumbari_0",
+  "qty": 1,
+  "unit_price_kes": 100,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T18:58:00.000Z",
+  "synced_at": "2026-11-10T18:58:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_047_l0",
+  "order_id": "o_047",
+  "product_id": "tusker",
+  "size_id": "tusker_0",
+  "qty": 2,
+  "unit_price_kes": 300,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T19:08:00.000Z",
+  "synced_at": "2026-11-10T19:08:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_047_l1",
+  "order_id": "o_047",
+  "product_id": "cane",
+  "size_id": "cane_2",
+  "qty": 1,
+  "unit_price_kes": 450,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T19:08:00.000Z",
+  "synced_at": "2026-11-10T19:08:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_047_l2",
+  "order_id": "o_047",
+  "product_id": "soda",
+  "size_id": "soda_1",
+  "qty": 2,
+  "unit_price_kes": 100,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T19:08:00.000Z",
+  "synced_at": "2026-11-10T19:08:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "id": "o_048_l0",
+  "order_id": "o_048",
+  "product_id": "tusker",
+  "size_id": "tusker_0",
+  "qty": 2,
+  "unit_price_kes": 300,
+  "status": "active",
+  "keg_id": null,
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T19:17:00.000Z",
+  "synced_at": "2026-11-10T19:17:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ }
+]$seed$);
+
+insert into public.payments
+select * from jsonb_populate_recordset(null::public.payments, $seed$[
+ {
+  "id": "o_044_p0",
+  "order_id": "o_044",
+  "method": "cash",
+  "amount_kes": 400,
+  "mpesa_ref_last4": null,
+  "recorded_by": "p_wanjiku",
+  "device_id": "d_counter1",
+  "created_at": "2026-11-10T19:05:00.000Z",
+  "synced_at": "2026-11-10T19:05:00.000Z",
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ }
+]$seed$);
+
+insert into public.shifts
+select * from jsonb_populate_recordset(null::public.shifts, $seed$[
+ {
+  "person_id": "p_mwangi",
+  "device_id": "d_counter2",
+  "opened_at": "2026-11-10T13:00:00.000Z",
+  "closed_at": "2026-11-10T17:00:00.000Z",
+  "id": "s_p_mwangi",
+  "float_kes": 2000,
+  "expenses": [],
+  "counted_cash_kes": 8820,
+  "result_kes": 0,
+  "cash_baseline_kes": 6820,
+  "mpesa_baseline_kes": 0,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "person_id": "p_wanjiku",
+  "device_id": "d_counter1",
+  "opened_at": "2026-11-10T15:00:00.000Z",
+  "closed_at": null,
+  "id": "s_p_wanjiku",
+  "float_kes": 2000,
+  "expenses": [
+   {
+    "label": "Ice",
+    "amount_kes": 700
+   },
+   {
+    "label": "Airtime",
+    "amount_kes": 500
+   }
+  ],
+  "counted_cash_kes": null,
+  "result_kes": null,
+  "cash_baseline_kes": 11550,
+  "mpesa_baseline_kes": 18400,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ },
+ {
+  "person_id": "p_akinyi",
+  "device_id": "d_counter2",
+  "opened_at": "2026-11-10T17:00:00.000Z",
+  "closed_at": null,
+  "id": "s_p_akinyi",
+  "float_kes": 2000,
+  "expenses": [],
+  "counted_cash_kes": null,
+  "result_kes": null,
+  "cash_baseline_kes": 12800,
+  "mpesa_baseline_kes": 0,
+  "updated_at": "2026-11-10T00:00:00.000Z"
+ }
+]$seed$);
