@@ -46,9 +46,17 @@ export async function call<T = Record<string, unknown>>(pg: PGlite, sql: string,
   return rows[0]!.r;
 }
 
+/** A real Postgres with the migrations only, as a real bar's project starts (no seed.sql). */
+export async function migratedDb(): Promise<PGlite> {
+  const pg = new PGlite();
+  await pg.exec(SUPABASE_ROLES);
+  for (const migration of migrations) await pg.exec(migration);
+  return pg;
+}
+
 /** Pairs a phone as an existing device row and returns its token. */
-export async function pairAs(pg: PGlite, deviceId = 'd_counter1', name = 'Counter 1'): Promise<string> {
-  const code = await call<string>(pg, 'select public.create_pairing_code($1, $2, $3) as r', [name, deviceId, 'p_njeri']);
+export async function pairAs(pg: PGlite, deviceId = 'd_counter1', name = 'Counter 1', barId = 'bar_baraka'): Promise<string> {
+  const code = await call<string>(pg, 'select public.create_pairing_code($1, $2, $3, $4) as r', [name, deviceId, 'p_njeri', barId]);
   const paired = await call<{ token: string }>(pg, 'select public.pair_device($1, $2, $3) as r', [code, name, 'test']);
   return paired.token;
 }

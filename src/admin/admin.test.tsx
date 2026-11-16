@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { seedAdminDatabase } from '../data/adminSeed';
 import { KauntaDB } from '../data/db';
+import { verifyPin } from '../domain/pin';
 import { SAMPLE_NOW } from '../domain/sampleDay';
 import { I18nProvider } from '../lib/I18nProvider';
 import type { Locale } from '../lib/i18n';
@@ -190,25 +191,76 @@ describe('Kegs (R-KEG-1…3)', () => {
   });
 });
 
-describe('Staff & devices (R-PIN-1, R-PIN-2, R-DEV-2)', () => {
+describe('Staff & devices (R-PIN-1, R-DEV-2; PINs set by owners and managers)', () => {
   it('unlocks a locked person', async () => {
     renderAt('/admin/staff');
     const row = (await screen.findByRole('rowheader', { name: /Otieno/ })).closest('tr')!;
     expect(within(row).getByText(/PIN locked · 4:5\d/)).toBeInTheDocument();
     await user.click(within(row).getByRole('button', { name: 'Unlock' }));
-    expect(await within(row).findByText('PIN')).toBeInTheDocument();
+    expect(await within(row).findByText('••••')).toBeInTheDocument();
     expect((await db.people.get('p_otieno'))!.pin_locked_until).toBeNull();
   });
 
-  it('a PIN reset shows a one-time code once and stores only its hash', async () => {
+  it('shows a counter person’s PIN on request, and sets a new one: logged, without the digits', async () => {
     renderAt('/admin/staff');
     const row = (await screen.findByRole('rowheader', { name: /Wanjiku/ })).closest('tr')!;
-    await user.click(within(row).getByRole('button', { name: 'Reset PIN' }));
-    const notice = (await screen.findByRole('heading', { name: 'One-time code for Wanjiku' })).closest<HTMLElement>('[role="status"]')!;
-    const code = within(notice).getByText(/^\d{3} \d{3}$/).textContent!.replace(' ', '');
+    expect(within(row).getByText('••••')).toBeInTheDocument();
+    await user.click(within(row).getByRole('button', { name: /^Show/ }));
+    expect(within(row).getByText('2580')).toBeInTheDocument();
+    await user.click(within(row).getByRole('button', { name: 'Change PIN' }));
+    const input = await screen.findByLabelText('New PIN for Wanjiku');
+    await user.clear(input);
+    await user.type(input, '12');
+    expect(screen.getByRole('button', { name: 'Save PIN' })).toBeDisabled();
+    await user.type(input, '34');
+    await user.click(screen.getByRole('button', { name: 'Save PIN' }));
+    const notice = (await screen.findByRole('heading', { name: 'New PIN for Wanjiku' })).closest<HTMLElement>('[role="status"]')!;
+    expect(within(notice).getByText('1234')).toBeInTheDocument();
     const wanjiku = (await db.people.get('p_wanjiku'))!;
-    expect(wanjiku.pin_reset_hash).toMatch(/^pbkdf2-sha256\$/);
-    expect(wanjiku.pin_reset_hash).not.toContain(code);
+    expect(wanjiku.pin_code).toBe('1234');
+    expect(await verifyPin('1234', wanjiku.pin_hash)).toBe(true);
+    const audit = (await db.auditEvents.where('kind').equals('pin_changed').toArray())[0]!;
+    expect(audit.ref_id).toBe('p_wanjiku');
+    expect(JSON.stringify(audit.detail)).not.toMatch(/1234|pbkdf2/);
+    // Owners and managers have their own sign-in; no PIN to show or change here.
+    const chebet = (await screen.findByRole('rowheader', { name: /Chebet/ })).closest('tr')!;
+    expect(within(chebet).getByText('Their own PIN')).toBeInTheDocument();
+    expect(within(chebet).queryByRole('button', { name: /PIN|Suspend/ })).toBeNull();
+  });
+
+  it('a new counter person gets a PIN from the owner, shown once and kept to look up', async () => {
+    renderAt('/admin/staff');
+    await user.click(await screen.findByRole('button', { name: '+ Add person' }));
+    await user.type(document.querySelector<HTMLElement>('.a-addperson input')!, 'Baraka');
+    const pin = screen.getByLabelText('PIN (4 digits)');
+    expect((pin as HTMLInputElement).value).toMatch(/^\d{4}$/);
+    await user.clear(pin);
+    await user.type(pin, '9753');
+    await user.click(screen.getByRole('button', { name: 'Add' }));
+    expect(await screen.findByRole('heading', { name: 'New PIN for Baraka' })).toBeInTheDocument();
+    const baraka = (await db.people.toArray()).find((p) => p.name === 'Baraka')!;
+    expect(baraka).toMatchObject({ role: 'counter', login: 'pin', pin_code: '9753' });
+    // Managers come from Kaunta, not from here.
+    await user.click(screen.getByRole('button', { name: '+ Add person' }));
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Counter staff', 'Server']);
+  });
+
+  it('suspends someone (off the counter, history kept) and gives access back', async () => {
+    renderAt('/admin/staff');
+    const row = (await screen.findByRole('rowheader', { name: /Kiprop/ })).closest('tr')!;
+    await user.click(within(row).getByRole('button', { name: 'Suspend' }));
+    expect(within(row).getByText(/Suspend Kiprop\? They are signed out of every counter at once/)).toBeInTheDocument();
+    await user.click(within(row).getByRole('button', { name: 'Suspend' }));
+    const section = (await screen.findByRole('heading', { name: 'Suspended' })).closest('section')!;
+    expect(within(section).getByText('Kiprop')).toBeInTheDocument();
+    expect(screen.queryByRole('rowheader', { name: /Kiprop/ })).toBeNull();
+    expect((await db.people.get('p_kiprop'))!.suspended_at).not.toBeNull();
+    expect(await screen.findByRole('rowheader', { name: /Njeri/ })).toBeInTheDocument();
+    await user.click(within(section).getByRole('button', { name: 'Give access back' }));
+    expect(await screen.findByRole('rowheader', { name: /Kiprop/ })).toBeInTheDocument();
+    expect((await db.people.get('p_kiprop'))!.suspended_at).toBeNull();
+    const kinds = (await db.auditEvents.where('ref_id').equals('p_kiprop').toArray()).map((a) => a.kind);
+    expect(kinds).toEqual(expect.arrayContaining(['person_suspended', 'person_reinstated']));
   });
 
   it('revoking a phone asks why, then greys it out', async () => {

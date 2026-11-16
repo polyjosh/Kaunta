@@ -45,6 +45,9 @@ export const rawSeed = raw;
 /** "#041" → "041", for readable, stable seed ids. */
 const idPart = (shortNo: string) => shortNo.replace('#', '');
 
+/** Demo PINs for the sample's counter staff the handoff gives none (Wanjiku's is 2580). */
+const EXTRA_DEMO_PINS: Record<Id, string> = { p_otieno: '1470', p_akinyi: '3691', p_kiprop: '8024', p_mwangi: '5813' };
+
 /**
  * Turns the handoff sample data (Baraka Pub, business day 10 Nov 2026) into
  * model records: products split from their sizes, open orders split into
@@ -67,7 +70,9 @@ export function loadSeed(): SeedData {
     keg_foam_allowance_cups: raw.bar.keg_foam_allowance_cups,
   };
 
-  const demoPins: Record<Id, string> = {};
+  // The handoff gives Wanjiku's PIN only; the demo gives the other counter
+  // staff one too, so owners can look PINs up and anyone can be tried at the counter.
+  const demoPins: Record<Id, string> = { ...EXTRA_DEMO_PINS };
   const people: Person[] = raw.people.map((p) => {
     if ('demo_pin' in p && p.demo_pin) demoPins[p.id] = p.demo_pin;
     return {

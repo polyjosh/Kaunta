@@ -62,7 +62,8 @@ describe('seed: catalogue', () => {
   });
 
   it('keeps demo PINs out of the person records', () => {
-    expect(seed.demoPins).toEqual({ p_wanjiku: '2580' });
+    // Wanjiku's from the handoff; the demo gives the other counter staff one too.
+    expect(seed.demoPins).toEqual({ p_wanjiku: '2580', p_otieno: '1470', p_akinyi: '3691', p_kiprop: '8024', p_mwangi: '5813' });
     for (const person of seed.people) {
       expect(person.pin_hash).toBeNull();
       expect(person).not.toHaveProperty('demo_pin');

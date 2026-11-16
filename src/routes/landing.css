@@ -1,0 +1,192 @@
+/* Landing (`/`): Counter Night, the logo on the brand's own dark surface. */
+.l-page {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--k-bg);
+  color: var(--k-text);
+  padding: max(24px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+}
+
+.l-main {
+  flex: 1;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 36px;
+}
+
+.l-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.l-logo {
+  margin: 0;
+  line-height: 0;
+}
+
+.l-logo img {
+  max-width: 100%;
+  height: auto;
+}
+
+.l-promise {
+  margin: 0;
+  max-width: 340px;
+  font-size: 19px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--k-text-2);
+  text-wrap: balance;
+}
+
+.l-ways {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.l-way {
+  min-height: var(--k-touch-primary);
+  padding: 16px 18px;
+  border-radius: var(--k-r-card);
+  border: 1px solid var(--k-line-strong);
+  background: var(--k-raised);
+  color: var(--k-text) !important;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.l-way.is-counter {
+  border: none;
+  background: var(--k-ember);
+  color: var(--k-on-ember) !important;
+}
+
+.l-way:focus-visible {
+  outline: 3px solid var(--k-text);
+  outline-offset: 3px;
+}
+
+.l-way-icon {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.l-way-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.l-way-text strong {
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.l-way-text span {
+  font-size: 15px;
+  line-height: 1.35;
+  opacity: 0.85;
+}
+
+.l-lang {
+  align-self: center;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--k-r-pill);
+  background: var(--k-tile);
+  border: 1px solid var(--k-line);
+}
+
+.l-lang button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: none;
+  border-radius: var(--k-r-pill);
+  background: transparent;
+  color: var(--k-text-2);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.l-lang button[aria-pressed='true'] {
+  background: var(--k-raised);
+  color: var(--k-text);
+}
+
+.l-foot {
+  max-width: 440px;
+  margin: 24px auto 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--k-text-3);
+}
+
+.l-install {
+  min-height: 56px;
+  padding: 10px 16px;
+  border-radius: var(--k-r-card);
+  border: 1px dashed var(--k-line-strong);
+  background: transparent;
+  color: var(--k-text);
+  font: inherit;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.l-install > span {
+  display: flex;
+  flex-direction: column;
+}
+
+.l-install strong {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.l-install span span {
+  font-size: 14px;
+  color: var(--k-text-2);
+}
+
+.l-install-note {
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--k-text-2);
+}
+
+.l-foot p {
+  margin: 0;
+}
+
+.l-platform {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 10px;
+  color: var(--k-text-3) !important;
+  font-size: 13px;
+}

@@ -9,6 +9,9 @@
   --k-warning-line: #5a4818;
   --k-chip-font: 16px;
   --k-warning-card: #2a2312;
+  /* Logo, "dark" scheme (kaunta-handoff/design/logo/README.md). */
+  --k-logo-ink: #f7eee4;
+  --k-logo-ember: #ff8f3f;
 }
 
 :root[data-theme='day'] {
@@ -18,6 +21,9 @@
   --k-warning-line: color-mix(in srgb, var(--k-warning-fg) 30%, var(--k-warning-bg));
   --k-chip-font: 15px;
   --k-warning-card: var(--k-warning-bg);
+  /* Logo, "light" scheme. */
+  --k-logo-ink: #22180f;
+  --k-logo-ember: #e0681a;
 }
 
 *,

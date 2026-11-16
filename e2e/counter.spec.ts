@@ -13,6 +13,10 @@ const NOW = new Date('2026-11-10T19:20:00.000Z');
 
 test.beforeEach(async ({ page }) => {
   await page.clock.setFixedTime(NOW);
+  // This browser has already joined the sample bar (its code, BRKA-PUB2, is typed in e2e/fullLoop.spec.ts).
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('kaunta.counterBar')) localStorage.setItem('kaunta.counterBar', JSON.stringify('bar_baraka'));
+  });
 });
 
 async function login(page: Page) {
@@ -194,4 +198,17 @@ test('a wrong PIN counts down and the 5th locks the person', async ({ page }) =>
   for (const digit of wrong) await page.getByRole('button', { name: digit, exact: true }).click();
   await expect(page.getByText('Locked · 5 wrong PINs')).toBeVisible();
   await expect(page.getByRole('timer')).toHaveText(/^[45]:\d\d$/);
+});
+
+test('the landing page shows the logo, fits a phone, and leads to the counter', async ({ page }) => {
+  await page.goto('/');
+  const logo = page.getByRole('img', { name: 'Kaunta · Till · Cash · Shelf' });
+  await expect(logo).toBeVisible();
+  // The artwork loaded (not a broken image).
+  expect(await logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  const counter = page.getByRole('link', { name: /Open the counter/ });
+  expect((await counter.boundingBox())!.height).toBeGreaterThanOrEqual(64);
+  await counter.click();
+  await expect(page.getByRole('button', { name: demo.name })).toBeVisible();
 });

@@ -377,7 +377,7 @@ const GROUPS: Record<AuditGroup, string[]> = {
   voids: ['void_recorded', 'void_requested', 'approval_decided', 'approval_undone'],
   products: ['product_saved'],
   stock: ['delivery_recorded', 'shelf_counted', 'keg_finished', 'keg_checked'],
-  logins: ['login', 'logged_in', 'pin_failed', 'person_unlocked', 'pin_reset', 'pin_set', 'person_saved', 'person_archived', 'device_paired', 'device_revoked'],
+  logins: ['login', 'logged_in', 'pin_failed', 'person_unlocked', 'pin_reset', 'pin_set', 'pin_changed', 'person_saved', 'person_archived', 'person_suspended', 'person_reinstated', 'device_paired', 'device_revoked'],
   shifts: ['shift_opened', 'shift_closed', 'day_closed'],
 };
 export const AUDIT_GROUPS = Object.keys(GROUPS) as AuditGroup[];

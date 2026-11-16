@@ -41,6 +41,36 @@ export async function verifyPin(pin: string, stored: string | null): Promise<boo
   return diff === 0;
 }
 
+/** A fresh 4-digit PIN for someone at the counter (owners and managers set staff PINs). */
+export function makePin(): string {
+  return String(crypto.getRandomValues(new Uint32Array(1))[0]! % 10_000).padStart(4, '0');
+}
+
+/** Whoever can still use the bar: not archived, not suspended. */
+export function hasAccess(person: Pick<Person, 'archived_at' | 'suspended_at'>): boolean {
+  return !person.archived_at && !person.suspended_at;
+}
+
+/** Owners sign in with a password; managers and counter staff with a 4-digit PIN. */
+export const MIN_PASSWORD = 8;
+
+/** Salted hash of any secret (an admin PIN, the platform password), in the same format as hashPin. */
+export async function hashSecret(secret: string, salt: Uint8Array = crypto.getRandomValues(new Uint8Array(16))): Promise<string> {
+  if (!secret) throw new RangeError('Nothing to hash');
+  const hash = await derive(secret, salt, ITERATIONS);
+  return [SCHEME, ITERATIONS, toB64(salt), toB64(hash)].join('$');
+}
+
+export async function verifySecret(secret: string, stored: string | null | undefined): Promise<boolean> {
+  if (!stored || !secret) return false;
+  const [scheme, iterations, salt, expected] = stored.split('$');
+  if (scheme !== SCHEME || !iterations || !salt || !expected) return false;
+  const actual = toB64(await derive(secret, fromB64(salt), Number(iterations)));
+  let diff = actual.length ^ expected.length;
+  for (let i = 0; i < actual.length; i++) diff |= actual.charCodeAt(i) ^ (expected.charCodeAt(i) || 0);
+  return diff === 0;
+}
+
 type LockView = Pick<Person, 'pin_locked_until' | 'failed_pin_attempts'>;
 type LockRules = Pick<Bar, 'pin_attempts' | 'lockout_minutes'>;
 

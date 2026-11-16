@@ -12,6 +12,7 @@ import { useI18n } from '../lib/I18nProvider';
 import type { TFunction } from '../lib/I18nProvider';
 import { formatAmount, formatKES } from '../lib/money';
 import { AdminLayout, PageTitle } from './AdminLayout';
+import { FirstRun } from './FirstRun';
 import { useAdmin } from './AdminSession';
 import { hhmm, personName } from './data';
 import { parseKes } from './ReconcileScreen';
@@ -39,6 +40,14 @@ export function ProductsScreen() {
   const [showArchived, setShowArchived] = useState(false);
   if (!data) return <AdminLayout>{null}</AdminLayout>;
   const archived = data.products.filter((p) => p.archived_at).length;
+  if (data.products.length === 0) {
+    return (
+      <AdminLayout>
+        <PageTitle title={t('nav.products')} />
+        <FirstRun />
+      </AdminLayout>
+    );
+  }
   return (
     <AdminLayout>
       <PageTitle title={t('nav.products')} aside={<Link className="a-btn a-btn-primary" to="/admin/products/new">{t('admin.product.add')}</Link>} />

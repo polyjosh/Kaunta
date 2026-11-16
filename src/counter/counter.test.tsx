@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
@@ -17,11 +17,19 @@ import { SessionProvider } from './Session';
 let db: KauntaDB;
 let n = 0;
 
+/** The counter screens' snapshot (seed `_note`): 22:20 on the sample evening, so the next order is #049 on any real date. */
+const COUNTER_NOW = '2026-11-10T19:20:00.000Z';
+
 beforeEach(async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(COUNTER_NOW));
   db = new KauntaDB(`kaunta-ui-${++n}`);
   await seedDatabase(db);
 });
-afterEach(() => db.delete());
+afterEach(async () => {
+  vi.useRealTimers();
+  await db.delete();
+});
 
 const user = userEvent.setup();
 
@@ -35,7 +43,7 @@ function countTaps() {
   return { get count() { return taps; }, stop: () => document.removeEventListener('click', onClick, true) };
 }
 
-function renderApp(path = '/') {
+function renderApp(path = '/counter/login') {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <App db={db} />
@@ -65,17 +73,19 @@ const typePin = async (pin: string) => {
 };
 
 describe('1. PIN login', () => {
-  it('lists everyone with a PIN, and nobody else', async () => {
+  it('lists everyone who logs in here (staff, then the owner and managers), and nobody else', async () => {
     renderApp();
     expect(await screen.findByRole('heading', { name: 'Who is at the counter?' })).toBeInTheDocument();
     expect(await screen.findByText('Baraka Pub')).toBeInTheDocument();
     expect(await screen.findByText('Counter 1 · shared device')).toBeInTheDocument();
     await screen.findByRole('button', { name: 'Wanjiku' });
-    for (const name of ['Wanjiku', 'Otieno', 'Akinyi', 'Kiprop', 'Mwangi', 'Chebet']) {
+    for (const name of ['Wanjiku', 'Otieno', 'Akinyi', 'Kiprop', 'Mwangi']) {
       expect(screen.getByRole('button', { name })).toBeInTheDocument();
     }
-    expect(screen.queryByRole('button', { name: 'Njeri' })).toBeNull(); // owner: phone + password
-    expect(screen.queryByRole('button', { name: 'Juma' })).toBeNull(); // server only
+    // The owner (password) and the manager (PIN) can sell too; they come last, marked.
+    const names = screen.getAllByRole('button').filter((b) => b.classList.contains('c-staff-tile')).map((b) => b.textContent);
+    expect(names.slice(-2)).toEqual(['CChebetManager', 'NNjeriOwner']);
+    expect(screen.queryByRole('button', { name: /Juma/ })).toBeNull(); // server only
   });
 
   it('submits on the 4th digit and opens Sell for the right PIN', async () => {

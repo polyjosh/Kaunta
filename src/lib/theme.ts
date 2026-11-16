@@ -11,7 +11,9 @@ export function isTheme(value: unknown): value is Theme {
  * Admin defaults to Day and may be switched to Night by the user.
  */
 export function themeForPath(pathname: string, adminTheme: Theme = 'day'): Theme {
-  return pathname === '/admin' || pathname.startsWith('/admin/') ? adminTheme : 'night';
+  // The Kaunta platform (/super) looks like admin.
+  const managed = pathname === '/admin' || pathname.startsWith('/admin/') || pathname === '/super' || pathname.startsWith('/super/');
+  return managed ? adminTheme : 'night';
 }
 
 export function applyTheme(theme: Theme, root: HTMLElement = document.documentElement): void {

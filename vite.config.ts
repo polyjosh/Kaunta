@@ -12,20 +12,32 @@ export default defineConfig({
       // instead of reloading under someone mid-sale (which would empty the tray).
       registerType: 'prompt',
       injectRegister: false, // registered in src/pwa.ts
-      includeAssets: ['icon.svg'],
+      // The logo files (kaunta-handoff/design/logo), cached so the app starts offline with them.
+      includeAssets: ['favicon.svg', 'favicon.ico', 'brand/apple-touch-icon-180.png', 'brand/app-icon-192.png', 'brand/app-icon-512.png'],
       manifest: {
-        name: 'Kaunta',
+        id: '/',
+        name: 'Kaunta · Till · Cash · Shelf',
         short_name: 'Kaunta',
-        description: 'Record what was served and confirm it was paid.',
-        start_url: '/counter/login',
+        description: 'Kaunta shows you when your till, your cash, and your shelf don’t agree.',
+        lang: 'en',
+        categories: ['business', 'productivity'],
+        // The landing page; the installed app goes on to the way this device used last (counter or admin).
+        start_url: '/',
         scope: '/',
         display: 'standalone',
-        orientation: 'portrait',
+        // Phones at the counter are held upright; laptops for admin may be any way round.
+        orientation: 'any',
+        shortcuts: [
+          { name: 'Open the counter', short_name: 'Counter', url: '/counter/login', icons: [{ src: '/brand/app-icon-192.png', sizes: '192x192', type: 'image/png' }] },
+          { name: 'Owner or manager', short_name: 'Admin', url: '/admin', icons: [{ src: '/brand/app-icon-192.png', sizes: '192x192', type: 'image/png' }] },
+        ],
         background_color: '#15100C',
         theme_color: '#15100C',
         icons: [
-          { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
-          { src: '/icon-maskable.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
+          { src: '/brand/app-icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/brand/app-icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/brand/app-icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: '/brand/app-icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {

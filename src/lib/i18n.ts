@@ -8,12 +8,15 @@ import extraSw from '../i18n/extra.sw.json';
 // Admin screens (build step 5): copy the designs show that the handoff files lack.
 import adminEn from '../i18n/admin.en.json';
 import adminSw from '../i18n/admin.sw.json';
+// The Kaunta platform (super admin) screens.
+import superEn from '../i18n/super.en.json';
+import superSw from '../i18n/super.sw.json';
 
 export type Locale = 'en' | 'sw';
 export const LOCALES: readonly Locale[] = ['en', 'sw'];
 export const DEFAULT_LOCALE: Locale = 'en';
 
-type RawKey = keyof typeof en | keyof typeof extraEn | keyof typeof adminEn;
+type RawKey = keyof typeof en | keyof typeof extraEn | keyof typeof adminEn | keyof typeof superEn;
 type StripPlural<K extends string> = K extends `${infer Base}_one`
   ? Base
   : K extends `${infer Base}_other`
@@ -25,8 +28,8 @@ export type MessageKey = StripPlural<RawKey>;
 export type MessageParams = Record<string, string | number>;
 
 export const messages: Record<Locale, Record<string, string>> = {
-  en: { ...en, ...extraEn, ...adminEn },
-  sw: { ...sw, ...extraSw, ...adminSw },
+  en: { ...en, ...extraEn, ...adminEn, ...superEn },
+  sw: { ...sw, ...extraSw, ...adminSw, ...superSw },
 };
 
 const pluralRules: Record<Locale, Intl.PluralRules> = {

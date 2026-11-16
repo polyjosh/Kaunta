@@ -1,3 +1,4 @@
+import { isPairingCode, normaliseBarCode } from '../domain/barCode';
 import type { KauntaEvent, OutboxEntry } from '../data/events';
 import type { Id, Instant } from '../domain/types';
 import type { ServerConfig } from './config';
@@ -113,7 +114,10 @@ export class SupabaseTransport implements SyncTransport {
     return this.rpc<PullResponse>('sync_pull', { p_token: token, p_since: since });
   }
 
+  /** A 6-digit one-time code from an admin, or the bar's counter code. Either way the phone gets a device token. */
   pair(code: string, name: string | null = null, model: string | null = null) {
-    return this.rpc<PairResponse>('pair_device', { p_code: code, p_name: name, p_model: model });
+    return isPairingCode(code)
+      ? this.rpc<PairResponse>('pair_device', { p_code: code.replace(/\s/g, ''), p_name: name, p_model: model })
+      : this.rpc<PairResponse>('pair_with_bar_code', { p_code: normaliseBarCode(code), p_name: name, p_model: model });
   }
 }

@@ -16,7 +16,11 @@ const user = userEvent.setup();
 
 /** A server holding the handoff sample data. */
 class FakeServer implements SyncTransport {
-  codes = new Map([['482913', { device_id: 'd_counter1', token: 'tok-1' }]]);
+  codes = new Map([
+    ['482913', { device_id: 'd_counter1', token: 'tok-1' }],
+    ['BRKAPUB2', { device_id: 'd_counter1', token: 'tok-bar' }],
+  ]);
+  paired: string[] = [];
   failures = 0;
   pushes: WireEvent[][] = [];
   failPull = 0;
@@ -24,6 +28,7 @@ class FakeServer implements SyncTransport {
   flag = new Set<string>();
 
   async pair(code: string): Promise<PairResponse> {
+    this.paired.push(code);
     const hit = this.codes.get(code);
     if (hit) {
       this.codes.delete(code);
@@ -90,42 +95,64 @@ const renderApp = (path = '/counter/login') =>
     </MemoryRouter>,
   );
 
+/** What a person does on a new phone: type the code, then "Open the counter". */
 const type = async (code: string) => {
-  for (const digit of code) await user.click(screen.getByRole('button', { name: digit }));
+  const input = screen.getByLabelText('Bar code');
+  await user.clear(input);
+  await user.type(input, code);
+  await user.click(screen.getByRole('button', { name: 'Open the counter' }));
 };
 
-describe('pairing a phone (R-DEV-1)', () => {
-  it('asks for a code on a new phone, and starts with no sample data', async () => {
+describe('joining a bar on a new phone (R-DEV-1)', () => {
+  it('asks which bar (its code) on a new phone, and starts with no sample data', async () => {
     renderApp();
-    expect(await screen.findByRole('heading', { name: 'Connect this phone' })).toBeInTheDocument();
-    expect(screen.getByText(/Ask an admin for a 6-digit pairing code/)).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Which bar is this counter for?' })).toBeInTheDocument();
+    expect(screen.getByText(/You only do this once on this phone/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open the counter' })).toBeDisabled();
     expect(await db.products.count()).toBe(0);
+  });
+
+  it('shows a bar code as XXXX-XXXX however it is typed', async () => {
+    renderApp();
+    const input = await screen.findByLabelText('Bar code');
+    await user.type(input, 'brka pub2');
+    expect(input).toHaveValue('BRKA-PUB2');
+    expect(screen.getByRole('button', { name: 'Open the counter' })).toBeEnabled();
+  });
+
+  it('with the bar’s code, joins that bar, pulls everything, and opens the staff list', async () => {
+    renderApp();
+    await screen.findByLabelText('Bar code');
+    await type('brka-pub2');
+    expect(await screen.findByRole('heading', { name: 'Who is at the counter?' })).toBeInTheDocument();
+    expect((await db.meta.get('device_token'))?.value).toBe('tok-bar');
+    expect(await db.products.count()).toBe(24);
+    expect(server.paired).toEqual(['BRKAPUB2']);
   });
 
   it('says so when a code is wrong, and stops after too many', async () => {
     renderApp();
-    await screen.findByRole('heading', { name: 'Connect this phone' });
-    await type('111111');
-    expect(await screen.findByText('That code didn’t work. Check it, or ask for a new one.')).toBeInTheDocument();
-    await type('222222');
-    await type('333333');
+    await screen.findByLabelText('Bar code');
+    await type('ZZZZ-ZZZZ');
+    expect(await screen.findByText('That code doesn’t match a bar. Check it with your owner or manager.')).toBeInTheDocument();
+    await type('YYYY-YYYY');
+    await type('XXXX-XXXX');
     expect(await screen.findByText('Too many wrong codes. Wait 10 minutes and try again.')).toBeInTheDocument();
   });
 
-  it('with the right code, stores the token, pulls everything, and opens the staff list', async () => {
+  it('a 6-digit pairing code from an admin works too', async () => {
     renderApp();
-    await screen.findByRole('heading', { name: 'Connect this phone' });
+    await screen.findByLabelText('Bar code');
     await type('482913');
     expect(await screen.findByRole('heading', { name: 'Who is at the counter?' })).toBeInTheDocument();
     expect(await screen.findByText('Counter 1 · shared device')).toBeInTheDocument();
     expect((await db.meta.get('device_token'))?.value).toBe('tok-1');
-    expect(await db.products.count()).toBe(24);
   });
 
   it('if the first pull fails, it says so and can try again', async () => {
     server.failPull = 1;
     renderApp();
-    await screen.findByRole('heading', { name: 'Connect this phone' });
+    await screen.findByLabelText('Bar code');
     await type('482913');
     expect(await screen.findByText('Couldn’t reach the server. Check the internet and try again.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Try again' }));

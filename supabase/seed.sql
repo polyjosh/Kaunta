@@ -13,6 +13,7 @@ select * from jsonb_populate_recordset(null::public.bar, $seed$[
   "pin_attempts": 5,
   "lockout_minutes": 5,
   "keg_foam_allowance_cups": 0,
+  "counter_code": "BRKAPUB2",
   "updated_at": "2026-11-10T00:00:00.000Z"
  }
 ]$seed$);
@@ -54,11 +55,13 @@ select * from jsonb_populate_recordset(null::public.categories, $seed$[
   "sort": 5,
   "updated_at": "2026-11-10T00:00:00.000Z"
  }
-]$seed$);
+]$seed$)
+on conflict (id) do update set name_en = excluded.name_en, name_sw = excluded.name_sw, sort = excluded.sort, updated_at = excluded.updated_at;
 
 insert into public.people
 select * from jsonb_populate_recordset(null::public.people, $seed$[
  {
+  "bar_id": "bar_baraka",
   "id": "p_njeri",
   "name": "Njeri",
   "initial": "N",
@@ -69,9 +72,11 @@ select * from jsonb_populate_recordset(null::public.people, $seed$[
   "pin_locked_until": null,
   "failed_pin_attempts": 0,
   "archived_at": null,
+  "pin_code": null,
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "p_wanjiku",
   "name": "Wanjiku",
   "initial": "W",
@@ -82,61 +87,71 @@ select * from jsonb_populate_recordset(null::public.people, $seed$[
   "pin_locked_until": null,
   "failed_pin_attempts": 0,
   "archived_at": null,
+  "pin_code": "2580",
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "p_otieno",
   "name": "Otieno",
   "initial": "O",
   "colour": "#E9C46A",
   "role": "counter",
   "login": "pin",
-  "pin_hash": null,
+  "pin_hash": "pbkdf2-sha256$100000$1xF+rX4kgM+8ck+5pQ1Zjw==$Hez4Z7//d7g/5ZWzOp+yHH8jz75Cwg2hfS0oVjRmnYI=",
   "pin_locked_until": null,
   "failed_pin_attempts": 0,
   "archived_at": null,
+  "pin_code": "1470",
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "p_akinyi",
   "name": "Akinyi",
   "initial": "A",
   "colour": "#F4A3A0",
   "role": "counter",
   "login": "pin",
-  "pin_hash": null,
+  "pin_hash": "pbkdf2-sha256$100000$MZW3Z5NpL/biIEApuTCR8Q==$TsYymBZsfbHMp1k5Q8LOwblvEjKBZwL+iR2YaZvjjkw=",
   "pin_locked_until": null,
   "failed_pin_attempts": 0,
   "archived_at": null,
+  "pin_code": "3691",
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "p_kiprop",
   "name": "Kiprop",
   "initial": "K",
   "colour": "#9ED9B8",
   "role": "counter",
   "login": "pin",
-  "pin_hash": null,
+  "pin_hash": "pbkdf2-sha256$100000$m0k/sUfazIkuOI9R9Pf/nw==$VSDlZFueFTVOceroGTXZAjx/FWfy+czr7yscmqof55o=",
   "pin_locked_until": null,
   "failed_pin_attempts": 0,
   "archived_at": null,
+  "pin_code": "8024",
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "p_mwangi",
   "name": "Mwangi",
   "initial": "M",
   "colour": "#A9C8F0",
   "role": "counter",
   "login": "pin",
-  "pin_hash": null,
+  "pin_hash": "pbkdf2-sha256$100000$v1yytrJEdcYxw/7nPsyqPw==$mqjUoE6g4SwwpZj09k9/ZGfP0sAe1d5h0Y3RFgpfHHI=",
   "pin_locked_until": null,
   "failed_pin_attempts": 0,
   "archived_at": null,
+  "pin_code": "5813",
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "p_chebet",
   "name": "Chebet",
   "initial": "C",
@@ -147,9 +162,11 @@ select * from jsonb_populate_recordset(null::public.people, $seed$[
   "pin_locked_until": null,
   "failed_pin_attempts": 0,
   "archived_at": null,
+  "pin_code": null,
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "p_juma",
   "name": "Juma",
   "initial": "J",
@@ -160,6 +177,7 @@ select * from jsonb_populate_recordset(null::public.people, $seed$[
   "pin_locked_until": null,
   "failed_pin_attempts": 0,
   "archived_at": null,
+  "pin_code": null,
   "updated_at": "2026-11-10T00:00:00.000Z"
  }
 ]$seed$);
@@ -167,6 +185,7 @@ select * from jsonb_populate_recordset(null::public.people, $seed$[
 insert into public.devices
 select * from jsonb_populate_recordset(null::public.devices, $seed$[
  {
+  "bar_id": "bar_baraka",
   "token_hash": null,
   "last_sync_at": null,
   "id": "d_counter1",
@@ -179,6 +198,7 @@ select * from jsonb_populate_recordset(null::public.devices, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "token_hash": null,
   "last_sync_at": null,
   "id": "d_counter2",
@@ -191,6 +211,7 @@ select * from jsonb_populate_recordset(null::public.devices, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "token_hash": null,
   "last_sync_at": null,
   "id": "d_old",
@@ -207,6 +228,7 @@ select * from jsonb_populate_recordset(null::public.devices, $seed$[
 insert into public.products
 select * from jsonb_populate_recordset(null::public.products, $seed$[
  {
+  "bar_id": "bar_baraka",
   "sort": 0,
   "id": "tusker",
   "category_id": "beer",
@@ -220,6 +242,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 1,
   "id": "whitecap",
   "category_id": "beer",
@@ -233,6 +256,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 2,
   "id": "guinness",
   "category_id": "beer",
@@ -246,6 +270,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 3,
   "id": "pilsner",
   "category_id": "beer",
@@ -259,6 +284,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 4,
   "id": "tuskerlite",
   "category_id": "beer",
@@ -272,6 +298,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 5,
   "id": "cider",
   "category_id": "beer",
@@ -285,6 +312,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 6,
   "id": "balozi",
   "category_id": "beer",
@@ -298,6 +326,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 7,
   "id": "guinnesscan",
   "category_id": "beer",
@@ -311,6 +340,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 8,
   "id": "cane",
   "category_id": "spirits",
@@ -324,6 +354,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 9,
   "id": "smirnoff",
   "category_id": "spirits",
@@ -337,6 +368,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 10,
   "id": "gilbeys",
   "category_id": "spirits",
@@ -350,6 +382,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 11,
   "id": "hunters",
   "category_id": "spirits",
@@ -363,6 +396,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 12,
   "id": "chrome",
   "category_id": "spirits",
@@ -376,6 +410,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 13,
   "id": "keg",
   "category_id": "keg",
@@ -389,6 +424,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 14,
   "id": "soda",
   "category_id": "soft",
@@ -402,6 +438,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 15,
   "id": "water",
   "category_id": "soft",
@@ -415,6 +452,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 16,
   "id": "juice",
   "category_id": "soft",
@@ -428,6 +466,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 17,
   "id": "tonic",
   "category_id": "soft",
@@ -441,6 +480,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 18,
   "id": "nyama",
   "category_id": "food",
@@ -454,6 +494,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 19,
   "id": "kuku",
   "category_id": "food",
@@ -467,6 +508,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 20,
   "id": "chips",
   "category_id": "food",
@@ -480,6 +522,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 21,
   "id": "kachumbari",
   "category_id": "food",
@@ -493,6 +536,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 22,
   "id": "ugali",
   "category_id": "food",
@@ -506,6 +550,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "sort": 23,
   "id": "mutura",
   "category_id": "food",
@@ -523,6 +568,7 @@ select * from jsonb_populate_recordset(null::public.products, $seed$[
 insert into public.sizes
 select * from jsonb_populate_recordset(null::public.sizes, $seed$[
  {
+  "bar_id": "bar_baraka",
   "id": "tusker_0",
   "label_en": "500ml",
   "label_sw": "500ml",
@@ -534,6 +580,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "whitecap_0",
   "label_en": "500ml",
   "label_sw": "500ml",
@@ -545,6 +592,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "guinness_0",
   "label_en": "500ml",
   "label_sw": "500ml",
@@ -556,6 +604,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "pilsner_0",
   "label_en": "500ml",
   "label_sw": "500ml",
@@ -567,6 +616,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "tuskerlite_0",
   "label_en": "500ml",
   "label_sw": "500ml",
@@ -578,6 +628,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "cider_0",
   "label_en": "500ml",
   "label_sw": "500ml",
@@ -589,6 +640,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "balozi_0",
   "label_en": "500ml",
   "label_sw": "500ml",
@@ -600,6 +652,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "guinnesscan_0",
   "label_en": "500ml",
   "label_sw": "500ml",
@@ -611,6 +664,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "cane_0",
   "label_en": "Tot",
   "label_sw": "Tot",
@@ -622,6 +676,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "cane_1",
   "label_en": "250ml",
   "label_sw": "250ml",
@@ -633,6 +688,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "cane_2",
   "label_en": "350ml",
   "label_sw": "350ml",
@@ -644,6 +700,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "cane_3",
   "label_en": "750ml",
   "label_sw": "750ml",
@@ -655,6 +712,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "cane_4",
   "label_en": "1 Litre",
   "label_sw": "Lita 1",
@@ -666,6 +724,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "smirnoff_0",
   "label_en": "Tot",
   "label_sw": "Tot",
@@ -677,6 +736,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "smirnoff_1",
   "label_en": "250ml",
   "label_sw": "250ml",
@@ -688,6 +748,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "smirnoff_2",
   "label_en": "750ml",
   "label_sw": "750ml",
@@ -699,6 +760,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "gilbeys_0",
   "label_en": "Tot",
   "label_sw": "Tot",
@@ -710,6 +772,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "gilbeys_1",
   "label_en": "250ml",
   "label_sw": "250ml",
@@ -721,6 +784,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "gilbeys_2",
   "label_en": "750ml",
   "label_sw": "750ml",
@@ -732,6 +796,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "hunters_0",
   "label_en": "Tot",
   "label_sw": "Tot",
@@ -743,6 +808,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "hunters_1",
   "label_en": "250ml",
   "label_sw": "250ml",
@@ -754,6 +820,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "hunters_2",
   "label_en": "750ml",
   "label_sw": "750ml",
@@ -765,6 +832,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "chrome_0",
   "label_en": "250ml",
   "label_sw": "250ml",
@@ -776,6 +844,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "keg_0",
   "label_en": "Mug 500ml",
   "label_sw": "Kikombe 500ml",
@@ -787,6 +856,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "keg_1",
   "label_en": "Jug 2L",
   "label_sw": "Jagi 2L",
@@ -798,6 +868,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "soda_0",
   "label_en": "300ml",
   "label_sw": "300ml",
@@ -809,6 +880,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "soda_1",
   "label_en": "500ml",
   "label_sw": "500ml",
@@ -820,6 +892,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "water_0",
   "label_en": "500ml",
   "label_sw": "500ml",
@@ -831,6 +904,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "water_1",
   "label_en": "1 Litre",
   "label_sw": "Lita 1",
@@ -842,6 +916,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "juice_0",
   "label_en": "500ml",
   "label_sw": "500ml",
@@ -853,6 +928,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "tonic_0",
   "label_en": "350ml",
   "label_sw": "350ml",
@@ -864,6 +940,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "nyama_0",
   "label_en": "¼ kg",
   "label_sw": "¼ kg",
@@ -875,6 +952,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "nyama_1",
   "label_en": "½ kg",
   "label_sw": "½ kg",
@@ -886,6 +964,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "nyama_2",
   "label_en": "1 kg",
   "label_sw": "Kilo 1",
@@ -897,6 +976,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "kuku_0",
   "label_en": "Quarter",
   "label_sw": "Robo",
@@ -908,6 +988,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "kuku_1",
   "label_en": "Half",
   "label_sw": "Nusu",
@@ -919,6 +1000,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "chips_0",
   "label_en": "Plate",
   "label_sw": "Sahani",
@@ -930,6 +1012,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "kachumbari_0",
   "label_en": "Plate",
   "label_sw": "Sahani",
@@ -941,6 +1024,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "ugali_0",
   "label_en": "Plate",
   "label_sw": "Sahani",
@@ -952,6 +1036,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "mutura_0",
   "label_en": "Piece",
   "label_sw": "Kipande",
@@ -967,6 +1052,7 @@ select * from jsonb_populate_recordset(null::public.sizes, $seed$[
 insert into public.kegs
 select * from jsonb_populate_recordset(null::public.kegs, $seed$[
  {
+  "bar_id": "bar_baraka",
   "id": "k07",
   "product_id": "keg",
   "code": "K-07",
@@ -980,6 +1066,7 @@ select * from jsonb_populate_recordset(null::public.kegs, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "k08",
   "product_id": "keg",
   "code": "K-08",
@@ -993,6 +1080,7 @@ select * from jsonb_populate_recordset(null::public.kegs, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "k09",
   "product_id": "keg",
   "code": "K-09",
@@ -1010,6 +1098,7 @@ select * from jsonb_populate_recordset(null::public.kegs, $seed$[
 insert into public.orders
 select * from jsonb_populate_recordset(null::public.orders, $seed$[
  {
+  "bar_id": "bar_baraka",
   "handover_pending": false,
   "id": "o_041",
   "short_no": "#041",
@@ -1026,6 +1115,7 @@ select * from jsonb_populate_recordset(null::public.orders, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "handover_pending": false,
   "id": "o_039",
   "short_no": "#039",
@@ -1042,6 +1132,7 @@ select * from jsonb_populate_recordset(null::public.orders, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "handover_pending": false,
   "id": "o_044",
   "short_no": "#044",
@@ -1058,6 +1149,7 @@ select * from jsonb_populate_recordset(null::public.orders, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "handover_pending": false,
   "id": "o_047",
   "short_no": "#047",
@@ -1074,6 +1166,7 @@ select * from jsonb_populate_recordset(null::public.orders, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "handover_pending": false,
   "id": "o_048",
   "short_no": "#048",
@@ -1094,6 +1187,7 @@ select * from jsonb_populate_recordset(null::public.orders, $seed$[
 insert into public.lines
 select * from jsonb_populate_recordset(null::public.lines, $seed$[
  {
+  "bar_id": "bar_baraka",
   "id": "o_041_l0",
   "order_id": "o_041",
   "product_id": "tusker",
@@ -1109,6 +1203,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_041_l1",
   "order_id": "o_041",
   "product_id": "nyama",
@@ -1124,6 +1219,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_041_l2",
   "order_id": "o_041",
   "product_id": "cane",
@@ -1139,6 +1235,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_041_l3",
   "order_id": "o_041",
   "product_id": "chips",
@@ -1154,6 +1251,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_039_l0",
   "order_id": "o_039",
   "product_id": "guinness",
@@ -1169,6 +1267,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_039_l1",
   "order_id": "o_039",
   "product_id": "nyama",
@@ -1184,6 +1283,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_039_l2",
   "order_id": "o_039",
   "product_id": "tusker",
@@ -1199,6 +1299,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_039_l3",
   "order_id": "o_039",
   "product_id": "ugali",
@@ -1214,6 +1315,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_044_l0",
   "order_id": "o_044",
   "product_id": "tusker",
@@ -1229,6 +1331,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_044_l1",
   "order_id": "o_044",
   "product_id": "cane",
@@ -1244,6 +1347,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_044_l2",
   "order_id": "o_044",
   "product_id": "soda",
@@ -1259,6 +1363,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_044_l3",
   "order_id": "o_044",
   "product_id": "kachumbari",
@@ -1274,6 +1379,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_047_l0",
   "order_id": "o_047",
   "product_id": "tusker",
@@ -1289,6 +1395,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_047_l1",
   "order_id": "o_047",
   "product_id": "cane",
@@ -1304,6 +1411,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_047_l2",
   "order_id": "o_047",
   "product_id": "soda",
@@ -1319,6 +1427,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "id": "o_048_l0",
   "order_id": "o_048",
   "product_id": "tusker",
@@ -1338,6 +1447,7 @@ select * from jsonb_populate_recordset(null::public.lines, $seed$[
 insert into public.payments
 select * from jsonb_populate_recordset(null::public.payments, $seed$[
  {
+  "bar_id": "bar_baraka",
   "id": "o_044_p0",
   "order_id": "o_044",
   "method": "cash",
@@ -1354,6 +1464,7 @@ select * from jsonb_populate_recordset(null::public.payments, $seed$[
 insert into public.shifts
 select * from jsonb_populate_recordset(null::public.shifts, $seed$[
  {
+  "bar_id": "bar_baraka",
   "person_id": "p_mwangi",
   "device_id": "d_counter2",
   "opened_at": "2026-11-10T13:00:00.000Z",
@@ -1368,6 +1479,7 @@ select * from jsonb_populate_recordset(null::public.shifts, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "person_id": "p_wanjiku",
   "device_id": "d_counter1",
   "opened_at": "2026-11-10T15:00:00.000Z",
@@ -1391,6 +1503,7 @@ select * from jsonb_populate_recordset(null::public.shifts, $seed$[
   "updated_at": "2026-11-10T00:00:00.000Z"
  },
  {
+  "bar_id": "bar_baraka",
   "person_id": "p_akinyi",
   "device_id": "d_counter2",
   "opened_at": "2026-11-10T17:00:00.000Z",

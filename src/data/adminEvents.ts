@@ -49,6 +49,15 @@ export type AdminEvent =
   | { type: 'pin_reset'; payload: { person_id: Id; reset_hash: string; expires_at: Instant } }
   | { type: 'person_saved'; payload: { person: Person } }
   | { type: 'person_archived'; payload: { person_id: Id } }
+  /**
+   * An owner, manager or Kaunta sets a counter person's 4-digit PIN (staff
+   * can't change their own). The PIN goes with the hash so admins can look it
+   * up; the audit row keeps neither.
+   */
+  | { type: 'pin_changed'; payload: { person_id: Id; pin_hash: string; pin_code: string } }
+  /** Access removed: off the counter's list and signed out at once; what they recorded stays. */
+  | { type: 'person_suspended'; payload: { person_id: Id } }
+  | { type: 'person_reinstated'; payload: { person_id: Id } }
   /** R-DEV-2 */
   | { type: 'device_revoked'; payload: { device_id: Id; reason: string } }
   /** R-DAY-3: kept on record with whatever variance there was. */
@@ -71,6 +80,9 @@ export type AdminOutboxEntry = AdminEvent & {
 
 /** The admin's browser is not a counter device; its records say so. */
 export const ADMIN_DEVICE = 'admin';
+
+/** Who a change made on the Kaunta platform (/super) is recorded as. */
+export const KAUNTA_ACTOR = 'kaunta';
 
 export interface AdminContext {
   person_id: Id;
@@ -103,13 +115,19 @@ export async function recordAdminEvent(db: KauntaDB, ctx: AdminContext, event: A
       device_id: ADMIN_DEVICE,
       kind: event.type,
       ref_id: refOf(event),
-      detail: event.payload as unknown as Record<string, unknown>,
+      detail: auditDetail(event),
       synced_at: null,
     };
     await db.auditEvents.add(audit);
     entry.seq = await db.adminOutbox.add(entry);
   });
   return entry;
+}
+
+/** What the audit log keeps of an event: everything but PINs and their hashes. */
+export function auditDetail(event: AdminEvent): Record<string, unknown> {
+  const { pin_hash: _hash, pin_code: _code, reset_hash: _reset, ...rest } = event.payload as unknown as Record<string, unknown>;
+  return rest;
 }
 
 export function refOf(event: AdminEvent): Id | null {
@@ -277,6 +295,19 @@ export async function applyAdminEvent(db: KauntaDB, event: AdminEvent, { by, at 
     }
     case 'person_archived': {
       await db.people.update(event.payload.person_id, { archived_at: at });
+      return;
+    }
+    case 'pin_changed': {
+      const { person_id, pin_hash, pin_code } = event.payload;
+      await db.people.update(person_id, { pin_hash, pin_code, pin_reset_hash: null, pin_reset_expires_at: null, pin_locked_until: null, failed_pin_attempts: 0 });
+      return;
+    }
+    case 'person_suspended': {
+      await db.people.update(event.payload.person_id, { suspended_at: at });
+      return;
+    }
+    case 'person_reinstated': {
+      await db.people.update(event.payload.person_id, { suspended_at: null });
       return;
     }
     case 'device_revoked': {

@@ -3,6 +3,7 @@ import { AdminApp } from './admin/AdminApp';
 import { LoginScreen } from './counter/LoginScreen';
 import { OrderDetailScreen } from './counter/OrderDetailScreen';
 import { OrdersScreen } from './counter/OrdersScreen';
+import { DemoCounterGate } from './counter/DemoCounterGate';
 import { PairingGate } from './counter/PairScreen';
 import { SellScreen } from './counter/SellScreen';
 import { SessionProvider, useSession } from './counter/Session';
@@ -16,6 +17,8 @@ import type { KauntaDB } from './data/db';
 import { I18nProvider } from './lib/I18nProvider';
 import { ThemeProvider } from './lib/ThemeProvider';
 import { ComponentsGallery } from './routes/ComponentsGallery';
+import { Landing } from './routes/Landing';
+import { SuperApp } from './platform/SuperApp';
 import { serverConfig } from './sync/config';
 import type { ServerConfig } from './sync/config';
 import { SyncProvider } from './sync/SyncProvider';
@@ -36,42 +39,44 @@ interface AppProps {
 }
 
 /**
- * All seven counter screens, syncing with Supabase when it is configured,
- * and the admin screens under /admin/* (their own store; see AdminApp).
+ * The landing page at `/`, all seven counter screens (syncing with Supabase
+ * when it is configured), and the admin screens under /admin/* (their own
+ * stores, one per bar; see AdminApp).
  */
 export function App({ db, config = serverConfig(), transport }: AppProps) {
   const demo = !config && !transport;
+  const counter = (
+    <PairingGate enabled={!demo}>
+      <SessionProvider>
+        <Routes>
+          <Route path="/counter/login" element={<LoginScreen />} />
+          <Route path="/counter/sync" element={<SyncScreen />} />
+          <Route element={<RequireLogin />}>
+            <Route path="/counter/sell" element={<SellScreen />} />
+            <Route path="/counter/orders" element={<OrdersScreen />} />
+            <Route path="/counter/orders/:id" element={<OrderDetailScreen />} />
+            <Route path="/counter/orders/:id/void" element={<VoidScreen />} />
+            <Route path="/counter/shift/close" element={<ShiftScreen />} />
+            <Route path="/counter/*" element={<Navigate to="/counter/sell" replace />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/counter/login" replace />} />
+        </Routes>
+      </SessionProvider>
+    </PairingGate>
+  );
   return (
     <I18nProvider>
       <ThemeProvider>
         <DbProvider db={db} demo={demo}>
           <SyncProvider config={config} transport={transport}>
             <Routes>
+              <Route path="/" element={<Landing />} />
               <Route path="/dev/components" element={<ComponentsGallery />} />
               <Route path="/admin/dev/components" element={<ComponentsGallery />} />
               <Route path="/admin/*" element={<AdminApp config={config} />} />
-              <Route
-                path="*"
-                element={
-                  <PairingGate enabled={!demo}>
-                    <SessionProvider>
-                      <Routes>
-                        <Route path="/counter/login" element={<LoginScreen />} />
-                        <Route path="/counter/sync" element={<SyncScreen />} />
-                        <Route element={<RequireLogin />}>
-                          <Route path="/counter/sell" element={<SellScreen />} />
-                          <Route path="/counter/orders" element={<OrdersScreen />} />
-                          <Route path="/counter/orders/:id" element={<OrderDetailScreen />} />
-                          <Route path="/counter/orders/:id/void" element={<VoidScreen />} />
-                          <Route path="/counter/shift/close" element={<ShiftScreen />} />
-                          <Route path="/counter/*" element={<Navigate to="/counter/sell" replace />} />
-                        </Route>
-                        <Route path="*" element={<Navigate to="/counter/login" replace />} />
-                      </Routes>
-                    </SessionProvider>
-                  </PairingGate>
-                }
-              />
+              <Route path="/super/*" element={<SuperApp />} />
+              {/* Demo: the counter first asks which bar (its code). A store handed in (tests) is already a bar's. */}
+              <Route path="*" element={demo && !db ? <DemoCounterGate>{counter}</DemoCounterGate> : counter} />
             </Routes>
           </SyncProvider>
         </DbProvider>

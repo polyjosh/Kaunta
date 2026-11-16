@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { addItems, recordOrder } from '../data/commands';
@@ -15,6 +15,8 @@ import { useSession } from './Session';
 import { Avatar, Sheet, Toast, TopBar, withOffline } from './ui';
 import type { ToastMessage } from './ui';
 import { voidLines } from '../data/voids';
+import { signInToAdminAs } from '../admin/bars';
+import { useCounterBar } from './DemoCounterGate';
 
 const TABLES = Array.from({ length: 12 }, (_, i) => `${i + 1}` as TableChoice);
 const CATEGORY_KEY = {
@@ -46,6 +48,7 @@ export function SellScreen() {
   const session = useSession();
   const navigate = useNavigate();
   const me = session.person!;
+  const counterBar = useCounterBar();
 
   const [category, setCategory] = useState<Id | null>(null);
   const [query, setQuery] = useState('');
@@ -83,6 +86,11 @@ export function SellScreen() {
   const target = useQuery(async (d) => (addToId ? ((await d.orders.get(addToId)) ?? null) : null), [addToId]);
   const { online } = useConnection();
   const offlineAware = (message: ToastMessage) => withOffline(message, online, t);
+
+  // Signed out because their access was removed: the tray is saved as an open order (pay later) first.
+  const unsaved = useRef<() => Promise<void>>(async () => undefined);
+  const { registerSaver } = session;
+  useEffect(() => registerSaver(() => unsaved.current()), [registerSaver]);
 
   const closeSheet = useCallback(() => setSheet(null), []);
   const clearToast = useCallback(() => setToast(null), []);
@@ -137,6 +145,13 @@ export function SellScreen() {
   const server: Person = servers.find((p) => p.id === session.serverId) ?? me;
   const serverText = (p: Person) => (p.id === me.id ? t('common.me') : p.name);
   const tableText = displayLabel(labelForTable(table), t);
+
+  unsaved.current = async () => {
+    if (empty || recording.current) return;
+    if (adding) await addItems(db, session.recordContext(), adding.id, cart);
+    else await recordOrder(db, session.recordContext(), { label: labelForTable(table), server_id: server.id, items: cart });
+    setCart([]);
+  };
 
   const record = async (paidBy?: PaymentMethod) => {
     if (empty || recording.current) return;
@@ -428,6 +443,19 @@ export function SellScreen() {
           <button type="button" className="c-btn c-btn-secondary" onClick={() => navigate('/counter/shift/close')}>
             {t('shift.title')}
           </button>
+          {(me.role === 'owner' || me.role === 'admin') && (
+            <button
+              type="button"
+              className="c-btn c-btn-secondary"
+              onClick={() => {
+                // Demo: their admin opens on this bar without signing in again.
+                if (counterBar) signInToAdminAs(me.id, counterBar.bar.id);
+                navigate('/admin');
+              }}
+            >
+              {t('sell.toAdmin')}
+            </button>
+          )}
         </Sheet>
       )}
 

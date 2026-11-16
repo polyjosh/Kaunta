@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Logo } from '../components/Icon';
+import { Lockup } from '../components/Icon';
+import { useTheme } from '../lib/ThemeProvider';
 import { useI18n } from '../lib/I18nProvider';
 import type { MessageKey } from '../lib/i18n';
 import { TransportError } from '../sync/transport';
@@ -8,6 +9,7 @@ import type { AdminServer } from './server';
 /** Owner / admin sign-in: phone (or email) and password, against Supabase Auth. */
 export function AdminSignIn({ server, onSignedIn, notice }: { server: Pick<AdminServer, 'signIn'>; onSignedIn: () => void; notice?: MessageKey | null }) {
   const { t, locale, setLocale } = useI18n();
+  const { theme } = useTheme();
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,10 +33,7 @@ export function AdminSignIn({ server, onSignedIn, notice }: { server: Pick<Admin
   return (
     <div className="a-app a-signin-page">
       <form className="a-card a-signin" onSubmit={submit}>
-        <div className="a-brand">
-          <Logo size={34} />
-          <span className="a-bar-name">Kaunta</span>
-        </div>
+        <Lockup kind="horizontal" scheme={theme === 'night' ? 'dark' : 'light'} height={48} />
         <h1>{t('admin.signIn.title')}</h1>
         <p className="a-note">{t('admin.signIn.body')}</p>
         <label className="a-field">
@@ -53,7 +52,7 @@ export function AdminSignIn({ server, onSignedIn, notice }: { server: Pick<Admin
           <button type="button" aria-pressed={locale === 'en'} onClick={() => setLocale('en')}>English</button>
           <button type="button" aria-pressed={locale === 'sw'} onClick={() => setLocale('sw')}>Kiswahili</button>
         </div>
-        <a className="a-link" href="/counter/login">{t('admin.toCounter')}</a>
+        <a className="a-link" href="/">← Kaunta</a>
       </form>
     </div>
   );

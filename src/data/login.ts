@@ -1,5 +1,5 @@
-import { activeLock, hashPin, isValidPin, verifyPin, verifyResetCode, wrongPinOutcome } from '../domain/pin';
-import type { Id, Instant } from '../domain/types';
+import { activeLock, hasAccess, verifyPin, verifySecret, wrongPinOutcome } from '../domain/pin';
+import type { Id, Instant, Person } from '../domain/types';
 import type { KauntaDB } from './db';
 import { recordEvent } from './outbox';
 
@@ -8,17 +8,23 @@ export type LoginResult =
   | { status: 'wrong'; tries_left: number }
   | { status: 'locked'; until: Instant };
 
+/** Who appears on the counter's list: anyone with a PIN or password login whose access has not been removed. */
+export function signsInAtCounter(person: Person): boolean {
+  return (person.login === 'pin' || person.login === 'password') && hasAccess(person);
+}
+
 /**
- * R-PIN-1: checks a PIN against the hash on this phone (works offline).
- * Wrong tries and the lock they lead to are recorded as events, so the lock
- * reaches every device and the audit log. A locked person is refused without
- * the PIN being checked at all.
+ * R-PIN-1: checks a PIN (or an owner's password) against the hash on this
+ * phone, so it works offline. Wrong tries and the lock they lead to are
+ * recorded as events, so the lock reaches every device and the audit log. A
+ * locked person is refused without the secret being checked at all. Someone
+ * whose access was removed is refused too.
  */
 export async function attemptLogin(
   db: KauntaDB,
   device_id: Id,
   person_id: Id,
-  pin: string,
+  secret: string,
   now: () => Date = () => new Date(),
 ): Promise<LoginResult> {
   const [person, bar] = await Promise.all([db.people.get(person_id), db.bar.toCollection().first()]);
@@ -28,7 +34,7 @@ export async function attemptLogin(
   if (locked) return { status: 'locked', until: locked };
 
   // Hashing runs outside any database transaction (it would end the transaction).
-  const ok = await verifyPin(pin, person.pin_hash);
+  const ok = hasAccess(person) && (person.login === 'password' ? await verifySecret(secret, person.pin_hash) : await verifyPin(secret, person.pin_hash));
   const ctx = { person_id, device_id, now };
 
   if (ok) {
@@ -51,41 +57,13 @@ export async function attemptLogin(
     : { status: 'wrong', tries_left: outcome.tries_left };
 }
 
-/** A reset is waiting for this person: an admin made a one-time code that has not run out (R-PIN-2). */
-export function hasPinReset(person: { pin_reset_hash?: string | null; pin_reset_expires_at?: Instant | null }, now: Date): boolean {
-  return !!person.pin_reset_hash && !!person.pin_reset_expires_at && Date.parse(person.pin_reset_expires_at) > now.getTime();
-}
-
 /**
- * R-PIN-2, step 1: the one-time code from the admin, checked against its hash
- * on this phone. A wrong code counts as a wrong PIN, so guessing locks the
- * person out exactly as wrong PINs do (R-PIN-1).
+ * An owner or manager already signed in to admin on this browser goes to the
+ * counter without signing in again: recorded as a login like any other.
  */
-export async function checkResetCode(
-  db: KauntaDB,
-  device_id: Id,
-  person_id: Id,
-  code: string,
-  now: () => Date = () => new Date(),
-): Promise<LoginResult> {
-  const [person, bar] = await Promise.all([db.people.get(person_id), db.bar.toCollection().first()]);
-  if (!person || !bar) throw new Error(`Unknown person ${person_id}`);
-  const locked = activeLock(person, now());
-  if (locked) return { status: 'locked', until: locked };
-  if (await verifyResetCode(code, person.pin_reset_hash, person.pin_reset_expires_at, now())) return { status: 'ok' };
-  const outcome = wrongPinOutcome(person, bar, now());
-  await recordEvent(db, { person_id, device_id, now }, {
-    type: 'pin_failed',
-    payload: { person_id, failed_pin_attempts: outcome.failed_pin_attempts, pin_locked_until: outcome.pin_locked_until },
-  });
-  return outcome.pin_locked_until ? { status: 'locked', until: outcome.pin_locked_until } : { status: 'wrong', tries_left: outcome.tries_left };
-}
-
-/** R-PIN-2, step 2: the new PIN is hashed here and only the hash is recorded; then the person is logged in. */
-export async function setNewPin(db: KauntaDB, device_id: Id, person_id: Id, pin: string, now: () => Date = () => new Date()): Promise<void> {
-  if (!isValidPin(pin)) throw new RangeError('A PIN is exactly 4 digits');
-  const pin_hash = await hashPin(pin);
-  const ctx = { person_id, device_id, now };
-  await recordEvent(db, ctx, { type: 'pin_set', payload: { person_id, pin_hash } });
-  await recordEvent(db, ctx, { type: 'logged_in', payload: { person_id } });
+export async function loginSignedInAdmin(db: KauntaDB, device_id: Id, person_id: Id, now: () => Date = () => new Date()): Promise<boolean> {
+  const person = await db.people.get(person_id);
+  if (!person || !hasAccess(person) || (person.role !== 'owner' && person.role !== 'admin')) return false;
+  await recordEvent(db, { person_id, device_id, now }, { type: 'logged_in', payload: { person_id } });
+  return true;
 }

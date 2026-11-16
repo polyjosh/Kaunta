@@ -1,7 +1,7 @@
 // @vitest-environment node
 // Real phones' local stores (IndexedDB via fake-indexeddb) syncing with the
 // real migration (PGlite): the whole loop, end to end, without a network.
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PGlite } from '@electric-sql/pglite';
 import { recordOrder, recordPayment } from '../src/data/commands';
 import { KauntaDB } from '../src/data/db';
@@ -38,10 +38,16 @@ let pg: PGlite;
 let n = 0;
 const phones: KauntaDB[] = [];
 
+/** The seed's counter snapshot, 22:20 on the sample evening: phones record on that business day on any real date. */
+const COUNTER_NOW = '2026-11-10T19:20:00.000Z';
+
 beforeEach(async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date(COUNTER_NOW));
   pg = await freshDb();
 });
 afterEach(async () => {
+  vi.useRealTimers();
   await Promise.all(phones.splice(0).map((db) => db.delete()));
   await pg.close();
 });

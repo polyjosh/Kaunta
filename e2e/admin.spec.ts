@@ -5,6 +5,14 @@ import { expect, test } from '@playwright/test';
  * night), phone width and desktop, and a decision that survives a reload.
  */
 
+// Signed in as the sample owner (njeri), on the sample bar: sign-in itself is in e2e/fullLoop.spec.ts.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem('kaunta.adminSession', 'acct_njeri');
+    if (!localStorage.getItem('kaunta.adminDemoBar')) localStorage.setItem('kaunta.adminDemoBar', JSON.stringify('bar_baraka'));
+  });
+});
+
 test('Today at 390px: the seed numbers, one column, nothing clipped (screens.md §8)', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/admin');
@@ -47,6 +55,8 @@ test('every admin screen opens without errors and fits a phone', async ({ page }
 });
 
 test('the counter’s “Admin login” opens admin', async ({ page }) => {
+  // A counter that has joined the sample bar (its code typed once).
+  await page.addInitScript(() => localStorage.setItem('kaunta.counterBar', JSON.stringify('bar_baraka')));
   await page.goto('/counter/login');
   await page.getByRole('button', { name: 'Admin login' }).click();
   await expect(page).toHaveURL(/\/admin$/);

@@ -11,6 +11,8 @@ import type { TFunction } from '../lib/I18nProvider';
 import type { Locale } from '../lib/i18n';
 import { formatKES } from '../lib/money';
 import { AdminLayout, PageTitle } from './AdminLayout';
+import { BarCodeCard } from './BarCodeCard';
+import { FirstRun } from './FirstRun';
 import { useNow } from './AdminSession';
 import { hhmm, personName, useDayData } from './data';
 import type { AdminDay } from './data';
@@ -120,6 +122,16 @@ export function TodayScreen() {
   const data = useDayData(day);
 
   if (!data) return <AdminLayout>{null}</AdminLayout>;
+  // A new bar: nothing to sell yet, so nothing to report. Start the menu here.
+  if (data.products.length === 0) {
+    return (
+      <AdminLayout>
+        <PageTitle title={t('today.title')} />
+        <FirstRun />
+        <BarCodeCard />
+      </AdminLayout>
+    );
+  }
   const s = todaySummary(data);
   const flags = attentionFlags(data, day).map((f) => flagView(f, data, t, locale));
   const hours = salesByHour(data, data.bar.day_start);

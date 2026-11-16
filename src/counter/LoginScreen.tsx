@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon, Logo } from '../components/Icon';
-import { attemptLogin, checkResetCode, hasPinReset, setNewPin } from '../data/login';
+import { useCounterBar } from './DemoCounterGate';
+import { attemptLogin, loginSignedInAdmin, signsInAtCounter } from '../data/login';
 import { useDb, useQuery } from '../data/react';
 import { startShift } from '../data/shifts';
 import { activeLock, lockCountdown } from '../domain/pin';
 import type { Id, Instant, Person } from '../domain/types';
+import { adminHere } from '../lib/adminHere';
 import { useI18n } from '../lib/I18nProvider';
 import { useSession } from './Session';
 import { Avatar, TopBar } from './ui';
@@ -15,39 +17,66 @@ const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 type View =
   | { name: 'names' }
   | { name: 'pin'; personId: Id }
+  /** Owners type their password. */
+  | { name: 'password'; personId: Id }
   | { name: 'locked'; personId: Id; until: Instant }
-  /** R-PIN-2: the one-time code from an admin, then the new PIN twice. */
-  | { name: 'reset'; personId: Id }
-  | { name: 'newPin'; personId: Id; first: string | null; mismatch?: boolean }
-  /** No PIN yet and no code waiting: only an admin can help. */
+  /** No PIN yet: only an owner or manager can set one. */
   | { name: 'noPin'; personId: Id };
 
-/** Screen 1: names → PIN → (locked). Rules R-PIN-1, R-PIN-2. */
+const runsTheBar = (p: Person) => p.role === 'owner' || p.role === 'admin';
+
+/**
+ * Screen 1: names → PIN (or an owner's password) → (locked). Rules R-PIN-1.
+ * Counter staff first, then the bar's owner and managers, who can sell too.
+ * Whoever is signed in to admin on this browser goes straight in.
+ */
 export function LoginScreen() {
   const { t } = useI18n();
   const db = useDb();
   const session = useSession();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [view, setView] = useState<View>({ name: 'names' });
 
   const bar = useQuery((d) => d.bar.toCollection().first());
-  // Everyone who logs in with a PIN, locked or not: the lock shows on every device.
+  // Everyone who logs in here, locked or not (the lock shows on every device); not anyone suspended.
   const staff = useQuery(async (d) =>
     (await d.people.toArray())
-      .filter((p) => p.login === 'pin' && !p.archived_at)
-      .sort((a, b) => a.name.localeCompare(b.name)),
+      .filter(signsInAtCounter)
+      .sort((a, b) => Number(runsTheBar(a)) - Number(runsTheBar(b)) || a.name.localeCompare(b.name)),
   );
   const person = view.name === 'names' ? undefined : staff?.find((p) => p.id === view.personId);
+  const here = adminHere();
+  const signedInHere = (p: Person) => !!bar && here?.bar_id === bar.id && here.person_id === p.id && runsTheBar(p);
 
-  const pick = (p: Person) => {
-    const now = new Date();
-    const until = activeLock(p, now);
+  const enter = async (p: Person) => {
+    // Continue this person's shift on this phone, or open one, and pick up handed-over orders.
+    await startShift(db, { person_id: p.id, device_id: session.device?.id ?? '' });
+    session.login(p.id);
+    navigate('/counter/sell', { replace: true });
+  };
+
+  const pick = async (p: Person) => {
+    session.clearRemoved();
+    const until = activeLock(p, new Date());
+    if (signedInHere(p) && (await loginSignedInAdmin(db, session.device?.id ?? '', p.id))) return enter(p);
     if (until) setView({ name: 'locked', personId: p.id, until });
-    else if (hasPinReset(p, now)) setView({ name: 'reset', personId: p.id });
     else if (!p.pin_hash) setView({ name: 'noPin', personId: p.id });
-    else setView({ name: 'pin', personId: p.id });
+    else setView(p.login === 'password' ? { name: 'password', personId: p.id } : { name: 'pin', personId: p.id });
   };
   const toNames = () => setView({ name: 'names' });
+  const counterBar = useCounterBar();
+
+  // "Sell at the counter" from admin: straight in as that owner or manager.
+  const fromAdmin = params.get('from') === 'admin';
+  const handed = useRef(false);
+  useEffect(() => {
+    if (!fromAdmin || handed.current || !staff || !bar) return;
+    handed.current = true;
+    const me = staff.find(signedInHere);
+    if (me) void pick(me);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromAdmin, staff, bar]);
 
   return (
     <div className="c-screen">
@@ -66,11 +95,18 @@ export function LoginScreen() {
               <h1>{t('login.who')}</h1>
               <p>{t('login.whoHint')}</p>
             </div>
+            {session.removed && (
+              <p className="c-login-removed" role="status">
+                {t('login.removed', { name: session.removed.name })}
+              </p>
+            )}
+            {staff && staff.length === 0 && <p className="c-login-empty">{t('login.noStaff')}</p>}
             <div className="c-staff-grid">
               {staff?.map((p) => (
-                <button key={p.id} type="button" className="c-staff-tile" onClick={() => pick(p)}>
+                <button key={p.id} type="button" className="c-staff-tile" onClick={() => void pick(p)}>
                   <Avatar person={p} size={56} />
                   <span>{p.name}</span>
+                  {runsTheBar(p) && <small className="c-staff-role">{t(p.role === 'owner' ? 'login.role.owner' : 'login.role.manager')}</small>}
                 </button>
               ))}
             </div>
@@ -79,6 +115,11 @@ export function LoginScreen() {
             <button type="button" className="c-btn c-btn-outline" onClick={() => navigate('/admin')}>
               {t('login.admin')}
             </button>
+            {counterBar && (
+              <button type="button" className="c-btn c-btn-link c-login-change" onClick={counterBar.changeBar}>
+                {t('bar.change')}
+              </button>
+            )}
           </footer>
         </>
       )}
@@ -90,49 +131,18 @@ export function LoginScreen() {
           onBack={toNames}
           onSubmit={(pin) => attemptLogin(db, session.device?.id ?? '', person.id, pin)}
           onLocked={(until) => setView({ name: 'locked', personId: person.id, until })}
-          onSuccess={async () => {
-            // Continue this person's shift on this phone, or open one, and pick up handed-over orders.
-            await startShift(db, { person_id: person.id, device_id: session.device?.id ?? '' });
-            session.login(person.id);
-            navigate('/counter/sell', { replace: true });
-          }}
+          onSuccess={() => enter(person)}
         />
       )}
 
-      {view.name === 'reset' && person && (
-        <PinPad
-          key={`reset-${person.id}`}
+      {view.name === 'password' && person && (
+        <PasswordForm
+          key={person.id}
           person={person}
-          length={6}
-          prompt={t('login.reset.enterCode')}
           onBack={toNames}
-          onSubmit={(code) => checkResetCode(db, session.device?.id ?? '', person.id, code)}
+          onSubmit={(password) => attemptLogin(db, session.device?.id ?? '', person.id, password)}
           onLocked={(until) => setView({ name: 'locked', personId: person.id, until })}
-          wrongMessage={(left) => t('login.reset.wrongCode', { count: left })}
-          onSuccess={async () => setView({ name: 'newPin', personId: person.id, first: null })}
-        />
-      )}
-
-      {view.name === 'newPin' && person && (
-        <PinPad
-          key={`new-${person.id}-${view.first ?? ''}`}
-          person={person}
-          prompt={view.first === null ? t('login.reset.choose') : t('login.reset.again')}
-          onBack={toNames}
-          onSubmit={async (pin) => (view.first === null || pin === view.first ? { status: 'ok' } : { status: 'wrong', tries_left: 0 })}
-          onLocked={() => undefined}
-          initialMessage={view.mismatch ? t('login.reset.mismatch') : ''}
-          onWrong={() => setView({ name: 'newPin', personId: person.id, first: null, mismatch: true })}
-          onSuccess={async (pin) => {
-            if (view.first === null) {
-              setView({ name: 'newPin', personId: person.id, first: pin });
-              return;
-            }
-            await setNewPin(db, session.device?.id ?? '', person.id, pin);
-            await startShift(db, { person_id: person.id, device_id: session.device?.id ?? '' });
-            session.login(person.id);
-            navigate('/counter/sell', { replace: true });
-          }}
+          onSuccess={() => enter(person)}
         />
       )}
 
@@ -140,7 +150,7 @@ export function LoginScreen() {
         <main className="c-body c-locked">
           <div className="c-locked-card">
             <Avatar person={person} size={64} />
-            <p className="c-locked-body">{t('login.reset.noPin', { name: person.name })}</p>
+            <p className="c-locked-body">{t('login.noPin', { name: person.name })}</p>
           </div>
           <div className="c-locked-actions">
             <button type="button" className="c-btn c-btn-secondary" onClick={toNames}>
@@ -154,11 +164,72 @@ export function LoginScreen() {
         <Locked
           person={person}
           until={view.until}
-          onExpired={() => setView({ name: 'pin', personId: person.id })}
+          onExpired={() => setView(person.login === 'password' ? { name: 'password', personId: person.id } : { name: 'pin', personId: person.id })}
           onBack={toNames}
         />
       )}
     </div>
+  );
+}
+
+interface PasswordFormProps {
+  person: Person;
+  onBack: () => void;
+  onSubmit: (password: string) => ReturnType<typeof attemptLogin>;
+  onLocked: (until: Instant) => void;
+  onSuccess: () => Promise<void>;
+}
+
+/** An owner signs in at the counter with the password they use for admin. */
+function PasswordForm({ person, onBack, onSubmit, onLocked, onSuccess }: PasswordFormProps) {
+  const { t } = useI18n();
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (busy || !password) return;
+    setBusy(true);
+    try {
+      const result = await onSubmit(password);
+      if (result.status === 'ok') return await onSuccess();
+      if (result.status === 'locked') return onLocked(result.until);
+      setPassword('');
+      setMessage(t('login.wrongPassword', { count: result.tries_left }));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <main className="c-body c-pin">
+      <button type="button" className="c-back" onClick={onBack}>
+        <Icon name="chevron-left" size={20} strokeWidth={2.4} />
+        {t('login.notMe')}
+      </button>
+      <div className="c-pin-who">
+        <Avatar person={person} size={64} />
+        <h1>{person.name}</h1>
+        <p>{t('login.enterPassword')}</p>
+      </div>
+      <form className="c-password" onSubmit={submit}>
+        <input
+          type="password"
+          autoFocus
+          autoComplete="current-password"
+          aria-label={t('login.password')}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <p className="c-pin-message" aria-live="polite">
+          {message}
+        </p>
+        <button type="submit" className="c-btn c-btn-primary" disabled={busy || !password}>
+          {t('login.signIn')}
+        </button>
+      </form>
+    </main>
   );
 }
 

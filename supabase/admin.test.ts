@@ -17,9 +17,9 @@ interface AdminResult {
 }
 
 const adminEvent = (type: string, payload: object, createdAt = now()) => ({ id: id('ae'), type, payload, created_at: createdAt });
-const push = (events: object[]) => call<{ results: AdminResult[] }>(pg, 'select public.admin_push($1::jsonb) as r', [JSON.stringify(events)]);
+const push = (events: object[]) => call<{ results: AdminResult[] }>(pg, "select public.admin_push('bar_baraka', $1::jsonb) as r", [JSON.stringify(events)]);
 const pushOne = async (type: string, payload: object, createdAt?: string) => (await push([adminEvent(type, payload, createdAt)])).results[0]!;
-const pull = (since: string | null = null) => call<Record<string, any>>(pg, 'select public.admin_pull($1) as r', [since]);
+const pull = (since: string | null = null) => call<Record<string, any>>(pg, "select public.admin_pull('bar_baraka', $1) as r", [since]);
 const stock = async (product: string) => (await one<{ stock_qty: number }>('select stock_qty from public.products where id = $1', [product])).stock_qty;
 
 /** #039's Guinness waits on a void request, as in the sample night. */
@@ -144,17 +144,55 @@ describe('products, stock, kegs', () => {
 });
 
 describe('staff and devices', () => {
-  it('R-PIN-2: a reset reaches the counter, which sets the new PIN with pin_set', async () => {
+  it('an owner sets a PIN: admins can read the digits, counters get only the hash, the log keeps neither', async () => {
     const token = await pairAs(pg);
-    await pushOne('pin_reset', { person_id: 'p_otieno', reset_hash: 'pbkdf2-sha256$1$c2FsdA==$aGFzaA==', expires_at: now(86_400_000) });
+    const hash = 'pbkdf2-sha256$1$bmV3$bmV3';
+    expect((await pushOne('pin_changed', { person_id: 'p_otieno', pin_hash: hash, pin_code: '4821' })).status).toBe('applied');
+    expect(await one(`select pin_hash, pin_code from public.people where id = 'p_otieno'`)).toEqual({ pin_hash: hash, pin_code: '4821' });
+    expect((await pull()).people.find((p: any) => p.id === 'p_otieno')).toMatchObject({ pin_code: '4821', pin_hash: hash });
     const counterPull = await call<Record<string, any>>(pg, 'select public.sync_pull($1, null) as r', [token]);
-    expect(counterPull.people.find((p: any) => p.id === 'p_otieno').pin_reset_hash).toMatch(/^pbkdf2/);
-    const pushed = await call<{ results: { status: string }[] }>(pg, 'select public.sync_push($1, $2::jsonb) as r', [
+    const otieno = counterPull.people.find((p: any) => p.id === 'p_otieno');
+    expect(otieno.pin_hash).toBe(hash);
+    expect(otieno).not.toHaveProperty('pin_code');
+    const log = await one(`select detail::text as detail from public.audit_events where kind = 'pin_changed'`);
+    const stored = await one(`select payload::text as payload from public.events where type = 'pin_changed'`);
+    for (const text of [log.detail, stored.payload]) {
+      expect(text).toContain('p_otieno');
+      expect(text).not.toMatch(/4821|bmV3/);
+    }
+  });
+
+  it('PINs are 4 digits, for counter staff only', async () => {
+    const hash = 'pbkdf2-sha256$1$bmV3$bmV3';
+    expect((await pushOne('pin_changed', { person_id: 'p_otieno', pin_hash: hash, pin_code: '48210' })).reason).toMatch('4 digits');
+    expect((await pushOne('pin_changed', { person_id: 'p_juma', pin_hash: hash, pin_code: '4821' })).reason).toMatch('PIN');
+    expect((await pushOne('pin_changed', { person_id: 'p_chebet', pin_hash: hash, pin_code: '4821' })).reason).toMatch('only counter staff');
+  });
+
+  it('staff cannot set their own PIN at a counter', async () => {
+    const token = await pairAs(pg);
+    const pushed = await call<{ results: { status: string; reason: string }[] }>(pg, 'select public.sync_push($1, $2::jsonb) as r', [
       token,
       JSON.stringify([{ id: id('ev'), type: 'pin_set', payload: { person_id: 'p_otieno', pin_hash: 'pbkdf2-sha256$1$bmV3$bmV3' }, recorded_by: 'p_otieno', device_id: 'd_counter1', created_at: now() }]),
     ]);
+    expect(pushed.results[0]!.status).not.toBe('applied');
+    expect((await one(`select pin_hash from public.people where id = 'p_otieno'`)).pin_hash).not.toBe('pbkdf2-sha256$1$bmV3$bmV3');
+  });
+
+  it('suspending takes a person off the counters; reinstating gives access back; what their phone queued still lands', async () => {
+    const token = await pairAs(pg);
+    expect((await pushOne('person_suspended', { person_id: 'p_wanjiku' })).status).toBe('applied');
+    const counterPull = await call<Record<string, any>>(pg, 'select public.sync_pull($1, null) as r', [token]);
+    expect(counterPull.people.find((p: any) => p.id === 'p_wanjiku').suspended_at).not.toBeNull();
+    // Recorded before the phone heard: still accepted.
+    const pushed = await call<{ results: { status: string }[] }>(pg, 'select public.sync_push($1, $2::jsonb) as r', [
+      token,
+      JSON.stringify([{ id: id('ev'), type: 'logged_in', payload: { person_id: 'p_wanjiku' }, recorded_by: 'p_wanjiku', device_id: 'd_counter1', created_at: now(-60_000) }]),
+    ]);
     expect(pushed.results[0]!.status).toBe('applied');
-    expect(await one(`select pin_hash, pin_reset_hash from public.people where id = 'p_otieno'`)).toEqual({ pin_hash: 'pbkdf2-sha256$1$bmV3$bmV3', pin_reset_hash: null });
+    expect((await pushOne('person_reinstated', { person_id: 'p_wanjiku' })).status).toBe('applied');
+    expect((await one(`select suspended_at from public.people where id = 'p_wanjiku'`)).suspended_at).toBeNull();
+    expect((await pushOne('person_suspended', { person_id: 'p_njeri' })).reason).toMatch('only counter staff');
   });
 
   it('R-DEV-2: a revoked phone gets nothing more, and what it sends is held for review', async () => {
@@ -164,7 +202,7 @@ describe('staff and devices', () => {
   });
 
   it('R-DEV-1: an admin makes a pairing code, and the phone it pairs records who paired it', async () => {
-    const made = await call<{ code: string; expires_at: string }>(pg, `select public.admin_create_pairing_code('Counter 3') as r`);
+    const made = await call<{ code: string; expires_at: string }>(pg, `select public.admin_create_pairing_code('bar_baraka', 'Counter 3') as r`);
     expect(made.code).toMatch(/^\d{6}$/);
     const paired = await call<{ device_id: string }>(pg, 'select public.pair_device($1, null, $2) as r', [made.code, 'Tecno']);
     expect((await one('select paired_by from public.devices where id = $1', [paired.device_id])).paired_by).toBe('p_njeri');

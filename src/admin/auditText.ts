@@ -4,7 +4,7 @@ import type { ApprovalItem, AuditEvent, Delivery, Device, Order, OrderLine, Paym
 import type { TFunction } from '../lib/I18nProvider';
 import type { Locale, MessageKey } from '../lib/i18n';
 import { formatAmount, formatKES } from '../lib/money';
-import { ADMIN_DEVICE } from '../data/adminEvents';
+import { ADMIN_DEVICE, KAUNTA_ACTOR } from '../data/adminEvents';
 import { hhmm } from './data';
 
 export interface AuditLookups {
@@ -30,6 +30,7 @@ const REASONS = ['mistake', 'changed', 'size', 'spilled', 'other'];
 
 export function auditWho(e: AuditEvent, l: AuditLookups, t: TFunction): string {
   if (e.actor_id === 'system') return t('admin.audit.system');
+  if (e.actor_id === KAUNTA_ACTOR) return t('admin.audit.kaunta');
   return l.people.find((p) => p.id === e.actor_id)?.name ?? e.actor_id;
 }
 
@@ -167,6 +168,12 @@ export function describeAudit(e: AuditEvent, l: AuditLookups, t: TFunction, loca
       return { what: t('admin.audit.personAdded', { name: d.person?.name ?? '', role: t(`staff.role.${d.person?.role ?? 'server'}` as MessageKey) }), changes: none };
     case 'person_archived':
       return { what: t('admin.audit.personArchived', { name: person(d.person_id) }), changes: none };
+    case 'pin_changed':
+      return { what: t('admin.audit.pinChanged', { name: person(d.person_id) }), changes: none };
+    case 'person_suspended':
+      return { what: t('admin.audit.personSuspended', { name: person(d.person_id) }), changes: none };
+    case 'person_reinstated':
+      return { what: t('admin.audit.personReinstated', { name: person(d.person_id) }), changes: none };
     case 'device_paired':
       return { what: t('admin.audit.devicePaired', { name: l.devices.find((x) => x.id === e.ref_id)?.name ?? e.ref_id ?? '' }), changes: none };
     case 'device_revoked':
@@ -193,6 +200,10 @@ export function describeAudit(e: AuditEvent, l: AuditLookups, t: TFunction, loca
       const c = d.day_close;
       return { what: t('admin.audit.dayClosed', { till: formatKES(c.till_total_kes), recorded: formatKES(c.recorded_mpesa_kes) }), changes: none };
     }
+    case 'bar_code_changed':
+      return { what: t('admin.audit.barCodeChanged'), changes: none };
+    case 'bar_created':
+      return { what: t('admin.audit.barCreated', { name: String(d.name ?? '') }), changes: none };
     default:
       return { what: e.kind.replace(/_/g, ' '), changes: none };
   }

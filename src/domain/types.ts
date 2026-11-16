@@ -32,6 +32,8 @@ export interface Bar {
   pin_attempts: number;
   lockout_minutes: number;
   keg_foam_allowance_cups: number;
+  /** What a counter phone types to join this bar (see domain/barCode.ts). Admins see it; on a server, phones are sent it after joining. */
+  counter_code?: string;
 }
 
 export type Role = 'owner' | 'admin' | 'counter' | 'server';
@@ -44,11 +46,22 @@ export interface Person {
   colour: string;
   role: Role;
   login: LoginKind;
-  /** Salted hash only; PINs are never stored or shown (R-PIN-2). */
+  /**
+   * Salted hash of the PIN (counter staff, managers) or of the password
+   * (owners), checked on the phone so login works offline.
+   */
   pin_hash: string | null;
+  /**
+   * The 4-digit PIN itself, for counter staff: owners, managers and Kaunta set
+   * it and can look it up (staff can't change it). Only admin stores hold it;
+   * a server never sends it to counter phones.
+   */
+  pin_code?: string | null;
   pin_locked_until: Instant | null;
   failed_pin_attempts: number;
   archived_at: Instant | null;
+  /** Access removed by an owner or manager: off the counter's list, signed out at once. Reinstating gives it back. */
+  suspended_at?: Instant | null;
   /**
    * R-PIN-2: an admin's "Reset PIN" leaves a salted hash of a one-time code
    * here. The person types the code at a counter and chooses a new PIN.

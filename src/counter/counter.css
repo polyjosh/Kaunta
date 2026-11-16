@@ -1058,3 +1058,149 @@
   font-size: 20px;
   font-weight: 800;
 }
+
+/* Bar code: which bar this counter phone is for (asked once). */
+.c-barcode {
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.c-barcode-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.c-barcode-intro h1 {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.c-barcode-intro p {
+  margin-top: 8px;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--k-text-2);
+}
+
+.c-barcode-label {
+  margin-top: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.c-barcode-input {
+  min-height: 72px;
+  padding: 0 16px;
+  border-radius: var(--k-r-input);
+  border: 2px solid var(--k-line-strong);
+  background: var(--k-tile);
+  color: var(--k-text);
+  font: inherit;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.c-barcode-input::placeholder {
+  color: var(--k-text-3);
+  font-weight: 700;
+}
+
+.c-barcode-input:focus-visible {
+  outline: none;
+  border-color: var(--k-ember);
+}
+
+.c-barcode-input[aria-invalid='true'] {
+  border-color: var(--k-error);
+}
+
+.c-barcode-message {
+  min-height: 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--k-error);
+}
+
+.c-barcode-hint {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--k-text-3);
+  text-align: center;
+}
+
+.c-barcode-hint strong {
+  color: var(--k-text);
+  letter-spacing: 0.06em;
+}
+
+.c-login-empty {
+  padding: 16px;
+  border-radius: var(--k-r-card);
+  border: 1px dashed var(--k-line-strong);
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--k-text-2);
+}
+
+.c-login-change {
+  width: 100%;
+  margin-top: 4px;
+  color: var(--k-text-2) !important;
+}
+
+/* Login: the bar's owner and managers sell too; their tile says who they are. */
+.c-staff-role {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--k-text-2);
+  margin-top: -4px;
+}
+
+/* Signed out because their access was removed. */
+.c-login-removed {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: var(--k-r-card);
+  border: 1px solid var(--k-warning-line);
+  background: var(--k-warning-card);
+  color: var(--k-warning-fg);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+/* Login: an owner's password */
+.c-password {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 360px;
+  margin: 8px auto 0;
+}
+.c-password input {
+  min-height: var(--k-touch-primary);
+  padding: 0 16px;
+  border-radius: var(--k-r-input);
+  border: 1px solid var(--k-line-strong);
+  background: var(--k-tile);
+  color: var(--k-text);
+  font: inherit;
+  font-size: 20px;
+}
+.c-password input:focus-visible {
+  outline: none;
+  border-color: var(--k-ember);
+}
+.c-password .c-btn {
+  min-height: var(--k-touch-primary);
+}

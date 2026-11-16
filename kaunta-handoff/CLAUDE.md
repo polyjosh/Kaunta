@@ -38,7 +38,7 @@ Progress is tracked in the project root `CLAUDE.md` (status, decisions, open que
 3. ✅ Counter: PIN login & lockout → Sell → Open orders → Order detail & payment → Void → Shift close → Sync screen.
 4. ✅ Sync engine: ordered outbox, retry with backoff, conflict rules from `domain-rules.md` (price mismatch → approval item).
 5. ✅ Admin: Today → Approvals → Reconciliation → Sales feed → Product editor → Add stock → Kegs → Staff & devices → Audit log.
-6. ◐ Empty/error states listed in `docs/screens.md` (first run presets, no open orders, offline with queue, sync needs review). Done: no open orders, offline with queue, sync needs review, search with no results, PIN locked, shift close blocked. Left: first run presets.
+6. ✅ Empty/error states listed in `docs/screens.md` (first run presets, no open orders, offline with queue, sync needs review, search with no results, PIN locked, shift close blocked).
 
 ## Testing expectations
 

@@ -1,4 +1,6 @@
+import { hashPin } from '../domain/pin';
 import { loadSampleDay, SAMPLE_NOW } from '../domain/sampleDay';
+import { loadSeed } from '../domain/seed';
 import type { SampleDay } from '../domain/sampleDay';
 import type { KauntaDB } from './db';
 
@@ -18,7 +20,15 @@ export async function seedAdminDatabase(db: KauntaDB, options: { day?: SampleDay
   const offset = Date.parse(SAMPLE_NOW) - realNow.getTime();
   // Otieno's lock, as the Staff design shows it: 4:52 still to go.
   const lockUntil = new Date(Date.parse(SAMPLE_NOW) + (4 * 60 + 52) * 1000).toISOString();
-  const people = day.people.map((p) => (p.pin_locked_until ? { ...p, pin_locked_until: lockUntil } : p));
+  // Counter staff's demo PINs, which owners and managers can look up (hashed before the transaction: WebCrypto would end it).
+  const pins = loadSeed().demoPins;
+  const hashes = new Map<string, string>();
+  for (const [id, pin] of Object.entries(pins)) hashes.set(id, await hashPin(pin));
+  const people = day.people.map((p) => ({
+    ...p,
+    ...(pins[p.id] ? { pin_code: pins[p.id], pin_hash: hashes.get(p.id)! } : {}),
+    ...(p.pin_locked_until ? { pin_locked_until: lockUntil } : {}),
+  }));
 
   return db.transaction('rw', db.tables, async () => {
     if (await db.meta.get('seeded')) return false;

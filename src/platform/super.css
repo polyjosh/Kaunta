@@ -1,0 +1,149 @@
+/* The Kaunta platform (/super): admin's look, with a few extras. */
+.s-brand {
+  gap: 12px;
+}
+
+.s-brand .k-lockup {
+  height: 40px;
+  width: auto;
+}
+
+.s-chip {
+  white-space: nowrap;
+}
+
+.s-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.s-tile {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid var(--k-line);
+  background: var(--k-tile);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.s-tile.is-risk {
+  border-color: var(--k-warning-line);
+  background: var(--k-warning-bg);
+}
+
+.s-tile-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--k-text-2);
+}
+
+.s-tile-value {
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.s-table .is-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.s-code {
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+.s-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.s-code-input {
+  min-width: 0;
+  flex: 1 1 160px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.s-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.s-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.s-form h3 {
+  font-size: 16px;
+  font-weight: 800;
+  padding-top: 8px;
+  border-top: 1px solid var(--k-line);
+}
+
+.s-narrow,
+.s-created {
+  max-width: 560px;
+}
+
+.s-give {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 16px;
+  margin: 0;
+  font-size: 18px;
+}
+
+.s-give dt {
+  color: var(--k-text-2);
+  font-weight: 700;
+}
+
+.s-give dd {
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.s-nowrap {
+  white-space: nowrap;
+}
+
+/* Fields stacked in a card take their own height (admin's .a-field grows in rows). */
+.a-card > .a-field,
+.s-form .a-field {
+  flex: none;
+}
+
+/* Text columns read from the left; amounts stay right. */
+.s-table th:not(.is-num),
+.s-table td:not(.is-num) {
+  text-align: left;
+}
+
+/* Counter staff on a bar's page: their PIN, shown on request, and setting a new one. */
+.s-staff {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+.s-pin {
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+}

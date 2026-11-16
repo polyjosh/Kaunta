@@ -11,8 +11,8 @@ import { call, freshDb, signInAs } from './testDb';
 
 /** admin_push / admin_pull, called as the signed-in admin instead of over HTTP. */
 const server = (pg: PGlite) => ({
-  push: (events: object[]) => call<any>(pg, 'select public.admin_push($1::jsonb) as r', [JSON.stringify(events)]),
-  pull: (since: string | null) => call<any>(pg, 'select public.admin_pull($1) as r', [since]),
+  push: (events: object[]) => call<any>(pg, "select public.admin_push('bar_baraka', $1::jsonb) as r", [JSON.stringify(events)]),
+  pull: (since: string | null) => call<any>(pg, "select public.admin_pull('bar_baraka', $1) as r", [since]),
 });
 
 let pg: PGlite;

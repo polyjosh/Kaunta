@@ -8,6 +8,7 @@ import { normaliseRow } from '../sync/apply';
 import { PULL_TABLES, TransportError } from '../sync/transport';
 import type { Row } from '../sync/transport';
 import type { PairingCode } from './AdminSession';
+import type { BarSummary } from './bars';
 
 export interface AuthSession {
   access_token: string;
@@ -31,7 +32,7 @@ export function normaliseLogin(input: string): { phone: string } | { email: stri
 }
 
 const ADMIN_TABLES = [...PULL_TABLES, 'deliveries', 'dayCloses', 'stockMovements', 'auditEvents'] as const;
-type AdminPull = { me: Id; cursor: Instant; server_time: Instant } & Record<(typeof ADMIN_TABLES)[number], Row[]>;
+export type AdminPull = { me: Id; cursor: Instant; server_time: Instant } & Record<(typeof ADMIN_TABLES)[number], Row[]>;
 interface AdminPushResult {
   id: Id;
   status: 'applied' | 'rejected';
@@ -130,21 +131,42 @@ export class AdminServer {
     }
     if (!response.ok) {
       const text = await response.text().catch(() => '');
-      throw new TransportError(text.includes('not_admin') ? 'not_admin' : `server answered ${response.status}`, response.status);
+      const known = ['not_admin', 'not_owner', 'name_required'].find((reason) => text.includes(reason));
+      throw new TransportError(known ?? `server answered ${response.status}`, response.status);
     }
     return (await response.json()) as T;
   }
 
-  pull(since: Instant | null) {
-    return this.rpc<AdminPull>('admin_pull', { p_since: since });
-  }
+  /** The bars this sign-in may run (owner or admin in each). */
+  bars = (): Promise<BarSummary[]> => this.rpc<BarSummary[]>('admin_bars', {});
 
-  push(events: object[]) {
-    return this.rpc<{ server_time: Instant; results: AdminPushResult[] }>('admin_push', { p_events: events });
-  }
+  /** An owner starts another bar; they are its owner. */
+  createBar = (name: string): Promise<BarSummary> => this.rpc<BarSummary>('admin_create_bar', { p_name: name });
 
-  createPairingCode = (deviceName: string): Promise<PairingCode> =>
-    this.rpc<PairingCode>('admin_create_pairing_code', { p_device_name: deviceName });
+  /** The admin functions for one bar. The server checks this sign-in may run it. */
+  forBar(barId: string): BarServer {
+    return {
+      pull: (since) => this.rpc<AdminPull>('admin_pull', { p_bar_id: barId, p_since: since }),
+      push: (events) => this.rpc<{ server_time: Instant; results: AdminPushResult[] }>('admin_push', { p_bar_id: barId, p_events: events }),
+      createPairingCode: (deviceName) => this.rpc<PairingCode>('admin_create_pairing_code', { p_bar_id: barId, p_device_name: deviceName }),
+      changeBarCode: async (code) => {
+        const answer = code
+          ? await this.rpc<{ counter_code?: string; error?: 'invalid' | 'taken' }>('admin_set_bar_code', { p_bar_id: barId, p_code: code })
+          : await this.rpc<{ counter_code: string }>('admin_new_bar_code', { p_bar_id: barId });
+        return 'error' in answer && answer.error ? { error: answer.error } : { code: answer.counter_code! };
+      },
+    };
+  }
+}
+
+export type BarCodeChange = { code: string } | { error: 'invalid' | 'taken' };
+
+export interface BarServer {
+  pull(since: Instant | null): Promise<AdminPull>;
+  push(events: object[]): Promise<{ server_time: Instant; results: AdminPushResult[] }>;
+  createPairingCode(deviceName: string): Promise<PairingCode>;
+  /** Owners: the bar's code becomes the one they chose (if no other bar has it), or a fresh one. */
+  changeBarCode(code?: string): Promise<BarCodeChange>;
 }
 
 const wire = (e: AdminOutboxEntry) => ({ id: e.id, type: e.type, payload: e.payload, created_at: e.created_at });
@@ -182,7 +204,7 @@ export class AdminSync {
 
   constructor(
     private readonly db: KauntaDB,
-    private readonly server: Pick<AdminServer, 'push' | 'pull'>,
+    private readonly server: Pick<BarServer, 'push' | 'pull'>,
     private readonly everyMs = 20_000,
   ) {}
 
