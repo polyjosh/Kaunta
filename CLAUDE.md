@@ -166,7 +166,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 
 ## Not yet done
 
-- Everything is committed: steps 1–5 in `3617480`, up to staff access in `b155a53`, stock, managers, stock per size and Kaunta controls in `48cb153`.
+- Everything is committed: steps 1–5 in `3617480`, up to staff access in `b155a53`, stock, managers, stock per size and Kaunta controls in `48cb153`, the live server (accounts, Kaunta, keys) in `753587c`.
 - Not deployed anywhere: installing on a phone needs the app on an HTTPS address.
 - **The server side is written and tested (PGlite) but has never run on a real Supabase project.** Fill `.env.local` and follow `supabase/README.md` → Set up a project.
 - In the demo, all of this is in one browser's storage: anyone with access to the browser can read it. It is for testing, not for real bars' data.
