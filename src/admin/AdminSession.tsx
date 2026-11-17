@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useQuery } from '../data/react';
 import { setAdminHere } from '../lib/adminHere';
 import { clockOffset } from '../data/adminSeed';
+import { KAUNTA_ACTOR } from '../data/adminEvents';
 import type { AdminContext } from '../data/adminEvents';
 import type { Person } from '../domain/types';
 import type { BarSummary } from './bars';
@@ -29,9 +30,19 @@ interface SessionValue {
   changeBarCode?: (code?: string) => Promise<BarCodeChange>;
   /** The signed-in owner or manager's own account (username + password or PIN), when there is one. */
   account?: AccountChoice;
+  /**
+   * Kaunta (the super admin) opened this bar from /super: every owner tab, as
+   * Kaunta. What Kaunta does is left out of what owners and managers see in
+   * their logs; Kaunta sees it.
+   */
+  kaunta: boolean;
+  /** Owners: how many bars they own and how many Kaunta allows (null = no limit). */
+  barLimit?: { used: number; max: number | null };
 }
 
 export interface AccountChoice {
+  /** Their platform account (demo), for the owner-only tools such as adding managers. */
+  id?: string;
   username: string;
   /** Owners have a password, managers a 4-digit PIN. */
   secret: 'password' | 'pin';
@@ -46,6 +57,7 @@ export interface BarChoice {
   switchBar: (id: string) => void;
   createBar?: (name: string) => Promise<void>;
   changeBarCode?: (code?: string) => Promise<BarCodeChange>;
+  barLimit?: { used: number; max: number | null };
 }
 
 export interface PairingCode {
@@ -61,6 +73,17 @@ const demoPairingCode = (now: () => Date) => async (): Promise<PairingCode> => (
 
 const SessionContext = createContext<SessionValue | null>(null);
 
+/** Who Kaunta is in a bar's admin: not a person of the bar, so never on its staff list or counter. */
+export const KAUNTA_PERSON: Person = {
+  id: KAUNTA_ACTOR, name: 'Kaunta', initial: 'K', colour: '#F28C38', role: 'owner', login: 'password',
+  pin_hash: null, pin_locked_until: null, failed_pin_attempts: 0, archived_at: null,
+};
+
+/** Hides what Kaunta did from owners and managers; Kaunta sees everything. */
+export function visibleTo<E extends { actor_id: string }>(events: E[], kaunta: boolean): E[] {
+  return kaunta ? events : events.filter((e) => e.actor_id !== KAUNTA_ACTOR);
+}
+
 /**
  * Who is signed in to admin. In demo mode that is the owner from the sample
  * data; with a server it is the person linked to the Supabase sign-in.
@@ -71,8 +94,11 @@ export function AdminSessionProvider({
   createPairingCode,
   bars,
   account,
+  asKaunta = false,
   children,
 }: {
+  /** Opened by Kaunta from /super. */
+  asKaunta?: boolean;
   personId?: string | null;
   signOut?: () => void;
   createPairingCode?: (deviceName: string) => Promise<PairingCode>;
@@ -84,9 +110,11 @@ export function AdminSessionProvider({
     const offset = await clockOffset(db);
     const people = await db.people.toArray();
     // Signed in: exactly that person. Demo: the sample bar's owner.
-    const person = personId ? (people.find((p) => p.id === personId) ?? null) : (people.find((p) => p.role === 'owner' && !p.archived_at) ?? null);
+    const person = asKaunta
+      ? KAUNTA_PERSON
+      : personId ? (people.find((p) => p.id === personId) ?? null) : (people.find((p) => p.role === 'owner' && !p.archived_at) ?? null);
     return { offset, person };
-  }, [personId]);
+  }, [personId, asKaunta]);
   const value = useMemo<SessionValue | null>(() => {
     if (!loaded?.person) return null;
     const now = () => new Date(Date.now() + loaded.offset);
@@ -107,11 +135,13 @@ export function AdminSessionProvider({
       switchBar: bars?.switchBar ?? (() => {}),
       createBar: bars?.createBar,
       changeBarCode: bars?.changeBarCode,
+      barLimit: bars?.barLimit,
       account,
+      kaunta: asKaunta,
     };
-  }, [loaded, signOut, createPairingCode, bars, account]);
-  // The counter on this browser lets this owner or manager straight in.
-  const herePerson = value?.person.id;
+  }, [loaded, signOut, createPairingCode, bars, account, asKaunta]);
+  // The counter on this browser lets this owner or manager straight in (not Kaunta: it is no one at the counter).
+  const herePerson = asKaunta ? undefined : value?.person.id;
   const hereBar = value?.barId;
   useEffect(() => {
     if (herePerson && hereBar) setAdminHere({ bar_id: hereBar, person_id: herePerson });

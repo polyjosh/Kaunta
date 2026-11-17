@@ -30,7 +30,7 @@ const SYNCED_WITHIN_MS = 15 * 60_000;
 function AccountMenu() {
   const { t, locale, setLocale } = useI18n();
   const { adminTheme, setAdminTheme } = useTheme();
-  const { person, signOut, account, demo, barId } = useAdmin();
+  const { person, signOut, account, demo, barId, kaunta } = useAdmin();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -80,16 +80,32 @@ function AccountMenu() {
             </Link>
           )}
           {/* Straight in at this bar's counter as themselves, without signing in again. */}
-          <a className="a-menu-link" href="/counter/login?from=admin" onClick={() => demo && barId && rememberCounterBar(barId)}>
-            {t('admin.toCounter')}
-          </a>
+          {!kaunta && (
+            <a className="a-menu-link" href="/counter/login?from=admin" onClick={() => demo && barId && rememberCounterBar(barId)}>
+              {t('admin.toCounter')}
+            </a>
+          )}
           {signOut && (
             <button type="button" className="a-menu-link" onClick={signOut}>
-              {t('admin.signOut')}
+              {kaunta ? t('admin.kaunta.back') : t('admin.signOut')}
             </button>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Kaunta in a bar's admin: say so, and that owners and managers won't see these actions in their logs. */
+function KauntaBanner() {
+  const { t } = useI18n();
+  const { kaunta, signOut } = useAdmin();
+  if (!kaunta) return null;
+  return (
+    <div className="a-kaunta" role="note">
+      <Icon name="lock" size={18} />
+      <span>{t('admin.kaunta.banner')}</span>
+      {signOut && <button type="button" className="a-btn a-btn-sm" onClick={signOut}>{t('admin.kaunta.back')}</button>}
     </div>
   );
 }
@@ -173,6 +189,7 @@ export function AdminLayout({ children, wide = true }: { children: ReactNode; wi
         </nav>
       </header>
       <main className={`a-main${wide ? '' : ' is-narrow'}`}>
+        <KauntaBanner />
         <PinReminder />
         {children}
       </main>

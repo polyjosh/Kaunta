@@ -6,7 +6,7 @@ import { kegFinishSummary, kegRecordedMl } from './kegs';
 import { lineTotal, orderDue, orderTotal, paidTotal } from './orders';
 import { expectedCash, expensesTotal, shiftPayments, shiftResult } from './shifts';
 import type { ShiftResult } from './shifts';
-import { isNegativeStock } from './stock';
+import { negativePools } from './stock';
 import { businessDayOf, localTime } from './time';
 import type {
   ApprovalItem,
@@ -140,7 +140,7 @@ export function byServer(data: Pick<DayData, 'orders' | 'lines' | 'payments'>): 
 }
 
 export type Flag =
-  | { kind: 'negativeStock'; product_id: Id; qty: number }
+  | { kind: 'negativeStock'; product_id: Id; qty: number; /** Stock per size: the size below zero. */ size_id?: Id | null }
   | { kind: 'voids'; approvals: ApprovalItem[]; amount_kes: number }
   | { kind: 'writeOffs'; approvals: ApprovalItem[]; amount_kes: number }
   | { kind: 'priceMismatch'; approvals: ApprovalItem[]; amount_kes: number }
@@ -155,7 +155,11 @@ export type Flag =
 export function attentionFlags(data: DayData, day: BusinessDay): Flag[] {
   const flags: Flag[] = [];
   for (const product of data.products) {
-    if (product.archived_at === null && isNegativeStock(product)) flags.push({ kind: 'negativeStock', product_id: product.id, qty: product.stock_qty! });
+    if (product.archived_at !== null) continue;
+    // Per size, each size's own stock (250 ml can be short while 750 ml is not).
+    for (const pool of negativePools(product, data.sizes.filter((s) => s.product_id === product.id))) {
+      flags.push({ kind: 'negativeStock', product_id: product.id, qty: pool.qty, size_id: pool.size?.id ?? null });
+    }
   }
   const waiting = data.approvals.filter((a) => a.status === 'waiting');
   const group = (kinds: ApprovalItem['kind'][]) => waiting.filter((a) => kinds.includes(a.kind));

@@ -103,6 +103,25 @@ export interface Product {
   archived_at: Instant | null;
   /** Position on the counter within its category (best sellers first). */
   sort?: number;
+  /**
+   * The packs it is delivered in ("Crate of 25", "Box of 12"), set by owners
+   * and managers. Missing = the usual crates of 24 and 25 (count mode) or none
+   * (ml). A single bottle, and in ml mode one bottle of each size, is always offered.
+   */
+  packs?: Pack[] | null;
+  /**
+   * Each size has its own stock (250 ml and 750 ml Smirnoff counted apart).
+   * `stock_qty` is then the sum of the sizes' stock. Missing = one pool.
+   */
+  per_size?: boolean;
+}
+
+/** A pack a product arrives in: `count` bottles or pieces (of size `size_id`, in ml mode). */
+export interface Pack {
+  id: Id;
+  label: string;
+  count: number;
+  size_id?: Id | null;
 }
 
 export interface ProductSize {
@@ -115,6 +134,17 @@ export interface ProductSize {
   price_kes: number;
   enabled: boolean;
   sort: number;
+  /** Removed from the product: no longer sold or shown, kept for the orders that used it. */
+  archived_at?: Instant | null;
+  /**
+   * Per-size stock only. This size's own stock, in units (count mode) or ml;
+   * null when it has none of its own (one pool, or poured from another size).
+   */
+  stock_qty?: number | null;
+  /** Per-size stock only: warn at or below this, in the same units as `stock_qty`. */
+  low_stock_at?: number | null;
+  /** Per-size stock only: sold out of another size's stock (a tot poured from the 750 ml bottle). */
+  stock_from?: Id | null;
 }
 
 export type KegStatus = 'queued' | 'active' | 'finished';
@@ -251,6 +281,8 @@ export interface Payment extends Recorded {
 
 export interface DeliveryLine {
   product_id: Id;
+  /** Per-size stock: the size whose stock it went into. */
+  size_id?: Id | null;
   /** How it arrived, in words: "Crate of 25", "Bottle 750 ml", "Keg 50 L". */
   container_label: string;
   container_qty: number;
@@ -303,6 +335,8 @@ export type StockReason = 'sale' | 'void_return' | 'write_off' | 'delivery' | 'c
 export interface StockMovement {
   id: Id;
   product_id: Id;
+  /** Per-size stock: the size whose stock moved. */
+  size_id?: Id | null;
   /** Units or ml; negative for sales. */
   delta: number;
   reason: StockReason;

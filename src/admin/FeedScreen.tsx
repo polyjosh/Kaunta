@@ -13,7 +13,7 @@ import type { TFunction } from '../lib/I18nProvider';
 import type { Locale, MessageKey } from '../lib/i18n';
 import { formatAmount, formatKES } from '../lib/money';
 import { AdminLayout, PageTitle } from './AdminLayout';
-import { useNow } from './AdminSession';
+import { useAdmin, useNow, visibleTo } from './AdminSession';
 import { approvalCard } from './ApprovalsScreen';
 import { deviceName, hhmm, personName, useDayData } from './data';
 import type { AdminDay } from './data';
@@ -87,7 +87,8 @@ export function FeedScreen() {
   const now = useNow();
   const day = businessDayOf(now);
   const data = useDayData(day);
-  const audit = useQuery((db) => db.auditEvents.where('at').aboveOrEqual(new Date(Date.parse(`${day}T00:00:00.000Z`)).toISOString()).toArray(), [day]);
+  const { kaunta } = useAdmin();
+  const audit = useQuery(async (db) => visibleTo(await db.auditEvents.where('at').aboveOrEqual(new Date(Date.parse(`${day}T00:00:00.000Z`)).toISOString()).toArray(), kaunta), [day, kaunta]);
   const [filter, setFilter] = useState<Filter>('all');
 
   if (!data || !audit) return <AdminLayout>{null}</AdminLayout>;

@@ -42,6 +42,8 @@ export interface Account {
   failed_attempts: number;
   locked_until: Instant | null;
   created_at: Instant;
+  /** Owners: how many bars they may own, set by Kaunta. Missing or null = no limit. */
+  max_bars?: number | null;
 }
 
 export interface PlatformBar {
@@ -52,6 +54,8 @@ export interface PlatformBar {
   created_at: Instant;
   /** 'kaunta' for a first bar made by the super admin, else the owner's account id. */
   created_by: string;
+  /** Suspended by Kaunta: nobody attached to it gets in (admin or counter) until access is given back. */
+  suspended_at?: Instant | null;
 }
 
 export interface Membership {
@@ -95,7 +99,7 @@ function defaults(): Platform {
     super_password_hash: null,
     super_password_changed_at: null,
     accounts: [
-      { id: DEMO_OWNER.id, username: DEMO_OWNER.username, name: 'Njeri', initial: 'N', colour: '#F2A0A0', person_id: 'p_njeri', secret: 'password', pin_hash: null, pin_set_by: 'kaunta', failed_attempts: 0, locked_until: null, created_at: EPOCH },
+      { id: DEMO_OWNER.id, username: DEMO_OWNER.username, name: 'Njeri', initial: 'N', colour: '#F2A0A0', person_id: 'p_njeri', secret: 'password', pin_hash: null, pin_set_by: 'kaunta', failed_attempts: 0, locked_until: null, created_at: EPOCH, max_bars: 3 },
       { id: DEMO_MANAGER.id, username: DEMO_MANAGER.username, name: 'Chebet', initial: 'C', colour: '#C9B6F2', person_id: 'p_chebet', secret: 'pin', pin_hash: null, pin_set_by: 'kaunta', failed_attempts: 0, locked_until: null, created_at: EPOCH },
     ],
     bars: [
@@ -221,13 +225,13 @@ export interface BarView {
   counter_code: string;
 }
 
-/** The bars an account may run, by name. */
+/** The bars an account may run, by name. A bar Kaunta suspended is left out until access is given back. */
 export function barsFor(accountId: string, p: Platform = platform()): BarView[] {
   return p.members
     .filter((m) => m.account_id === accountId)
     .map((m) => {
       const bar = p.bars.find((b) => b.id === m.bar_id);
-      return bar ? { id: bar.id, name: bar.name, role: m.role, counter_code: bar.counter_code } : null;
+      return bar && !bar.suspended_at ? { id: bar.id, name: bar.name, role: m.role, counter_code: bar.counter_code } : null;
     })
     .filter((b): b is BarView => b !== null)
     .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
@@ -272,11 +276,42 @@ export function setBarCode(barId: string, code: string): { code: string } | { er
   return { code: stored };
 }
 
-/** An owner starts another bar. Its code is made unless they choose one. */
-export function createBar(ownerAccountId: string, name: string, code?: string, by: string = ownerAccountId): { bar: PlatformBar } | { error: 'name' | CodeProblem } {
+/** Bars an account suspended by Kaunta keeps it out of (to say why it sees none). */
+export function suspendedBarsFor(accountId: string, p: Platform = platform()): PlatformBar[] {
+  return p.members.filter((m) => m.account_id === accountId).map((m) => p.bars.find((b) => b.id === m.bar_id)).filter((b): b is PlatformBar => !!b?.suspended_at);
+}
+
+export function isBarSuspended(barId: string, p: Platform = platform()): boolean {
+  return !!p.bars.find((b) => b.id === barId)?.suspended_at;
+}
+
+/** Kaunta suspends a bar (its owner, managers and counters lose access) or gives access back. */
+export function setBarSuspended(barId: string, suspended: boolean): void {
+  update((p) => ({ ...p, bars: p.bars.map((b) => (b.id === barId ? { ...b, suspended_at: suspended ? (b.suspended_at ?? new Date().toISOString()) : null } : b)) }));
+}
+
+/** How many bars an owner owns, and how many Kaunta lets them own (null = no limit). */
+export function barLimit(accountId: string, p: Platform = platform()): { used: number; max: number | null } {
+  const max = p.accounts.find((a) => a.id === accountId)?.max_bars;
+  return { used: ownedBars(accountId, p).length, max: max ?? null };
+}
+
+export const MAX_BAR_LIMIT = 99;
+
+/** Kaunta sets how many bars an owner may own (1–99), or no limit. Bars they already have stay. */
+export function setBarLimit(accountId: string, max: number | null): 'invalid' | null {
+  if (max !== null && (!Number.isInteger(max) || max < 1 || max > MAX_BAR_LIMIT)) return 'invalid';
+  update((p) => ({ ...p, accounts: p.accounts.map((a) => (a.id === accountId ? { ...a, max_bars: max } : a)) }));
+  return null;
+}
+
+/** An owner starts another bar, within the number Kaunta allows them. Its code is made unless they choose one. */
+export function createBar(ownerAccountId: string, name: string, code?: string, by: string = ownerAccountId): { bar: PlatformBar } | { error: 'name' | 'limit' | CodeProblem } {
   const trimmed = name.trim();
   if (!trimmed) return { error: 'name' };
   const p = platform();
+  const limit = barLimit(ownerAccountId, p);
+  if (limit.max !== null && limit.used >= limit.max) return { error: 'limit' };
   if (code !== undefined && code.trim() !== '') {
     const problem = checkCode(code);
     if (problem) return { error: problem };
@@ -436,15 +471,17 @@ async function newAccount(input: NewPerson, kind: SecretKind, secret: string): P
  * The super admin creates a bar owner: their account (username, a password
  * Kaunta sets) and their first bar with its code (made, or chosen).
  */
-export async function createOwner(input: NewPerson & { password: string; barName: string; barCode?: string }): Promise<{ account: Account; bar: PlatformBar } | { error: AccountProblem | 'barName' | CodeProblem }> {
+export async function createOwner(input: NewPerson & { password: string; barName: string; barCode?: string; maxBars?: number | null }): Promise<{ account: Account; bar: PlatformBar } | { error: AccountProblem | 'barName' | 'barLimit' | CodeProblem }> {
   const problem = checkPerson(input, 'password', input.password);
   if (problem) return { error: problem };
   if (!input.barName.trim()) return { error: 'barName' };
+  const maxBars = input.maxBars === undefined ? 1 : input.maxBars;
+  if (maxBars !== null && (!Number.isInteger(maxBars) || maxBars < 1 || maxBars > MAX_BAR_LIMIT)) return { error: 'barLimit' };
   if (input.barCode?.trim()) {
     const codeProblem = checkCode(input.barCode);
     if (codeProblem) return { error: codeProblem };
   }
-  const account = await newAccount(input, 'password', input.password);
+  const account = { ...(await newAccount(input, 'password', input.password)), max_bars: maxBars };
   update((p) => ({ ...p, accounts: [...p.accounts, account] }));
   const made = createBar(account.id, input.barName, input.barCode, 'kaunta');
   if ('error' in made) throw new Error(`could not create the first bar: ${made.error}`);
@@ -458,6 +495,68 @@ export async function addManager(barId: string, input: NewPerson & { pin: string
   const account = await newAccount(input, 'pin', input.pin);
   update((p) => ({ ...p, accounts: [...p.accounts, account], members: [...p.members, { account_id: account.id, bar_id: barId, role: 'admin' }] }));
   return { account };
+}
+
+// ------------------------------------------------------ owners and managers
+
+/** The bars an owner owns (not those they only manage). */
+export function ownedBars(ownerId: string, p: Platform = platform()): PlatformBar[] {
+  return p.bars.filter((b) => b.owner_account_id === ownerId);
+}
+
+const ownsBar = (ownerId: string, barId: string, p: Platform) => p.bars.some((b) => b.id === barId && b.owner_account_id === ownerId);
+const isManagerAt = (accountId: string, barId: string, p: Platform) => p.members.some((m) => m.account_id === accountId && m.bar_id === barId && m.role === 'admin');
+
+/**
+ * The managers an owner works with: everyone who manages at least one of
+ * their bars. Only these can be added to another of the owner's bars, so an
+ * owner can never take on another owner's manager by username.
+ */
+export function managersOf(ownerId: string, p: Platform = platform()): Account[] {
+  const owned = new Set(ownedBars(ownerId, p).map((b) => b.id));
+  const ids = new Set(p.members.filter((m) => m.role === 'admin' && owned.has(m.bar_id)).map((m) => m.account_id));
+  return p.accounts.filter((a) => ids.has(a.id) && a.id !== ownerId).sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** The owner's bars that this manager runs. */
+export function managedBars(ownerId: string, accountId: string, p: Platform = platform()): PlatformBar[] {
+  return ownedBars(ownerId, p).filter((b) => isManagerAt(accountId, b.id, p));
+}
+
+export type ManagerProblem = 'notOwner' | 'notManager' | 'already' | 'notThere';
+
+/**
+ * An owner adds a new manager (username + a 4-digit PIN the owner sets) to
+ * one or more of their own bars.
+ */
+export async function createManager(ownerId: string, barIds: readonly string[], input: NewPerson & { pin: string }): Promise<{ account: Account } | { error: AccountProblem | 'bars' | 'notOwner' }> {
+  const p = platform();
+  if (barIds.length === 0) return { error: 'bars' };
+  if (!barIds.every((id) => ownsBar(ownerId, id, p))) return { error: 'notOwner' };
+  const problem = checkPerson(input, 'pin', input.pin);
+  if (problem) return { error: problem };
+  const account = await newAccount(input, 'pin', input.pin);
+  update((q) => ({ ...q, accounts: [...q.accounts, account], members: [...q.members, ...barIds.map((bar_id) => ({ account_id: account.id, bar_id, role: 'admin' as const }))] }));
+  return { account };
+}
+
+/** An owner adds one of their managers to another of their bars. */
+export function addManagerToBar(ownerId: string, accountId: string, barId: string): ManagerProblem | null {
+  const p = platform();
+  if (!ownsBar(ownerId, barId, p)) return 'notOwner';
+  if (!managersOf(ownerId, p).some((a) => a.id === accountId)) return 'notManager';
+  if (p.members.some((m) => m.account_id === accountId && m.bar_id === barId)) return 'already';
+  update((q) => ({ ...q, members: [...q.members, { account_id: accountId, bar_id: barId, role: 'admin' }] }));
+  return null;
+}
+
+/** An owner takes a manager off one of their bars (the account stays, with its other bars). */
+export function removeManagerFromBar(ownerId: string, accountId: string, barId: string): ManagerProblem | null {
+  const p = platform();
+  if (!ownsBar(ownerId, barId, p)) return 'notOwner';
+  if (!isManagerAt(accountId, barId, p)) return 'notThere';
+  update((q) => ({ ...q, members: q.members.filter((m) => !(m.account_id === accountId && m.bar_id === barId)) }));
+  return null;
 }
 
 /** Who may run a bar, owner first. */
@@ -519,10 +618,23 @@ export function setOwnerSession(accountId: string | null): void {
   writeSession(OWNER_SESSION, accountId);
 }
 
+const SUPER_VIEW = 'kaunta.superView';
+
+/** The bar Kaunta opened in admin from /super (all the owner's tabs, as Kaunta). Only while signed in to /super. */
+export function superViewBar(): string | null {
+  const id = readSession(SUPER_VIEW);
+  return id && superSession() && platform().bars.some((b) => b.id === id) ? id : null;
+}
+
+export function setSuperViewBar(barId: string | null): void {
+  writeSession(SUPER_VIEW, barId);
+}
+
 export function superSession(): boolean {
   return readSession(SUPER_SESSION) === 'yes';
 }
 
 export function setSuperSession(on: boolean): void {
   writeSession(SUPER_SESSION, on ? 'yes' : null);
+  if (!on) writeSession(SUPER_VIEW, null);
 }

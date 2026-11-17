@@ -59,10 +59,12 @@ function flagView(flag: Flag, data: AdminDay, t: TFunction, locale: Locale): Fla
     case 'negativeStock': {
       const product = data.products.find((p) => p.id === flag.product_id)!;
       const unit = product.stock_mode === 'ml' ? 'ml' : t('admin.unit.bottles');
+      const size = flag.size_id ? data.sizes.find((s) => s.id === flag.size_id) : undefined;
+      const name = size ? `${productName(product, locale)} ${sizeLabel(size, locale)}` : productName(product, locale);
       return {
-        key: `stock-${product.id}`, tone: 'error', icon: 'box', to: `/admin/stock/new?product=${product.id}`,
+        key: `stock-${product.id}${size ? `-${size.id}` : ''}`, tone: 'error', icon: 'box', to: `/admin/stock/new?product=${product.id}`,
         // A count, not money, so it may carry a minus sign.
-        title: t('today.flag.negativeStock', { product: productName(product, locale), qty: `−${Math.abs(flag.qty)}`, unit }),
+        title: t('today.flag.negativeStock', { product: name, qty: `−${Math.abs(flag.qty)}`, unit }),
         body: t('today.flag.negativeStockBody'), cta: t('action.addStock'),
       };
     }

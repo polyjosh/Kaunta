@@ -147,3 +147,17 @@
   letter-spacing: 0.12em;
   font-variant-numeric: tabular-nums;
 }
+
+/* Bar page: Access (suspend a bar, open its admin). */
+.s-access .a-actions {
+  flex-wrap: wrap;
+}
+
+.s-access.is-suspended {
+  border-color: var(--k-error-fg);
+}
+
+th .s-chip {
+  font-size: 13px;
+  vertical-align: middle;
+}

@@ -13,7 +13,7 @@ import { AdminServer, AdminSync, applyAdminPull } from './server';
 import { AdminSessionProvider, useAdmin } from './AdminSession';
 import type { AccountChoice, BarChoice } from './AdminSession';
 import { NoBars, OwnerSignIn } from './OwnerSignIn';
-import { accountById, barsFor, changeSecret, createBar as createPlatformBar, DEMO_OWNER, ownerSession, setOwnerSession, usePlatform } from '../platform/platform';
+import { accountById, barLimit, barsFor, changeSecret, createBar as createPlatformBar, DEMO_OWNER, ownerSession, setOwnerSession, setSuperViewBar, superViewBar, suspendedBarsFor, usePlatform } from '../platform/platform';
 import type { Account } from '../platform/platform';
 import { BarPicker } from './BarSwitcher';
 import {
@@ -265,6 +265,8 @@ function AdminLive({ server: given, db }: { server: AdminServer; db?: KauntaDB }
  */
 function AdminDemo({ db }: { db?: KauntaDB }) {
   const p = usePlatform();
+  // Kaunta opened a bar from /super: that bar, every tab, as Kaunta.
+  const [kauntaBar, setKauntaBar] = useState<string | null>(() => (db ? null : superViewBar()));
   // A store handed in (tests) is the sample bar's, opened as its owner.
   const [accountId, setAccountId] = useState<string | null>(() => (db ? DEMO_OWNER.id : ownerSession()));
   const account = accountById(accountId, p);
@@ -272,6 +274,18 @@ function AdminDemo({ db }: { db?: KauntaDB }) {
     setOwnerSession(null);
     setAccountId(null);
   }, []);
+  if (kauntaBar && p.bars.some((b) => b.id === kauntaBar)) {
+    return (
+      <KauntaBar
+        barId={kauntaBar}
+        onBack={() => {
+          setSuperViewBar(null);
+          setKauntaBar(null);
+          window.location.assign(`/super/bars/${kauntaBar}`);
+        }}
+      />
+    );
+  }
   if (!account) {
     return (
       <OwnerSignIn
@@ -311,6 +325,7 @@ function DemoBars({ account, db, onSignOut }: { account: Account; db?: KauntaDB;
     setBarId(id);
   }, []);
   const ownsABar = bars.some((b) => b.role === 'owner');
+  const limit = barLimit(account.id, p);
   const createBar = useCallback(
     async (name: string) => {
       const made = createPlatformBar(account.id, name);
@@ -321,11 +336,13 @@ function DemoBars({ account, db, onSignOut }: { account: Account; db?: KauntaDB;
   );
   const changeBarCode = useCallback(async (code?: string) => (bar ? newDemoBarCode(bar.id, code) : { error: 'invalid' as const }), [bar]);
   const choice = useMemo<BarChoice | null>(
-    () => (bar ? { bars, barId: bar.id, switchBar, createBar: ownsABar ? createBar : undefined, changeBarCode } : null),
-    [bars, bar, switchBar, ownsABar, createBar, changeBarCode],
+    () => (bar ? { bars, barId: bar.id, switchBar, createBar: ownsABar ? createBar : undefined, changeBarCode, barLimit: ownsABar ? limit : undefined } : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- limit follows `p`
+    [bars, bar, switchBar, ownsABar, createBar, changeBarCode, limit.used, limit.max],
   );
   const accountChoice = useMemo<AccountChoice>(
     () => ({
+      id: account.id,
       username: account.username,
       secret: account.secret,
       pinSetByKaunta: account.pin_set_by === 'kaunta',
@@ -339,10 +356,42 @@ function DemoBars({ account, db, onSignOut }: { account: Account; db?: KauntaDB;
     [account],
   );
 
-  if (!bar || !store || !choice) return <NoBars onSignOut={onSignOut} />;
+  if (!bar || !store || !choice) return <NoBars onSignOut={onSignOut} suspended={suspendedBarsFor(account.id, p).map((b) => b.name)} />;
   return (
     <DbProvider key={bar.id} db={store} demo seed={seed}>
       <AdminSessionProvider personId={account.person_id} signOut={onSignOut} bars={choice} account={accountChoice}>
+        <AdminRoutes />
+      </AdminSessionProvider>
+    </DbProvider>
+  );
+}
+
+/**
+ * Kaunta (the super admin, signed in at /super) in one bar's admin: every tab
+ * the owner has, as Kaunta, even while the bar is suspended. Kaunta's actions
+ * are audited as Kaunta and left out of what owners and managers see.
+ */
+function KauntaBar({ barId, onBack }: { barId: string; onBack: () => void }) {
+  const p = usePlatform();
+  const found = p.bars.find((b) => b.id === barId)!;
+  const bar = useMemo<BarSummary>(() => ({ id: found.id, name: found.name, role: 'owner', counter_code: found.counter_code }), [found.id, found.name, found.counter_code]);
+  const store = demoStore(bar.id);
+  const seed = useMemo(
+    () =>
+      bar.id === DEMO_SAMPLE_BAR
+        ? async (d: KauntaDB) => {
+            await seedAdminDatabase(d);
+            await ensureMemberPeople(d, DEMO_SAMPLE_BAR);
+          }
+        : (d: KauntaDB) => seedNewDemoBar(d, bar),
+    [bar],
+  );
+  useDemoServer(store, bar.id !== DEMO_SAMPLE_BAR);
+  const changeBarCode = useCallback(async (code?: string) => newDemoBarCode(bar.id, code), [bar.id]);
+  const choice = useMemo<BarChoice>(() => ({ bars: [bar], barId: bar.id, switchBar: () => {}, changeBarCode }), [bar, changeBarCode]);
+  return (
+    <DbProvider key={bar.id} db={store} demo seed={seed}>
+      <AdminSessionProvider asKaunta signOut={onBack} bars={choice}>
         <AdminRoutes />
       </AdminSessionProvider>
     </DbProvider>

@@ -78,5 +78,7 @@
   "login.wrongPassword_one": "Nenosiri si sahihi · imebaki jaribio {count}",
   "login.wrongPassword_other": "Nenosiri si sahihi · yamebaki majaribio {count}",
   "login.noPin": "{name} bado hana PIN. Mwombe mmiliki au meneja akuwekee (msimamizi → Wafanyakazi na vifaa).",
-  "sell.toAdmin": "Fungua msimamizi"
+  "sell.toAdmin": "Fungua msimamizi",
+  "bar.suspendedTitle": "Baa hii imesimamishwa",
+  "bar.suspendedBody": "Kaunta imesimamisha {bar}. Hakuna anayeweza kuingia kwenye kaunta yake hadi ruhusa irudishwe. Ongea na mmiliki."
 }

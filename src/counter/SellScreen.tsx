@@ -4,7 +4,7 @@ import { Icon } from '../components/Icon';
 import { addItems, recordOrder } from '../data/commands';
 import { useConnection, useDb, useQuery } from '../data/react';
 import { nextShortNo } from '../domain/payments';
-import { enabledSizes, isLowStock, isSellable } from '../domain/stock';
+import { enabledSizes, isPerSize, isSellable, leftOf } from '../domain/stock';
 import { businessDayOf } from '../domain/time';
 import type { Id, PaymentMethod, Person, Product, ProductSize } from '../domain/types';
 import { useI18n } from '../lib/I18nProvider';
@@ -291,7 +291,9 @@ export function SellScreen() {
             const qty = qtyOfProduct(product.id);
             const multi = options.length > 1;
             // "N left" only while there is something left; a negative count is the admin's flag.
-            const low = isLowStock(product) && (product.stock_qty ?? 0) > 0;
+            // Stock per size: the one size's own stock (or the bottle it is poured from).
+            const left = leftOf(product, options[0]!, sizes ?? []);
+            const low = left !== null;
             return (
               <button
                 key={product.id}
@@ -318,7 +320,7 @@ export function SellScreen() {
                     {low ? (
                       <span className="c-tile-low">
                         <Icon name="alert-triangle" size={14} strokeWidth={2.6} />
-                        {t('sell.left', { count: product.stock_qty! })}
+                        {t('sell.left', { count: left! })}
                       </span>
                     ) : (
                       <span className="c-tile-size">{sizeLabel(options[0]!, locale)}</span>
@@ -406,6 +408,7 @@ export function SellScreen() {
           <div className="c-rows">
             {(sizesByProduct.get(sizeProduct.id) ?? []).map((size) => {
               const qty = qtyOfSize(size.id);
+              const left = isPerSize(sizeProduct) ? leftOf(sizeProduct, size, sizes ?? []) : null;
               return (
                 <button
                   key={size.id}
@@ -419,6 +422,12 @@ export function SellScreen() {
                   <span className="c-size-label">
                     <strong>{sizeLabel(size, locale)}</strong>
                     {qty > 0 && <span className="c-in-order">{t('sell.inOrder', { count: qty })}</span>}
+                    {left !== null && qty === 0 && (
+                      <span className="c-tile-low">
+                        <Icon name="alert-triangle" size={14} strokeWidth={2.6} />
+                        {t('sell.left', { count: left })}
+                      </span>
+                    )}
                   </span>
                   <span className="c-size-price">{formatKES(size.price_kes)}</span>
                 </button>

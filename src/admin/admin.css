@@ -2196,3 +2196,359 @@
   font-size: 14px;
   color: var(--k-text-2);
 }
+
+/* ------------------------------------------------- stock lines and packs */
+
+.a-stepper-x {
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--k-text-2);
+}
+
+.a-stepper .a-stepper-qty {
+  width: 72px;
+  height: 48px;
+  padding: 0 6px;
+  border-radius: 12px;
+  border: 1px solid var(--k-line-strong);
+  background: var(--k-tile);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--k-text);
+}
+
+.a-srow-remove {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 48px;
+}
+
+.a-packform {
+  flex: 1 1 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--k-raised);
+  border: 1px dashed var(--k-line-strong);
+}
+
+.a-packform .a-note {
+  flex: 1 1 100%;
+  margin: 0;
+}
+
+.a-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--k-line-strong);
+  background: var(--k-tile);
+  color: var(--k-text-2);
+}
+
+.a-icon-btn:hover {
+  color: var(--k-error-fg, var(--k-text));
+}
+
+.a-input-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.a-input-unit input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.a-input-unit > span {
+  font-weight: 700;
+  color: var(--k-text-2);
+}
+
+.a-removed {
+  margin: 8px 0;
+}
+
+.a-packs {
+  min-width: 0;
+}
+
+.a-packs .a-input,
+.a-packs .a-select-sm {
+  width: 100%;
+  min-width: 64px;
+}
+
+.a-packs td:last-child {
+  width: 52px;
+}
+
+/* --------------------------------------------------------------- managers */
+
+.a-addmanager .a-seg {
+  flex-basis: 100%;
+}
+
+.a-seg button[role='radio'][aria-checked='true'] {
+  background: var(--k-text);
+  border-color: var(--k-text);
+  color: var(--k-bg) !important;
+}
+
+.a-mchecks {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+}
+
+.a-mchecks legend {
+  width: 100%;
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+
+.a-mcheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-weight: 700;
+}
+
+.a-mcheck input {
+  width: 22px;
+  height: 22px;
+}
+
+.a-managers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.a-managers li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  padding: 12px 0;
+  border-top: 1px solid var(--k-line);
+}
+
+.a-managers-who {
+  flex: 1 1 180px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.a-managers-creds {
+  display: block;
+  margin-top: 6px;
+}
+
+.a-managers-done {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+/* Stock per size: the switch on the product, and each size's stock. */
+.a-persize {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--k-line);
+}
+
+.a-sizestock {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.a-sizestock li {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--k-line);
+}
+
+.a-sizestock-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 12px;
+  width: 100%;
+}
+
+.a-sizestock-head strong {
+  font-size: 17px;
+}
+
+.a-sizestock-qty {
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.a-sizestock li.is-neg .a-sizestock-qty {
+  color: var(--k-error);
+}
+
+/*
+ * Phones: the sizes and packs tables become one card per row, every field
+ * labelled, so nothing hides off to the side (the Stock column made the
+ * sizes table about twice the width of a phone).
+ */
+@media (max-width: 640px) {
+  .a-sizes {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .a-sizes,
+  .a-sizes tbody {
+    display: block;
+  }
+
+  .a-sizes thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .a-sizes tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 10px 12px;
+    align-items: end;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--k-line);
+  }
+
+  .a-sizes tbody tr:last-child {
+    border-bottom: 0;
+  }
+
+  .a-sizes td,
+  .a-sizes th {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .a-sizes td[data-label]::before {
+    content: attr(data-label);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--k-text-2);
+    overflow-wrap: anywhere;
+  }
+
+  .a-sizes .a-input,
+  .a-sizes .a-select-sm {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .a-sizes .a-c-label {
+    grid-column: 1 / 3;
+    grid-row: 1;
+  }
+
+  .a-sizes .a-c-remove {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: end;
+  }
+
+  .a-sizes .a-c-deduct {
+    grid-column: 1;
+  }
+
+  .a-sizes .a-c-price {
+    grid-column: 2 / 4;
+  }
+
+  /* Full rows: the switch's On/Off words and the "From 750ml" choice need the width (Kiswahili is longer). */
+  .a-sizes .a-c-sold {
+    grid-column: 1 / -1;
+    align-items: flex-start;
+  }
+
+  .a-sizes .a-c-stock {
+    grid-column: 1 / -1;
+  }
+
+  .a-packs td:last-child {
+    width: auto;
+  }
+}
+
+/* Switch words wrap rather than run under the next field. */
+.a-switch {
+  max-width: 100%;
+}
+
+.a-switch-state,
+.a-switch-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Kaunta (the super admin) in a bar's admin. */
+.a-kaunta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--k-line-strong);
+  background: var(--k-raised);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.a-kaunta > span {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.a-bars-limit {
+  padding: 8px 12px;
+}
+
+.a-text-btn.is-danger {
+  color: var(--k-error-fg);
+}

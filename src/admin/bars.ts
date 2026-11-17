@@ -1,4 +1,5 @@
 import { db as sampleCounterDb, KauntaDB } from '../data/db';
+import { recordAdminEvent } from '../data/adminEvents';
 import { defaultCategories } from '../domain/presets';
 import { loadSeed } from '../domain/seed';
 import type { Person } from '../domain/types';
@@ -202,11 +203,39 @@ export async function ensureMemberPeople(db: KauntaDB, barId: string): Promise<v
     const row = await db.people.get(account.person_id);
     const wanted = personFor(account, role, hash);
     if (!row) await db.people.put(wanted);
-    else if (row.pin_hash !== hash || row.login !== wanted.login || row.role !== role) {
-      // A new password or PIN unlocks them at the counter too.
-      await db.people.update(row.id, { pin_hash: hash, login: wanted.login, role, pin_locked_until: null, failed_pin_attempts: 0 });
+    else if (row.pin_hash !== hash || row.login !== wanted.login || row.role !== role || row.archived_at) {
+      // A new password or PIN unlocks them at the counter too; a manager added back is back on its list.
+      await db.people.update(row.id, { pin_hash: hash, login: wanted.login, role, pin_locked_until: null, failed_pin_attempts: 0, archived_at: null });
     }
   }
+}
+
+/** The stores a bar has on this browser: its own, and for the sample bar the counter's too (once it has been opened). */
+async function storesOf(barId: string, open?: KauntaDB): Promise<KauntaDB[]> {
+  const stores = [open ?? demoStore(barId)];
+  if (barId === DEMO_SAMPLE_BAR && (await sampleCounterDb.meta.get('seeded'))) stores.push(sampleCounterDb);
+  return stores;
+}
+
+/**
+ * A manager now runs this bar (demo): their `people` row goes into its store
+ * as an audited admin event by the owner ("Added X · Admin"), so they can open
+ * it in admin and sign in at its counter with their PIN.
+ */
+export async function managerAdded(owner: Account, manager: Account, barId: string, open?: KauntaDB): Promise<void> {
+  const [store, ...others] = await storesOf(barId, open);
+  const person = personFor(manager, 'admin', await secretHash(manager.id));
+  await recordAdminEvent(store!, { person_id: owner.person_id }, { type: 'person_saved', payload: { person } });
+  for (const db of others) await ensureMemberPeople(db, barId);
+}
+
+/** A manager no longer runs this bar: off its counter's list and out of its admin (audited); their history stays. */
+export async function managerRemoved(owner: Account, manager: Account, barId: string, open?: KauntaDB): Promise<void> {
+  const [store, ...others] = await storesOf(barId, open);
+  if (await store!.people.get(manager.person_id)) {
+    await recordAdminEvent(store!, { person_id: owner.person_id }, { type: 'person_archived', payload: { person_id: manager.person_id } });
+  }
+  for (const db of others) await db.people.update(manager.person_id, { archived_at: new Date().toISOString() });
 }
 
 /**

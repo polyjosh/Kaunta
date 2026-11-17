@@ -14,6 +14,8 @@ import type {
 } from '../domain/types';
 import type { KauntaDB } from './db';
 import { refreshOrderStatus } from './events';
+import { shiftStock } from './pools';
+import { isPerSize, rebalancePools } from '../domain/stock';
 import type { OutboxStatus } from './events';
 
 export type Decision = 'approved' | 'rejected';
@@ -39,7 +41,7 @@ export type AdminEvent =
   /** R-STOCK-2 / R-STOCK-4: containers converted to units or ml; kegs go to the queue. */
   | { type: 'delivery_recorded'; payload: { delivery: Delivery; kegs: Keg[] } }
   /** Count shelf: the shelf is what it is; the difference is a `count` movement. */
-  | { type: 'shelf_counted'; payload: { product_id: Id; counted_qty: number; before_qty: number } }
+  | { type: 'shelf_counted'; payload: { product_id: Id; counted_qty: number; before_qty: number; size_id?: Id | null } }
   /** R-KEG-1: finished, and the next queued keg goes on tap. */
   | { type: 'keg_finished'; payload: { keg_id: Id; finished_at: Instant; next_keg_id: Id | null } }
   /** R-KEG-3: the admin looked at the summary and wrote off the missing cups, or none. */
@@ -144,6 +146,8 @@ export function refOf(event: AdminEvent): Id | null {
 
 interface StockChange {
   product_id: Id;
+  /** The size sold or written off: per-size stock moves that size's stock (or the one it is poured from). */
+  size_id?: Id | null;
   delta: number;
   reason: StockReason;
 }
@@ -168,7 +172,7 @@ export function approvalEffect(
 ): ApprovalEffect {
   const item = approval.target.item;
   const itemStock = (sign: 1 | -1, reason: StockReason): StockChange[] =>
-    item ? [{ product_id: item.product_id, delta: sign * item.qty * itemDeduct, reason }] : [];
+    item ? [{ product_id: item.product_id, size_id: item.size_id, delta: sign * item.qty * itemDeduct, reason }] : [];
   switch (approval.kind) {
     case 'void':
       // Approved: the lines go and their stock comes back. Rejected: they stand.
@@ -200,17 +204,16 @@ async function lineReturns(db: KauntaDB, approval: ApprovalItem): Promise<StockC
   for (const line of await db.lines.bulkGet(approval.target.line_ids)) {
     if (!line) continue;
     const size = await db.sizes.get(line.size_id);
-    if (size) changes.push({ product_id: line.product_id, delta: size.deduct * line.qty, reason: 'void_return' });
+    if (size) changes.push({ product_id: line.product_id, size_id: size.id, delta: size.deduct * line.qty, reason: 'void_return' });
   }
   return changes;
 }
 
 async function moveStock(db: KauntaDB, change: StockChange, ref: Id, by: Id, at: Instant, key: string): Promise<void> {
   if (change.delta === 0) return;
-  const product = await db.products.get(change.product_id);
-  if (!product || product.stock_qty === null) return;
-  await db.products.update(product.id, { stock_qty: product.stock_qty + change.delta });
-  await db.stockMovements.put({ id: `${ref}:${key}`, product_id: product.id, delta: change.delta, reason: change.reason, ref_id: ref, recorded_by: by, created_at: at });
+  const pool = await shiftStock(db, change.product_id, change.size_id, change.delta);
+  if (pool === undefined) return;
+  await db.stockMovements.put({ id: `${ref}:${key}`, product_id: change.product_id, size_id: pool, delta: change.delta, reason: change.reason, ref_id: ref, recorded_by: by, created_at: at });
 }
 
 async function applyEffect(db: KauntaDB, approval: ApprovalItem, effect: ApprovalEffect, by: Id, at: Instant, key: string, linesTo: 'voided' | 'active' | 'void_pending' | null) {
@@ -249,24 +252,32 @@ export async function applyAdminEvent(db: KauntaDB, event: AdminEvent, { by, at 
     }
     case 'product_saved': {
       const { product, sizes } = event.payload;
-      await db.products.put(product);
-      await db.sizes.bulkPut(sizes);
+      // Stock stays as it is on this device (sales may have come in since the editor opened); only how it is split by size follows the save.
+      const was = await db.products.get(product.id);
+      const previous = await db.sizes.where('product_id').equals(product.id).toArray();
+      const saved = { ...product, stock_qty: was ? was.stock_qty : product.stock_qty };
+      await db.products.put(saved);
+      await db.sizes.bulkPut(rebalancePools(saved, was ? isPerSize(was) : false, sizes, previous));
       return;
     }
     case 'delivery_recorded': {
       const { delivery, kegs } = event.payload;
       await db.deliveries.add(delivery);
       for (const [i, line] of delivery.lines.entries()) {
-        await moveStock(db, { product_id: line.product_id, delta: line.total, reason: 'delivery' }, delivery.id, by, at, `delivery${i}`);
+        await moveStock(db, { product_id: line.product_id, size_id: line.size_id ?? null, delta: line.total, reason: 'delivery' }, delivery.id, by, at, `delivery${i}`);
       }
       if (kegs.length > 0) await db.kegs.bulkAdd(kegs);
       return;
     }
     case 'shelf_counted': {
-      const { product_id, counted_qty } = event.payload;
+      const { product_id, counted_qty, size_id } = event.payload;
       const product = await db.products.get(product_id);
       if (!product || product.stock_qty === null) throw new Error('This product is not counted on the shelf');
-      await moveStock(db, { product_id, delta: counted_qty - product.stock_qty, reason: 'count' }, product_id, by, at, `count:${at}`);
+      // Per-size stock: one size is counted, against that size's stock.
+      const pool = size_id && isPerSize(product) ? await db.sizes.get(size_id) : undefined;
+      if (size_id && isPerSize(product) && (!pool || pool.stock_from)) throw new Error('That size has no stock of its own');
+      const before = pool ? (pool.stock_qty ?? 0) : product.stock_qty;
+      await moveStock(db, { product_id, size_id: pool?.id ?? null, delta: counted_qty - before, reason: 'count' }, product_id, by, at, `count:${size_id ? `${size_id}:` : ''}${at}`);
       return;
     }
     case 'keg_finished': {

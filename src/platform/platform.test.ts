@@ -2,6 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   accountByUsername,
   addManager,
+  addManagerToBar,
+  createManager,
+  LOUNGE_BAR_ID,
+  managedBars,
+  managersOf,
+  removeManagerFromBar,
+  SAMPLE_BAR_ID,
   barByCode,
   barsFor,
   changeSecret,
@@ -23,6 +30,13 @@ import {
   suggestPassword,
   suggestPin,
   verifySuperPassword,
+  barLimit,
+  setBarLimit,
+  setBarSuspended,
+  setSuperSession,
+  setSuperViewBar,
+  superViewBar,
+  suspendedBarsFor,
 } from './platform';
 
 beforeEach(() => {
@@ -178,5 +192,82 @@ describe('the platform password', () => {
     expect(await verifySuperPassword(PRESET_SUPER_PASSWORD)).toBe(false);
     expect(await verifySuperPassword('new-password-1')).toBe(true);
     expect(platform().super_password_hash).not.toContain('new-password-1');
+  });
+});
+
+describe('owners add managers to their own bars', () => {
+  it('a new manager for one or more of the owner’s bars, with a 4-digit PIN', async () => {
+    const made = await createManager(DEMO_OWNER.id, [SAMPLE_BAR_ID, LOUNGE_BAR_ID], { name: 'Amani', username: 'amani', pin: '2468' });
+    if ('error' in made) throw new Error(made.error);
+    expect(barsFor(made.account.id).map((b) => [b.id, b.role]).sort()).toEqual([[LOUNGE_BAR_ID, 'admin'], [SAMPLE_BAR_ID, 'admin']].sort());
+    expect(await signIn('amani', '2468')).toMatchObject({ account: { id: made.account.id } });
+    expect(await createManager(DEMO_OWNER.id, [], { name: 'X', username: 'xavier', pin: '1111' })).toEqual({ error: 'bars' });
+    expect(await createManager(DEMO_OWNER.id, [SAMPLE_BAR_ID], { name: 'X', username: 'xavier', pin: '123456' })).toEqual({ error: 'pin' });
+    expect(await createManager(DEMO_OWNER.id, [SAMPLE_BAR_ID], { name: 'X', username: 'chebet', pin: '1111' })).toEqual({ error: 'usernameTaken' });
+  });
+
+  it('an existing manager can be added to another of the owner’s bars, and taken off again', () => {
+    expect(managersOf(DEMO_OWNER.id).map((a) => a.username)).toEqual(['chebet']);
+    expect(addManagerToBar(DEMO_OWNER.id, DEMO_MANAGER.id, LOUNGE_BAR_ID)).toBeNull();
+    expect(barsFor(DEMO_MANAGER.id).map((b) => b.id).sort()).toEqual([LOUNGE_BAR_ID, SAMPLE_BAR_ID].sort());
+    expect(managedBars(DEMO_OWNER.id, DEMO_MANAGER.id).map((b) => b.id).sort()).toEqual([LOUNGE_BAR_ID, SAMPLE_BAR_ID].sort());
+    expect(addManagerToBar(DEMO_OWNER.id, DEMO_MANAGER.id, LOUNGE_BAR_ID)).toBe('already');
+    expect(removeManagerFromBar(DEMO_OWNER.id, DEMO_MANAGER.id, LOUNGE_BAR_ID)).toBeNull();
+    expect(barsFor(DEMO_MANAGER.id).map((b) => b.id)).toEqual([SAMPLE_BAR_ID]);
+    expect(removeManagerFromBar(DEMO_OWNER.id, DEMO_MANAGER.id, LOUNGE_BAR_ID)).toBe('notThere');
+  });
+
+  it('only into bars the owner owns, and only managers of their own bars', async () => {
+    const other = await createOwner({ name: 'Otis', username: 'otis', password: 'otis-2026x', barName: 'Otis Bar' });
+    if ('error' in other) throw new Error(other.error);
+    // Njeri can't add to Otis's bar, nor Otis take Njeri's manager.
+    expect(await createManager(DEMO_OWNER.id, [other.bar.id], { name: 'X', username: 'xavier', pin: '1111' })).toEqual({ error: 'notOwner' });
+    expect(addManagerToBar(DEMO_OWNER.id, DEMO_MANAGER.id, other.bar.id)).toBe('notOwner');
+    expect(addManagerToBar(other.account.id, DEMO_MANAGER.id, other.bar.id)).toBe('notManager');
+    expect(managersOf(other.account.id)).toEqual([]);
+    // A manager is not an owner: they can't add managers anywhere.
+    expect(await createManager(DEMO_MANAGER.id, [SAMPLE_BAR_ID], { name: 'X', username: 'xavier', pin: '1111' })).toEqual({ error: 'notOwner' });
+    expect(removeManagerFromBar(DEMO_MANAGER.id, DEMO_MANAGER.id, SAMPLE_BAR_ID)).toBe('notOwner');
+  });
+});
+
+describe('Kaunta: bars an owner may open, suspending a bar', () => {
+  it('an owner opens bars up to the number Kaunta sets; changing it keeps the bars they have', () => {
+    expect(barLimit(DEMO_OWNER.id)).toEqual({ used: 2, max: 3 });
+    expect('bar' in createBar(DEMO_OWNER.id, 'Baraka Garden')).toBe(true);
+    expect(createBar(DEMO_OWNER.id, 'One too many')).toEqual({ error: 'limit' });
+    expect(setBarLimit(DEMO_OWNER.id, 0)).toBe('invalid');
+    expect(setBarLimit(DEMO_OWNER.id, 1)).toBeNull();
+    expect(barsFor(DEMO_OWNER.id)).toHaveLength(3);
+    expect(createBar(DEMO_OWNER.id, 'Still no')).toEqual({ error: 'limit' });
+    expect(setBarLimit(DEMO_OWNER.id, null)).toBeNull();
+    expect('bar' in createBar(DEMO_OWNER.id, 'No limit now')).toBe(true);
+  });
+
+  it('a new owner may open one bar unless Kaunta says otherwise', async () => {
+    const made = await createOwner({ name: 'Wambui', username: 'wambui', password: 'karibu-2026', barName: 'Wambui Bar' });
+    if ('error' in made) throw new Error(made.error);
+    expect(barLimit(made.account.id)).toEqual({ used: 1, max: 1 });
+    expect(createBar(made.account.id, 'Second')).toEqual({ error: 'limit' });
+    expect(await createOwner({ name: 'X', username: 'xowner', password: 'karibu-2026', barName: 'X', maxBars: 100 })).toEqual({ error: 'barLimit' });
+  });
+
+  it('a suspended bar is out of everyone’s list until access is given back', () => {
+    setBarSuspended(SAMPLE_BAR_ID, true);
+    expect(barsFor(DEMO_OWNER.id).map((b) => b.id)).toEqual([LOUNGE_BAR_ID]);
+    expect(barsFor(DEMO_MANAGER.id)).toEqual([]);
+    expect(suspendedBarsFor(DEMO_MANAGER.id).map((b) => b.name)).toEqual(['Baraka Pub']);
+    setBarSuspended(SAMPLE_BAR_ID, false);
+    expect(barsFor(DEMO_MANAGER.id).map((b) => b.id)).toEqual([SAMPLE_BAR_ID]);
+  });
+
+  it('Kaunta’s view of a bar lasts only while signed in to /super', () => {
+    setSuperViewBar(SAMPLE_BAR_ID);
+    expect(superViewBar()).toBeNull();
+    setSuperSession(true);
+    setSuperViewBar(SAMPLE_BAR_ID);
+    expect(superViewBar()).toBe(SAMPLE_BAR_ID);
+    setSuperSession(false);
+    expect(superViewBar()).toBeNull();
   });
 });

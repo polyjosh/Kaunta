@@ -9,7 +9,7 @@ import { businessDayOf } from '../domain/time';
 import { useI18n } from '../lib/I18nProvider';
 import type { MessageKey } from '../lib/i18n';
 import { AdminLayout } from './AdminLayout';
-import { useNow } from './AdminSession';
+import { useAdmin, useNow, visibleTo } from './AdminSession';
 import { auditDevice, auditWho, describeAudit } from './auditText';
 import type { AuditLookups } from './auditText';
 import { dayLabel, hhmm } from './data';
@@ -30,14 +30,15 @@ const SHOW = 200;
 export function AuditScreen() {
   const { t, locale } = useI18n();
   const clock = useNow();
+  const { kaunta } = useAdmin();
   const [params, setParams] = useSearchParams();
   const loaded = useQuery(async (db) => {
     const [audit, people, devices, products, sizes, orders, lines, approvals, kegs, bar] = await Promise.all([
-      db.auditEvents.toArray(), db.people.toArray(), db.devices.toArray(), db.products.toArray(), db.sizes.toArray(),
+      db.auditEvents.toArray().then((all) => visibleTo(all, kaunta)), db.people.toArray(), db.devices.toArray(), db.products.toArray(), db.sizes.toArray(),
       db.orders.toArray(), db.lines.toArray(), db.approvals.toArray(), db.kegs.toArray(), db.bar.toCollection().first(),
     ]);
     return { audit, lookups: { people, devices, products, sizes, orders, lines, approvals, kegs } as AuditLookups, dayStart: bar?.day_start ?? '06:00' };
-  });
+  }, [kaunta]);
   const today = businessDayOf(clock);
   const day = params.get('day') ?? today;
   const text = params.get('q') ?? '';
@@ -46,7 +47,8 @@ export function AuditScreen() {
   const [groups, setGroups] = useState<AuditGroup[]>([]);
   const set = (key: string, value: string) => {
     const next = new URLSearchParams(params);
-    if (value) next.set(key, value);
+    // "All days" is an empty day, kept in the address: no day at all means today.
+    if (value || key === 'day') next.set(key, value);
     else next.delete(key);
     setParams(next, { replace: true });
   };

@@ -11,7 +11,12 @@ import { formatKES } from '../lib/money';
 import { useTheme } from '../lib/ThemeProvider';
 import {
   addManager,
+  barLimit,
   changeSuperPassword,
+  MAX_BAR_LIMIT,
+  setBarLimit,
+  setBarSuspended,
+  setSuperViewBar,
   checkCode,
   createOwner,
   membersOf,
@@ -37,7 +42,8 @@ import type { Person } from '../domain/types';
 import '../admin/admin.css';
 import './super.css';
 
-const ERRORS: Record<AccountProblem | CodeProblem | 'barName', MessageKey> = {
+const ERRORS: Record<AccountProblem | CodeProblem | 'barName' | 'barLimit', MessageKey> = {
+  barLimit: 'super.error.barLimit',
   name: 'super.error.name',
   username: 'super.error.username',
   usernameTaken: 'super.error.usernameTaken',
@@ -222,7 +228,10 @@ function BarsScreen() {
                 const owner = ownerOf(p, b.id);
                 return (
                   <tr key={b.id}>
-                    <th scope="row"><Link className="a-link" to={`/super/bars/${b.id}`}>{b.name}</Link></th>
+                    <th scope="row">
+                      <Link className="a-link" to={`/super/bars/${b.id}`}>{b.name}</Link>
+                      {b.suspended_at && <> <span className="k-chip k-tone-error s-chip">{t('super.bar.isSuspended')}</span></>}
+                    </th>
                     <td className="s-code">{formatBarCode(b.counter_code)}</td>
                     <td>{owner ? `${owner.name} (${owner.username})` : '—'}</td>
                     <td className="is-num">{s ? s.lookups.products.filter((x) => !x.archived_at).length : '…'}</td>
@@ -294,6 +303,12 @@ function StaffPin({ barId, person }: { barId: string; person: Person }) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  // As an owner does it (signed out at once, off the counter's list), but as Kaunta: not in the owner's log.
+  const setSuspended = async (suspend: boolean) => {
+    await recordAdminEvent(demoStore(barId), { person_id: KAUNTA_ACTOR }, { type: suspend ? 'person_suspended' : 'person_reinstated', payload: { person_id: person.id } });
+    setConfirming(false);
+  };
   const save = async () => {
     if (editing === null || !isValidPin(editing)) return;
     const pin_hash = await hashPin(editing);
@@ -320,6 +335,20 @@ function StaffPin({ barId, person }: { barId: string; person: Person }) {
           <button type="button" className="a-text-btn" onClick={() => setEditing(suggestPin())}>
             {person.pin_hash ? t('admin.staff.changePin') : t('admin.staff.setPin')}<span className="a-sr-only"> · {person.name}</span>
           </button>
+          {person.suspended_at ? (
+            <button type="button" className="a-text-btn" onClick={() => void setSuspended(false)}>
+              {t('super.staff.reinstate')}<span className="a-sr-only"> · {person.name}</span>
+            </button>
+          ) : confirming ? (
+            <>
+              <button type="button" className="a-btn a-btn-danger a-btn-sm" onClick={() => void setSuspended(true)}>{t('super.staff.suspendConfirm', { name: person.name })}</button>
+              <button type="button" className="a-btn a-btn-sm" onClick={() => setConfirming(false)}>{t('common.cancel')}</button>
+            </>
+          ) : (
+            <button type="button" className="a-text-btn is-danger" onClick={() => setConfirming(true)}>
+              {t('super.staff.suspend')}<span className="a-sr-only"> · {person.name}</span>
+            </button>
+          )}
         </span>
       ) : (
         <span className="s-inline">
@@ -343,7 +372,13 @@ function BarScreen() {
   const [manager, setManager] = useState({ name: '', username: '', pin: '' });
   const [managerError, setManagerError] = useState<MessageKey | null>(null);
   const [managerDone, setManagerDone] = useState<string | null>(null);
+  const [confirmSuspend, setConfirmSuspend] = useState(false);
+  const navigate = useNavigate();
   if (!bar) return <Navigate to="/super/bars" replace />;
+  const openAdmin = () => {
+    setSuperViewBar(bar.id);
+    navigate('/admin');
+  };
   const s = snaps?.get(bar.id);
   const members = membersOf(bar.id, p);
   const staff = s ? s.lookups.people.filter((x) => x.role === 'counter' && x.login === 'pin' && !x.archived_at) : [];
@@ -382,6 +417,30 @@ function BarScreen() {
         <Tile label={t('super.bars.risk')} value={s ? formatKES(s.today.money_at_risk_kes) : '…'} tone="risk" />
         <Tile label={t('super.col.open')} value={s ? String(s.today.open_orders) : '…'} />
       </div>
+
+      <section className={`a-card s-access${bar.suspended_at ? ' is-suspended' : ''}`} aria-labelledby="access-h">
+        <h2 id="access-h">{t('super.bar.access')}</h2>
+        {bar.suspended_at ? (
+          <p className="a-error" role="status">{t('super.bar.suspendedSince', { date: dayLabel(bar.suspended_at.slice(0, 10), locale), time: hhmm(bar.suspended_at) })}</p>
+        ) : (
+          <p className="a-note">{t('super.bar.accessHint')}</p>
+        )}
+        <div className="a-actions">
+          <button type="button" className="a-btn a-btn-primary" onClick={openAdmin}>{t('super.bar.openAdmin')}</button>
+          {bar.suspended_at ? (
+            <button type="button" className="a-btn" onClick={() => setBarSuspended(bar.id, false)}>{t('super.bar.reinstate')}</button>
+          ) : confirmSuspend ? (
+            <>
+              <button type="button" className="a-btn a-btn-danger" onClick={() => { setBarSuspended(bar.id, true); setConfirmSuspend(false); }}>{t('super.bar.suspendConfirm', { name: bar.name })}</button>
+              <button type="button" className="a-btn" onClick={() => setConfirmSuspend(false)}>{t('common.cancel')}</button>
+            </>
+          ) : (
+            <button type="button" className="a-btn a-btn-danger" onClick={() => setConfirmSuspend(true)}>{t('super.bar.suspend')}</button>
+          )}
+        </div>
+        {confirmSuspend && <p className="a-note is-strong">{t('super.bar.suspendNote')}</p>}
+        <p className="a-note">{t('super.bar.openAdminHint')}</p>
+      </section>
 
       <div className="a-row is-top">
         <div className="a-col a-grow-main">
@@ -494,6 +553,7 @@ function OwnersScreen() {
                 <th scope="col">{t('super.col.name')}</th>
                 <th scope="col">{t('super.col.username')}</th>
                 <th scope="col">{t('super.col.bars')}</th>
+                <th scope="col">{t('super.col.limit')}</th>
                 <th scope="col">{t('super.col.pin')}</th>
                 <th scope="col"><span className="a-sr-only">{t('super.owners.reset')}</span></th>
               </tr>
@@ -507,6 +567,7 @@ function OwnersScreen() {
                     <th scope="row">{a.name}</th>
                     <td>{a.username}</td>
                     <td>{bars.join(' · ') || '—'}</td>
+                    <td>{a.secret === 'password' ? <BarLimitCell account={a} /> : <span className="a-muted">—</span>}</td>
                     <td>
                       {t(a.secret === 'password' ? 'super.owners.password' : 'super.owners.pin')} ·{' '}
                       {locked ? t('super.owners.lockedUntil', { time: hhmm(a.locked_until!) }) : a.pin_set_by === 'kaunta' ? t('super.owners.setByKaunta') : t('super.owners.setBySelf')}
@@ -548,10 +609,44 @@ function OwnersScreen() {
   );
 }
 
+/** "2 of 3 bars" (or "no limit"), and Kaunta changes it. Bars an owner already has stay. */
+function BarLimitCell({ account }: { account: Account }) {
+  const { t } = useI18n();
+  const p = usePlatform();
+  const { used, max } = barLimit(account.id, p);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  const save = (value: number | null) => {
+    if (setBarLimit(account.id, value) === 'invalid') return setError(true);
+    setEditing(null);
+    setError(false);
+  };
+  if (editing === null) {
+    return (
+      <span className="s-inline">
+        <span>{max === null ? t('super.limit.none', { used }) : t('super.limit.of', { used, max })}</span>
+        <button type="button" className="a-text-btn" onClick={() => setEditing(String(max ?? Math.max(used, 1)))}>
+          {t('super.limit.edit')}<span className="a-sr-only"> · {account.name}</span>
+        </button>
+      </span>
+    );
+  }
+  return (
+    <div className="s-inline">
+      <input className="a-input s-code-input" type="text" inputMode="numeric" aria-label={t('super.limit.label', { name: account.name })} value={editing} onChange={(e) => { setError(false); setEditing(e.target.value.replace(/\D/g, '').slice(0, 2)); }} />
+      <button type="button" className="a-btn a-btn-primary a-btn-sm" disabled={editing === ''} onClick={() => save(Number(editing))}>{t('super.limit.save')}</button>
+      <button type="button" className="a-btn a-btn-sm" onClick={() => save(null)}>{t('super.limit.noLimit')}</button>
+      <button type="button" className="a-btn a-btn-sm" onClick={() => { setEditing(null); setError(false); }}>{t('common.cancel')}</button>
+      {error && <p className="a-error" role="alert">{t('super.error.barLimit')}</p>}
+      {!error && editing !== '' && Number(editing) < used && <p className="a-note">{t('super.limit.below', { used })}</p>}
+    </div>
+  );
+}
+
 function NewOwnerScreen() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ name: '', username: '', password: '', barName: '', barCode: '' });
+  const [form, setForm] = useState({ name: '', username: '', password: '', barName: '', barCode: '', maxBars: '1' });
   const [error, setError] = useState<MessageKey | null>(null);
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ name: string; username: string; password: string; code: string; barId: string } | null>(null);
@@ -568,7 +663,7 @@ function NewOwnerScreen() {
         </dl>
         <div className="a-actions">
           <Link className="a-btn a-btn-primary" to={`/super/bars/${created.barId}`}>{t('super.created.open')}</Link>
-          <button type="button" className="a-btn" onClick={() => { setCreated(null); setForm({ name: '', username: '', password: '', barName: '', barCode: '' }); }}>{t('super.created.another')}</button>
+          <button type="button" className="a-btn" onClick={() => { setCreated(null); setForm({ name: '', username: '', password: '', barName: '', barCode: '', maxBars: '1' }); }}>{t('super.created.another')}</button>
         </div>
       </section>
     );
@@ -579,7 +674,7 @@ function NewOwnerScreen() {
     setBusy(true);
     setError(null);
     try {
-      const result = await createOwner({ ...form, barCode: form.barCode || undefined });
+      const result = await createOwner({ ...form, barCode: form.barCode || undefined, maxBars: form.maxBars === '' ? null : Number(form.maxBars) });
       if ('error' in result) return setError(ERRORS[result.error]);
       setCreated({ name: result.account.name, username: result.account.username, password: form.password, code: result.bar.counter_code, barId: result.bar.id });
     } finally {
@@ -601,6 +696,11 @@ function NewOwnerScreen() {
         <PasswordField value={form.password} onChange={(password) => setForm({ ...form, password })} label={t('super.form.password')} />
         <label className="a-field">{t('super.form.barName')}<input type="text" value={form.barName} onChange={(e) => setForm({ ...form, barName: e.target.value })} /></label>
         <CodeField value={form.barCode} onChange={(barCode) => setForm({ ...form, barCode })} label={t('super.form.barCode')} hint={t('super.form.barCodeHint')} />
+        <div className="a-field">
+          <label htmlFor="new-owner-max">{t('super.form.maxBars')}</label>
+          <input id="new-owner-max" className="s-code-input" type="text" inputMode="numeric" aria-describedby="new-owner-max-hint" value={form.maxBars} onChange={(e) => setForm({ ...form, maxBars: e.target.value.replace(/\D/g, '').slice(0, 2) })} />
+          <span id="new-owner-max-hint" className="a-field-hint">{t('super.form.maxBarsHint', { max: MAX_BAR_LIMIT })}</span>
+        </div>
         {error && <p className="a-error" role="alert">{t(error)}</p>}
         <div className="a-actions">
           <button type="submit" className="a-btn a-btn-primary" disabled={busy}>{t('super.form.create')}</button>

@@ -9,6 +9,8 @@ import { useDemoServer } from '../data/demoServer';
 import { seedDatabase } from '../data/seedDb';
 import { formatBarCode, SAMPLE_BAR_CODE } from '../domain/barCode';
 import { useI18n } from '../lib/I18nProvider';
+import { Logo } from '../components/Icon';
+import { isBarSuspended, usePlatform } from '../platform/platform';
 import { BarCodeScreen } from './BarCodeScreen';
 
 interface CounterBarValue {
@@ -55,6 +57,9 @@ export function DemoCounterGate({ children }: { children: ReactNode }) {
   );
   // A bar the owner added: no server, so this browser accepts what the counter queues (admin sees it at once).
   useDemoServer(store, !!bar && bar.id !== DEMO_SAMPLE_BAR);
+  // Kaunta suspended the bar: nobody signs in (and whoever was in is out) until access is given back.
+  const p = usePlatform();
+  if (bar && isBarSuspended(bar.id, p)) return <SuspendedBar name={bar.name} onChangeBar={changeBar} />;
 
   if (!bar || !store || !value) {
     return (
@@ -74,5 +79,29 @@ export function DemoCounterGate({ children }: { children: ReactNode }) {
     <DbProvider key={bar.id} db={store} demo seed={seed}>
       <CounterBarContext.Provider value={value}>{children}</CounterBarContext.Provider>
     </DbProvider>
+  );
+}
+
+/** The counter of a bar Kaunta suspended. */
+function SuspendedBar({ name, onChangeBar }: { name: string; onChangeBar: () => void }) {
+  const { t } = useI18n();
+  return (
+    <div className="c-screen">
+      <header className="c-topbar">
+        <Logo />
+        <div className="c-topbar-id">
+          <strong>{name}</strong>
+        </div>
+      </header>
+      <main className="c-body c-barcode">
+        <div className="c-barcode-form" role="alert">
+          <div className="c-barcode-intro">
+            <h1>{t('bar.suspendedTitle')}</h1>
+            <p>{t('bar.suspendedBody', { bar: name })}</p>
+          </div>
+          <button type="button" className="c-btn c-btn-link" onClick={onChangeBar}>{t('bar.change')}</button>
+        </div>
+      </main>
+    </div>
   );
 }

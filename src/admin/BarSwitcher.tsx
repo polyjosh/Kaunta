@@ -63,7 +63,8 @@ function NewBarForm({ create, onCancel }: { create: (name: string) => Promise<vo
  */
 export function BarSwitcher({ name, day }: { name: string; day: string }) {
   const { t } = useI18n();
-  const { bars, barId, switchBar, createBar } = useAdmin();
+  const { bars, barId, switchBar, createBar, barLimit } = useAdmin();
+  const atLimit = !!barLimit && barLimit.max !== null && barLimit.used >= barLimit.max;
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
   const close = () => {
@@ -119,7 +120,10 @@ export function BarSwitcher({ name, day }: { name: string; day: string }) {
               </li>
             ))}
           </ul>
-          {createBar &&
+          {createBar && atLimit && (
+            <p className="a-note a-bars-limit">{t('admin.bars.limit', { max: barLimit!.max! })}</p>
+          )}
+          {createBar && !atLimit &&
             (adding ? (
               <NewBarForm create={async (n) => { await createBar(n); close(); }} onCancel={() => setAdding(false)} />
             ) : (

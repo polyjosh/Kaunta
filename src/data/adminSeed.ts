@@ -34,7 +34,8 @@ export async function seedAdminDatabase(db: KauntaDB, options: { day?: SampleDay
     if (await db.meta.get('seeded')) return false;
     await db.bar.add(day.bar);
     await db.categories.bulkAdd(day.categories);
-    await db.people.bulkAdd(people);
+    // Put, not add: an owner's or manager's row may be here already (ensureMemberPeople ran first); it is put right again after seeding.
+    await db.people.bulkPut(people);
     await db.devices.bulkAdd(
       day.devices.map((d) => ({ ...d, last_sync_at: d.revoked_at ? d.revoked_at : new Date(Date.parse(SAMPLE_NOW) - 60_000).toISOString() })),
     );

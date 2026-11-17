@@ -1,5 +1,6 @@
 import { statusAfterPayment } from '../domain/orders';
 import { saleDeduction } from '../domain/stock';
+import { shiftStock } from './pools';
 import type { ApprovalItem, Id, Instant, Order, OrderLine, Payment, Shift, VoidReason } from '../domain/types';
 import type { KauntaDB } from './db';
 
@@ -205,13 +206,15 @@ export async function refreshOrderStatus(db: KauntaDB, order_id: Id): Promise<vo
  * back. Untracked products (food, kegs) have no shelf count to change.
  */
 async function moveStock(db: KauntaDB, line: OrderLine, direction: 1 | -1, reason: 'sale' | 'void_return'): Promise<void> {
-  const [product, size] = await Promise.all([db.products.get(line.product_id), db.sizes.get(line.size_id)]);
-  if (!product || !size || product.stock_qty === null) return;
+  const size = await db.sizes.get(line.size_id);
+  if (!size) return;
   const delta = direction * saleDeduction(size, line.qty);
-  await db.products.update(product.id, { stock_qty: product.stock_qty + delta });
+  const pool = await shiftStock(db, line.product_id, size.id, delta);
+  if (pool === undefined) return;
   await db.stockMovements.add({
     id: `${line.id}:${reason}`,
-    product_id: product.id,
+    product_id: line.product_id,
+    size_id: pool,
     delta,
     reason,
     ref_id: line.id,

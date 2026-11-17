@@ -65,13 +65,13 @@ export function OwnerSignIn({ onSignedIn }: { onSignedIn: (accountId: string) =>
 }
 
 /** Signed in, but no bar yet (Kaunta adds an owner's first bar). */
-export function NoBars({ onSignOut }: { onSignOut: () => void }) {
+export function NoBars({ onSignOut, suspended = [] }: { onSignOut: () => void; suspended?: string[] }) {
   const { t } = useI18n();
   return (
     <div className="a-app a-signin-page">
       <div className="a-card a-signin">
-        <h1>{t('admin.owner.noBars')}</h1>
-        <p className="a-note">{t('admin.owner.noBarsBody')}</p>
+        <h1>{suspended.length ? t('admin.owner.suspended') : t('admin.owner.noBars')}</h1>
+        <p className="a-note">{suspended.length ? t('admin.owner.suspendedBody', { bars: suspended.join(', ') }) : t('admin.owner.noBarsBody')}</p>
         <button type="button" className="a-btn" onClick={onSignOut}>{t('admin.signOut')}</button>
       </div>
     </div>

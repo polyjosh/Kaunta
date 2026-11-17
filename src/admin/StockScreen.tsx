@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
-import { productName } from '../counter/labels';
+import { productName, sizeLabel } from '../counter/labels';
 import { recordAdminEvent } from '../data/adminEvents';
 import { useDb, useQuery } from '../data/react';
 import { mugSize } from '../domain/admin';
 import { uuidv7 } from '../domain/ids';
-import { deliveryTotal } from '../domain/stock';
-import type { Keg, Product, ProductSize } from '../domain/types';
+import { deliveryTotal, isPerSize, stockedSizes } from '../domain/stock';
+import type { Keg, Pack, Product, ProductSize } from '../domain/types';
 import { useI18n } from '../lib/I18nProvider';
 import type { TFunction } from '../lib/I18nProvider';
 import { formatAmount } from '../lib/money';
@@ -20,32 +20,81 @@ export interface Container {
   label: string;
   /** Units or ml in one. */
   per: number;
+  /** Stock per size: the size whose stock it goes into. */
+  size_id?: string | null;
 }
 
 const KEG_ML = 50_000;
 
 export const isKegProduct = (p: Pick<Product, 'category_id'>) => p.category_id === 'keg';
 
-/** How a product can arrive (R-STOCK-2): bottles by size for spirits, crates or singles for counted things, kegs. */
+/** The usual packs before an owner sets their own: crates of 24 and 25 for counted things, none for spirits. */
+export function defaultPacks(product: Pick<Product, 'stock_mode' | 'category_id'>, t: TFunction): Pack[] {
+  if (product.stock_mode === 'ml' || isKegProduct(product)) return [];
+  return [
+    { id: 'crate24', label: t('admin.stock.crate', { count: 24 }), count: 24 },
+    { id: 'crate25', label: t('admin.stock.crate', { count: 25 }), count: 25 },
+  ];
+}
+
+export const packsOf = (product: Product, t: TFunction): Pack[] => product.packs ?? defaultPacks(product, t);
+
+/** Sizes that are whole bottles (250 ml and up), largest first: what spirits arrive as. */
+export const bottleSizes = (product: Pick<Product, 'id'>, sizes: readonly ProductSize[]) =>
+  sizes.filter((s) => s.product_id === product.id && !s.archived_at && s.deduct >= 250).sort((a, b) => b.deduct - a.deduct);
+
+/** "Box of 12 (12 × 750ml)" in ml mode; the owner's own words in count mode. */
+export function packLabel(pack: Pack, size: Pick<ProductSize, 'label_en'> | undefined): string {
+  return size ? `${pack.label} (${pack.count} × ${size.label_en})` : pack.label;
+}
+
+/** How a product can arrive (R-STOCK-2): bottles by size and packs of them for spirits, packs or singles for counted things, kegs. */
 export function containersFor(product: Product, sizes: readonly ProductSize[], t: TFunction): Container[] {
   if (isKegProduct(product)) return [{ key: 'keg50', label: t('admin.stock.keg', { litres: KEG_ML / 1000, mugs: KEG_ML / 500 }), per: KEG_ML }];
+  const bySize = isPerSize(product) ? sizeContainers(product, sizes, t) : [];
+  if (bySize.length > 0) return bySize;
   if (product.stock_mode === 'ml') {
-    return sizes
-      .filter((s) => s.product_id === product.id && s.deduct >= 250)
-      .sort((a, b) => b.deduct - a.deduct)
-      .map((s) => ({ key: s.id, label: t('admin.stock.bottle', { size: s.label_en }), per: s.deduct }));
+    const bottles = bottleSizes(product, sizes);
+    return [
+      ...bottles.map((s) => ({ key: s.id, label: t('admin.stock.bottle', { size: s.label_en }), per: s.deduct })),
+      ...packsOf(product, t).flatMap((p) => {
+        const size = bottles.find((s) => s.id === p.size_id);
+        return size ? [{ key: p.id, label: packLabel(p, size), per: p.count * size.deduct }] : [];
+      }),
+    ];
   }
   return [
-    { key: 'crate24', label: t('admin.stock.crate', { count: 24 }), per: 24 },
-    { key: 'crate25', label: t('admin.stock.crate', { count: 25 }), per: 25 },
+    ...packsOf(product, t).map((p) => ({ key: p.id, label: p.label, per: p.count })),
     { key: 'single', label: t('admin.stock.single'), per: 1 },
   ];
 }
 
+/** Stock per size: each size that keeps its own stock arrives as itself and in its packs. */
+function sizeContainers(product: Product, sizes: readonly ProductSize[], t: TFunction): Container[] {
+  const pools = stockedSizes(product, sizes);
+  const packs = packsOf(product, t);
+  // A pack of a size without its own stock (or of none, for counted things) is of the largest size.
+  const poolOf = (p: Pack) => pools.find((s) => s.id === p.size_id) ?? (product.stock_mode === 'count' ? pools[0] : undefined);
+  return pools.flatMap((size) => {
+    const own = packs.filter((p) => poolOf(p)?.id === size.id);
+    if (product.stock_mode === 'ml') {
+      return [
+        { key: size.id, label: t('admin.stock.bottle', { size: size.label_en }), per: size.deduct, size_id: size.id },
+        ...own.map((p) => ({ key: p.id, label: packLabel(p, size), per: p.count * size.deduct, size_id: size.id })),
+      ];
+    }
+    const many = pools.length > 1;
+    return [
+      ...own.map((p) => ({ key: p.id, label: many ? packLabel(p, size) : p.label, per: p.count * size.deduct, size_id: size.id })),
+      { key: `single:${size.id}`, label: many ? t('admin.stock.singleSize', { size: size.label_en }) : t('admin.stock.single'), per: size.deduct, size_id: size.id },
+    ];
+  });
+}
+
 function defaultContainer(product: Product, options: Container[]): Container {
   if (product.stock_mode === 'ml') return options.find((o) => o.per === 750) ?? options[0]!;
-  if (product.category_id === 'beer') return options.find((o) => o.key === 'crate25')!;
-  if (product.category_id === 'soft') return options.find((o) => o.key === 'crate24')!;
+  if (product.category_id === 'beer') return options.find((o) => o.key === 'crate25') ?? options[0]!;
+  if (product.category_id === 'soft') return options.find((o) => o.key === 'crate24') ?? options[0]!;
   return options[0]!;
 }
 
@@ -58,9 +107,53 @@ export function amountText(amount: number, mode: Product['stock_mode'], t: TFunc
 const signed = (n: number) => `${n < 0 ? '−' : ''}${formatAmount(Math.abs(n))}`;
 
 interface Row {
+  /** Stable while lines are removed. */
+  key: number;
   product_id: string;
   container: string;
   qty: number;
+}
+
+const NEW_PACK = '__new_pack';
+const MAX_QTY = 9999;
+
+/** A pack the owner adds while entering a delivery ("Box of 12"); it is kept on the product. */
+function NewPackForm({ product, sizes, onSave, onCancel }: { product: Product; sizes: ProductSize[]; onSave: (pack: Pack) => void; onCancel: () => void }) {
+  const { t } = useI18n();
+  const ml = product.stock_mode === 'ml';
+  const perSize = isPerSize(product);
+  const bottles = perSize ? stockedSizes(product, sizes) : bottleSizes(product, sizes);
+  const pickSize = ml || perSize;
+  const [label, setLabel] = useState('');
+  const [count, setCount] = useState('');
+  const [sizeId, setSizeId] = useState(bottles.find((s) => s.deduct === 750)?.id ?? bottles[0]?.id ?? '');
+  const n = Number(count);
+  const ok = label.trim() !== '' && Number.isSafeInteger(n) && n > 1 && (!pickSize || sizeId !== '');
+  return (
+    <div className="a-packform" role="group" aria-label={t('admin.stock.newPackTitle', { name: product.name })}>
+      <label className="a-field a-field-sm">
+        {t('admin.pack.label')}
+        <input type="text" autoFocus value={label} placeholder={t('admin.pack.labelHint')} onChange={(e) => setLabel(e.target.value)} />
+      </label>
+      <label className="a-field a-field-sm">
+        {t('admin.pack.count')}
+        <input type="text" inputMode="numeric" value={count} onChange={(e) => setCount(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))} />
+      </label>
+      {pickSize && (
+        <label className="a-field a-field-sm">
+          {t('admin.pack.bottle')}
+          <select value={sizeId} onChange={(e) => setSizeId(e.target.value)}>
+            {bottles.map((s) => <option key={s.id} value={s.id}>{s.label_en}</option>)}
+          </select>
+        </label>
+      )}
+      <div className="a-actions">
+        <button type="button" className="a-btn a-btn-primary a-btn-sm" disabled={!ok} onClick={() => onSave({ id: uuidv7(), label: label.trim(), count: n, size_id: pickSize ? sizeId : null })}>{t('admin.pack.save')}</button>
+        <button type="button" className="a-btn a-btn-sm" onClick={onCancel}>{t('common.cancel')}</button>
+      </div>
+      <p className="a-note">{t('admin.pack.kept')}</p>
+    </div>
+  );
 }
 
 /** Add stock (Stock.dc.html): containers in, totals worked out (R-STOCK-2…4). */
@@ -77,27 +170,46 @@ export function StockScreen() {
   const [noteNo, setNoteNo] = useState('');
   const [picking, setPicking] = useState(false);
   const [done, setDone] = useState<string | null>(null);
+  const [newPackFor, setNewPackFor] = useState<number | null>(null);
+  const [nextKey, setNextKey] = useState(1);
 
   if (!data) return <AdminLayout>{null}</AdminLayout>;
   const stockable = data.products.filter((p) => !p.archived_at && (p.stock_qty !== null || isKegProduct(p)));
   const byId = new Map(data.products.map((p) => [p.id, p]));
-  const newRow = (p: Product): Row => {
+  const newRow = (p: Product, key: number): Row => {
     const options = containersFor(p, data.sizes, t);
-    return { product_id: p.id, container: defaultContainer(p, options).key, qty: 1 };
+    return { key, product_id: p.id, container: defaultContainer(p, options).key, qty: 1 };
   };
   const preset = params.get('product');
-  const current = rows ?? (preset && byId.get(preset) ? [newRow(byId.get(preset)!)] : []);
+  const current = rows ?? (preset && byId.get(preset) ? [newRow(byId.get(preset)!, 0)] : []);
   const update = (i: number, patch: Partial<Row>) => setRows(current.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const remove = (i: number) => {
+    setNewPackFor(null);
+    setRows(current.filter((_, j) => j !== i));
+  };
+  const savePack = async (i: number, product: Product, pack: Pack) => {
+    const sizes = data.sizes.filter((s) => s.product_id === product.id);
+    await recordAdminEvent(db, ctx, {
+      type: 'product_saved',
+      payload: { product: { ...product, packs: [...packsOf(product, t), pack] }, sizes, before: { product, sizes } },
+    });
+    setNewPackFor(null);
+    update(i, { container: pack.id });
+  };
 
   const lines = current.map((r) => {
     const product = byId.get(r.product_id)!;
     const options = containersFor(product, data.sizes, t);
     const container = options.find((o) => o.key === r.container) ?? options[0]!;
     const total = deliveryTotal(r.qty, container.per);
-    return { row: r, product, options, container, total, keg: isKegProduct(product) };
+    // The stock it adds to: that size's own (stock per size), or the product's.
+    const pool = container.size_id ? data.sizes.find((s) => s.id === container.size_id) : undefined;
+    const before = pool ? (pool.stock_qty ?? 0) : (product.stock_qty ?? 0);
+    const name = pool ? `${productName(product, locale)} ${sizeLabel(pool, locale)}` : productName(product, locale);
+    return { row: r, product, options, container, total, before, name, keg: isKegProduct(product) };
   });
   const chosen = lines.filter((l) => l.row.qty > 0);
-  const cleared = chosen.filter((l) => !l.keg && l.product.stock_qty !== null && l.product.stock_qty < 0 && l.product.stock_qty + l.total >= 0);
+  const cleared = chosen.filter((l) => !l.keg && l.product.stock_qty !== null && l.before < 0 && l.before + l.total >= 0);
   const kegs = chosen.filter((l) => l.keg).reduce((n, l) => n + l.row.qty, 0);
 
   const submit = async () => {
@@ -122,7 +234,7 @@ export function StockScreen() {
         delivery: {
           id, supplier: supplier.trim() || null, note_no: noteNo.trim() || null, received_by: person.id, created_at: at, keg_ids: newKegs.map((k) => k.id),
           // Kegs go to the queue, not the shelf (R-STOCK-4), so they carry no shelf line.
-          lines: chosen.filter((l) => !l.keg).map((l) => ({ product_id: l.product.id, container_label: l.container.label, container_qty: l.row.qty, per_container: l.container.per, total: l.total })),
+          lines: chosen.filter((l) => !l.keg).map((l) => ({ product_id: l.product.id, size_id: l.container.size_id ?? null, container_label: l.container.label, container_qty: l.row.qty, per_container: l.container.per, total: l.total })),
         },
         kegs: newKegs,
       },
@@ -156,32 +268,55 @@ export function StockScreen() {
           </div>
 
           {lines.map((l, i) => (
-            <div key={`${l.row.product_id}-${i}`} className="a-srow">
+            <div key={l.row.key} className="a-srow">
               <div className="a-srow-what">
                 <strong>{productName(l.product, locale)}</strong>
-                {l.options.length > 1 ? (
-                  <select className="a-select-sm" value={l.container.key} aria-label={t('admin.stock.containerAria', { name: l.product.name })} onChange={(e) => update(i, { container: e.target.value })}>
-                    {l.options.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
-                  </select>
-                ) : (
+                {l.keg ? (
                   <span>{l.container.label}</span>
+                ) : (
+                  <select
+                    className="a-select-sm"
+                    value={l.container.key}
+                    aria-label={t('admin.stock.containerAria', { name: l.product.name })}
+                    onChange={(e) => (e.target.value === NEW_PACK ? setNewPackFor(l.row.key) : update(i, { container: e.target.value }))}
+                  >
+                    {l.options.map((o) => <option key={o.key} value={o.key}>{o.label}</option>)}
+                    <option value={NEW_PACK}>{t('admin.stock.newPack')}</option>
+                  </select>
                 )}
               </div>
               <div className="a-stepper">
                 <button type="button" aria-label={t('admin.stock.less', { what: l.container.label })} disabled={l.row.qty === 0} onClick={() => update(i, { qty: Math.max(0, l.row.qty - 1) })}>−</button>
-                <span aria-live="polite">× {l.row.qty}</span>
-                <button type="button" aria-label={t('admin.stock.more', { what: l.container.label })} onClick={() => update(i, { qty: l.row.qty + 1 })}>+</button>
+                <span className="a-stepper-x" aria-hidden="true">×</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="a-stepper-qty"
+                  value={l.row.qty === 0 ? '' : String(l.row.qty)}
+                  placeholder="0"
+                  aria-label={t('admin.stock.qtyAria', { what: l.container.label, name: l.product.name })}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => update(i, { qty: Math.min(MAX_QTY, Number(e.target.value.replace(/[^0-9]/g, '') || 0)) })}
+                />
+                <button type="button" aria-label={t('admin.stock.more', { what: l.container.label })} disabled={l.row.qty >= MAX_QTY} onClick={() => update(i, { qty: l.row.qty + 1 })}>+</button>
               </div>
               <div className="a-srow-total">
                 <strong>= {amountText(l.total, l.keg ? 'ml' : l.product.stock_mode, t)}</strong>
                 {l.keg ? (
                   <span>{t('stock.toKegQueue')}</span>
                 ) : (
-                  <span className={l.product.stock_qty! < 0 && l.product.stock_qty! + l.total >= 0 ? 'is-fix' : ''}>
-                    {t('stock.now', { before: signed(l.product.stock_qty!), after: signed(l.product.stock_qty! + l.total), unit: l.product.stock_mode === 'ml' ? 'ml' : t('admin.unit.bottles') })}
+                  <span className={l.before < 0 && l.before + l.total >= 0 ? 'is-fix' : ''}>
+                    {l.container.size_id && <>{sizeLabel(data.sizes.find((s) => s.id === l.container.size_id)!, locale)}: </>}
+                    {t('stock.now', { before: signed(l.before), after: signed(l.before + l.total), unit: l.product.stock_mode === 'ml' ? 'ml' : t('admin.unit.bottles') })}
                   </span>
                 )}
               </div>
+              <button type="button" className="a-btn a-btn-sm a-srow-remove" aria-label={t('admin.stock.removeAria', { name: productName(l.product, locale) })} onClick={() => remove(i)}>
+                <Icon name="close" size={16} /> {t('admin.stock.remove')}
+              </button>
+              {newPackFor === l.row.key && (
+                <NewPackForm product={l.product} sizes={data.sizes} onSave={(pack) => savePack(i, l.product, pack)} onCancel={() => setNewPackFor(null)} />
+              )}
             </div>
           ))}
 
@@ -193,7 +328,10 @@ export function StockScreen() {
                 value=""
                 onChange={(e) => {
                   const p = byId.get(e.target.value);
-                  if (p) setRows([...current, newRow(p)]);
+                  if (p) {
+                    setRows([...current, newRow(p, nextKey)]);
+                    setNextKey(nextKey + 1);
+                  }
                   setPicking(false);
                 }}
                 onBlur={() => setPicking(false)}
@@ -213,13 +351,13 @@ export function StockScreen() {
             {chosen.length === 0 && <p className="a-muted">{t('admin.stock.nothingYet')}</p>}
             {chosen.map((l, i) => (
               <div key={i} className="a-legend is-sm">
-                <span>{productName(l.product, locale)}</span>
+                <span>{l.name}</span>
                 <strong>{amountText(l.total, l.keg ? 'ml' : l.product.stock_mode, t)}</strong>
               </div>
             ))}
             {cleared.map((l) => (
-              <p key={l.product.id} className="a-ok-note">
-                {t('admin.stock.clears', { name: productName(l.product, locale), before: signed(l.product.stock_qty!), after: signed(l.product.stock_qty! + l.total) })}
+              <p key={l.row.key} className="a-ok-note">
+                {t('admin.stock.clears', { name: l.name, before: signed(l.before), after: signed(l.before + l.total) })}
               </p>
             ))}
             {kegs > 0 && (

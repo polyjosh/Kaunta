@@ -124,6 +124,23 @@ describe('products, stock, kegs', () => {
     expect((await one(`select count(*)::int as n from public.size_prices where size_id = 'tusker_0'`)).n).toBe(2);
   });
 
+  it('keeps the packs a product is delivered in, and a removed size stays off sale for good', async () => {
+    const { updated_at: _p, ...p } = await one(`select * from public.products where id = 'soda'`);
+    const { updated_at: _s, ...s } = await one(`select * from public.sizes where id = 'soda_0'`);
+    const packs = [{ id: 'pk1', label: 'Crate of 24', count: 24, size_id: null }, { id: 'pk2', label: 'Box of 12', count: 12, size_id: null }];
+    const removed = { ...s, enabled: false, archived_at: now() };
+    await pushOne('product_saved', { product: { ...p, packs }, sizes: [removed], before: { product: p, sizes: [s] } });
+    expect((await one(`select packs from public.products where id = 'soda'`)).packs).toEqual(packs);
+    expect(await one(`select enabled, archived_at is not null as archived from public.sizes where id = 'soda_0'`)).toEqual({ enabled: false, archived: true });
+    // Turning it back on does not bring a removed size back.
+    await pushOne('product_saved', { product: { ...p, packs }, sizes: [{ ...s, enabled: true, archived_at: null }], before: null });
+    expect(await one(`select enabled, archived_at is not null as archived from public.sizes where id = 'soda_0'`)).toEqual({ enabled: false, archived: true });
+    // Admin pull and counter phones get both.
+    const pulled = await pull();
+    expect(pulled.products.find((x: any) => x.id === 'soda').packs).toEqual(packs);
+    expect(pulled.sizes.find((x: any) => x.id === 'soda_0').archived_at).not.toBeNull();
+  });
+
   it('a delivery adds stock and queues kegs (R-STOCK-2, R-STOCK-4)', async () => {
     await pushOne('delivery_recorded', {
       delivery: { id: 'dl1', supplier: 'Kamau', note_no: 'DN-1', received_by: 'p_njeri', created_at: now(), keg_ids: ['k10'],
@@ -133,6 +150,47 @@ describe('products, stock, kegs', () => {
     expect(await stock('pilsner')).toBe(21);
     expect((await one(`select status from public.kegs where id = 'k10'`)).status).toBe('queued');
     expect((await one(`select reason, delta from public.stock_movements where ref_id = 'dl1'`))).toEqual({ reason: 'delivery', delta: 25 });
+  });
+
+  it('stock per size: 250 ml and 750 ml Smirnoff apart, a tot poured from the 750 ml (asked for after managers)', async () => {
+    const { updated_at: _p, ...p } = await one(`select * from public.products where id = 'smirnoff'`);
+    const sizes = (await pg.query<any>(`select * from public.sizes where product_id = 'smirnoff' order by sort`)).rows.map(({ updated_at: _u, ...s }) => s);
+    const [tot, b250, b750] = sizes;
+    const sizeStock = async () => Object.fromEntries((await pg.query<any>(`select id, stock_qty from public.sizes where product_id = 'smirnoff'`)).rows.map((r) => [r.id, r.stock_qty]));
+    // Switched on: the 3,000 ml go to the largest bottle until counted.
+    const on = await pushOne('product_saved', {
+      product: { ...p, per_size: true },
+      sizes: [{ ...tot, stock_from: b750.id }, { ...b250, low_stock_at: 500 }, b750],
+      before: { product: p, sizes },
+    });
+    expect(on.status).toBe('applied');
+    expect(await sizeStock()).toEqual({ smirnoff_0: null, smirnoff_1: 0, smirnoff_2: 3000 });
+    // Count the 250s: 6 bottles. The total follows.
+    await pushOne('shelf_counted', { product_id: 'smirnoff', size_id: b250.id, counted_qty: 1500, before_qty: 0 });
+    // A delivery of 2 × 250 ml goes to the 250s.
+    await pushOne('delivery_recorded', {
+      delivery: { id: 'dl2', supplier: null, note_no: null, received_by: 'p_njeri', created_at: now(), keg_ids: [],
+        lines: [{ product_id: 'smirnoff', size_id: b250.id, container_label: 'Bottle 250ml', container_qty: 2, per_container: 250, total: 500 }] },
+      kegs: [],
+    });
+    // A comped tot comes out of the 750 ml bottle.
+    await pg.query(
+      `insert into public.approvals (id, kind, target, amount_kes, reason_code, requested_by, device_id, requested_at)
+       values ('c2', 'comp', '{"order_id":null,"line_ids":[],"whole_order":false,"item":{"product_id":"smirnoff","size_id":"smirnoff_0","qty":1}}', 100, 'other', 'p_kiprop', 'd_counter2', now())`,
+    );
+    await pushOne('approval_decided', { approval_id: 'c2', decision: 'approved', decided_at: now() });
+    expect(await sizeStock()).toEqual({ smirnoff_0: null, smirnoff_1: 2000, smirnoff_2: 2970 });
+    expect(await stock('smirnoff')).toBe(4970);
+    expect((await one(`select size_id from public.stock_movements where ref_id = 'dl2'`)).size_id).toBe(b250.id);
+    expect((await one(`select low_stock_at from public.sizes where id = 'smirnoff_1'`)).low_stock_at).toBe(500);
+    // A tot can't be poured from a size without stock of its own; a tot has none to count.
+    const bad = await pushOne('product_saved', { product: { ...p, per_size: true }, sizes: [{ ...tot, stock_from: 'nope' }, b250, b750], before: null });
+    expect(bad.status).toBe('rejected');
+    expect((await pushOne('shelf_counted', { product_id: 'smirnoff', size_id: tot.id, counted_qty: 5, before_qty: 0 })).status).toBe('rejected');
+    // Back to one pool: the total stays, the sizes hold none.
+    await pushOne('product_saved', { product: { ...p, per_size: false }, sizes: [{ ...tot, stock_from: null }, b250, b750], before: null });
+    expect(await stock('smirnoff')).toBe(4970);
+    expect(await sizeStock()).toEqual({ smirnoff_0: null, smirnoff_1: null, smirnoff_2: null });
   });
 
   it('a shelf count sets the stock; keg finished puts the next on tap', async () => {

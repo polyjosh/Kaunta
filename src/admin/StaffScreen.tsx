@@ -10,8 +10,9 @@ import type { Device, Id, Person, Role } from '../domain/types';
 import { useI18n } from '../lib/I18nProvider';
 import type { MessageKey } from '../lib/i18n';
 import { BarCodeCard } from './BarCodeCard';
+import { ManagersCard } from './ManagersCard';
 import { AdminLayout, PageTitle } from './AdminLayout';
-import { useAdmin, useNow } from './AdminSession';
+import { useAdmin, useNow, visibleTo } from './AdminSession';
 import type { PairingCode } from './AdminSession';
 import { dayLabel, deviceName, hhmm, personName } from './data';
 
@@ -149,12 +150,12 @@ const isStaff = (p: Person) => p.role === 'counter' || p.role === 'server';
 export function StaffScreen() {
   const { t, locale } = useI18n();
   const db = useDb();
-  const { ctx, person: me } = useAdmin();
+  const { ctx, person: me, kaunta } = useAdmin();
   const clock = useNow(1_000);
   const data = useQuery(async (d) => {
     const [people, devices, audit, bar] = await Promise.all([d.people.toArray(), d.devices.toArray(), d.auditEvents.orderBy('at').reverse().limit(2000).toArray(), d.bar.toCollection().first()]);
-    return { people, devices, audit, bar };
-  });
+    return { people, devices, audit: visibleTo(audit, kaunta), bar };
+  }, [kaunta]);
   const [notice, setNotice] = useState<Notice>(null);
   const [adding, setAdding] = useState(false);
   const [shown, setShown] = useState<Set<Id>>(() => new Set());
@@ -350,6 +351,8 @@ export function StaffScreen() {
           ))}
         </section>
       )}
+
+      <ManagersCard />
 
       <div className="a-row">
         <section className="a-card a-grow-2" aria-labelledby="devices-h">

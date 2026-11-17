@@ -2,7 +2,7 @@
 
 Instructions, non-negotiables and the build order live in `kaunta-handoff/CLAUDE.md`; read it and `kaunta-handoff/docs/` first. This file records where the build stands.
 
-Last updated: 2026-11-16 (staff access).
+Last updated: 2026-11-17 (Kaunta: bar limits, suspending bars and staff, opening a bar's admin).
 
 ## Build order
 
@@ -18,6 +18,10 @@ Last updated: 2026-11-16 (staff access).
 | + Bar codes, demo that works end to end in one browser, installable app | ✅ Done | see below; `supabase/migrations/20261117000000_kaunta_bar_codes.sql` |
 | + Super admin, owner accounts (username + PIN), owner-chosen bar codes | ✅ Demo (browser); server: codes only | see below; `src/platform/` |
 | + Staff access: PINs set and seen by owners/managers, suspend, owners and managers sell at the counter | ✅ Demo; server: PINs + suspend | see below; `supabase/migrations/20261118000000_kaunta_staff_access.sql` |
+| + Adding stock: typed quantities, remove lines, packs per product, remove sizes, warning level per mode | ✅ | see below; `supabase/migrations/20261119000000_kaunta_stock_packs.sql` |
+| + Owners add managers to their own bars | ✅ Demo (accounts are browser-only) | see below; `src/admin/ManagersCard.tsx` |
+| + Stock per size (250 ml and 750 ml apart) | ✅ | see below; `supabase/migrations/20261120000000_kaunta_size_stock.sql` |
+| + Kaunta: bar limits, suspend bars and staff, open a bar's admin, hidden from owners' logs | ✅ Demo (platform is browser-only) | see below; `src/platform/` |
 
 ### Step 6 detail (`docs/screens.md` → Empty and error states)
 
@@ -66,6 +70,46 @@ Last updated: 2026-11-16 (staff access).
 - The sample bar still has two stores (counter 22:20, admin 02:14): a PIN change or suspension there shows in admin only. Try the live sign-out with a bar created at `/super` (the e2e test does: two tabs, suspend in one, the counter in the other signs out).
 - Tests: `src/counter/access.test.tsx`, Staff & devices in `src/admin/admin.test.tsx`, `supabase/admin.test.ts` (PINs, suspension, refused `pin_set`), `e2e/fullLoop.spec.ts`.
 
+## Adding stock (asked for after staff access)
+
+- **Add stock** (`StockScreen`): the number of crates, packs or single bottles can be typed; − and + stay. Each line has **Remove** until **Add to stock**.
+- **Packs** (`Product.packs`, `products.packs`): what a product is delivered in ("Crate of 25", "Box of 12"; for spirits, boxes of one bottle size). Edited on the product under **Delivered in** (add, rename, change the count, remove), or added from the delivery screen with "+ Another pack size…", which saves it on the product (audited `product_saved`). Not set = the old crates of 24 and 25 (count) or none (ml). A single bottle, and one bottle of each size for spirits, is always offered.
+- **Sizes can be removed** on the product: a new one goes at once; a saved one is removed on save (`sizes.archived_at`, sale switched off for good, Undo before saving). The row stays because orders and voids refer to it.
+- **Warning level** follows the counting method chosen, before saving: Count → "Warn when the shelf count is at or below … bottles" (the counter's "N left" and Products' Low); Millilitres → in ml (Products' Low only; `isBelowAlert`). Each mode keeps its own value while switching. New products can set it before the first save.
+- Tests: `src/admin/stock.test.tsx`, `supabase/admin.test.ts` (packs, removed size stays off).
+
+## Owners add managers (asked for after adding stock)
+
+- **Staff & devices → Managers** (`ManagersCard`), shown only to the owner of the open bar. Lists the bar's managers (with the owner's other bars they also run) and **+ Add a manager**:
+  - **A new manager**: name, username, 4-digit PIN (typed or "Make one"), and which of the owner's bars they run (ticked: this one). The username and PIN are shown once to pass on.
+  - **One of your managers**: anyone who already manages another of this owner's bars, added to this one. Only offered when there is someone to add.
+  - **Remove** (with a confirm): off this bar only; the account and its other bars stay.
+- Rules (`src/platform/platform.ts`: `createManager`, `addManagerToBar`, `removeManagerFromBar`, `managersOf`, `managedBars`): only into bars the owner owns; only managers of the owner's own bars can be added to another of them (an owner can't take another owner's manager by username); managers can't add managers.
+- Each change is an audited admin event by the owner in that bar's store (`person_saved` "Added X · Admin", `person_archived` on removal; `managerAdded` / `managerRemoved` in `bars.ts`), so the manager opens the bar in admin and is on its counter's list with their PIN; removed, they are off both.
+- Server: none yet (accounts are demo-only, see Not yet done). The super admin's **Add a manager** on bar detail still works.
+- Tests: `src/platform/platform.test.ts` (rules), `src/admin/managers.test.tsx` (screen).
+
+## Stock per size (asked for after owners add managers)
+
+- **Product → How stock is counted → Keep each size's stock apart** (`Product.per_size`). Each size then has its own stock (`ProductSize.stock_qty`, in bottles for counted things and ml for spirits) and warning level (`low_stock_at`, typed in bottles). A size can be **poured from** another (`stock_from`: the tot from the 750 ml bottle; set by default when switched on for spirits). The product's `stock_qty` stays the sum, so totals elsewhere hold.
+- Switching on puts all current stock on the largest size until each size is counted (the editor says so); switching off adds the sizes together. `rebalancePools` (`src/domain/stock.ts`) and the server's `apply_admin_event` do the same.
+- **Sales, voids, comps, write-offs** move the stock of the size sold (or the one it is poured from): `shiftStock` (`src/data/pools.ts`), server `adjust_stock(…, p_size)` / `move_stock`. Movements and delivery lines carry `size_id`.
+- **Add stock** offers each size and its packs ("250ml bottle", "Box of 12 (12 × 750ml)", "Crate of 24 (500ml)") and shows that size's "Now X → Y". **In stock, by size** on the product counts each size (spirits: full bottles + ml in an open one) and sets its warning.
+- **Reflected**: Products shows each size's stock and Low per size; Today flags the size below zero ("Smirnoff Vodka 250ml is at −250 ml"); the counter's "N left" is per size (tile and size picker).
+- **The stock figure is edited on the product** ("In stock now", or "<size> in stock now" per size), in the unit of the counting method selected: bottles for Count, ml for Millilitres. Changing the method converts the figure as a suggestion (at the largest bottle size, else 750 ml) and says so; the old number is never shown with the new unit. Saved as `shelf_counted` events (before → after in the audit log), with or without other product changes. This replaced the separate "Count shelf" step.
+- Tests: `src/admin/sizeStock.test.tsx`, `supabase/admin.test.ts`.
+
+## Kaunta (super admin) controls (asked for after stock per size)
+
+- **Bars an owner may open** (`Account.max_bars`; null = no limit): set when creating an owner ("Bars they can open", default 1) and changed on **Owners & managers** ("2 of 3", Change, No limit). `createBar` refuses past it (`'limit'`); the owner's bar switcher then says to ask Kaunta instead of offering Add a bar. Lowering it below what they own keeps their bars. Demo: Njeri may own 3.
+- **Suspend a bar** (`PlatformBar.suspended_at`; bar page → Access → Suspend bar, with a confirm; Give access back): `barsFor` leaves it out, so its owner and managers can't open it (a manager with no other bar sees "Your bar is suspended"); its counters show "This bar is suspended" instead of the staff list, so whoever was signed in is out. Records stay. **Bars** shows a Suspended chip.
+- **Suspend counter staff** from the bar page (Suspend / Give access back next to each person's PIN): the same `person_suspended` / `person_reinstated` events an owner records, as Kaunta.
+- **Open this bar's admin** (bar page): `/admin` opens that bar with every owner tab, as Kaunta (`superViewBar`, only while signed in to /super; works on a suspended bar too). A banner says so; **Back to Kaunta** returns to the bar page. Kaunta is not a person of the bar (`KAUNTA_PERSON`): not on its staff list or counter, no Sell at the counter.
+- **Kaunta's actions are left out of what owners and managers see** (`visibleTo` in `AdminSession.tsx`): Audit log, Sales feed, Staff & devices and the product's "last changed". Kaunta's view and /super's activity list show them. The changes themselves (a PIN, a suspension, a price) still apply.
+- Fixed on the way: the Audit log's **All days** showed today only; the sample bar's seed failed if an owner's or manager's row was written first (now `bulkPut`).
+- Server: none of this yet (accounts and the platform are demo-only; see Not yet done).
+- Tests: `src/platform/platform.test.ts`, `src/platform/kaunta.test.tsx`.
+
 ## How step 5 is put together
 
 - Admin has its own local store (Dexie, `kaunta-admin`, or `kaunta-admin-demo` in demo mode). Screens read only from it.
@@ -76,7 +120,7 @@ Last updated: 2026-11-16 (staff access).
 
 ## Tests
 
-- `npm test`: 465 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
+- `npm test`: 497 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
 - Counter UI and phone-sync tests pin the clock to the 22:20 snapshot; before 2026-11-11 they used the real clock and broke when the business day rolled over.
 - `npm run test:e2e`: 17 Playwright tests (landing and counter at 360×800, admin at 390 px and desktop). `e2e/fullLoop.spec.ts` does the whole loop in one browser: add a bar, its code, presets, add a person, the code at the counter, one-time code → PIN, a sale, the sale in admin.
 
@@ -99,7 +143,7 @@ Last updated: 2026-11-16 (staff access).
 - "Already signed in to admin on this browser" is trusted by the counter on the same browser (as the rest of counter login is checked on the device).
 - Suspending is for counter staff and servers; managers are suspended by Kaunta removing their account (not built).
 - A wrong sign-in never says whether the username exists.
-- Managers' admin accounts are created by the super admin (bar detail → Add a manager); owners can't create them yet.
+- Managers' accounts are created by the super admin (bar detail) or by an owner for their own bars (Staff & devices → Managers). An owner can only add to another of their bars someone who already manages one of their bars.
 - New Kiswahili strings for the landing page and bar switching (`landing.*`, `admin.bars.*`) need the same native-speaker review.
 - First-run presets come with the seed's placeholder prices (not KES 0) so the counter can sell straight away; tracked presets start at 0 on the shelf and so show "Low" until stock is added. The chip says "Smirnoff Vodka" (seed name) where the design says "Smirnoff".
 
