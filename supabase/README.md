@@ -2,7 +2,7 @@
 
 The server for counter sync (build step 4) and the admin screens (build step 5). Phones never read or write tables
 directly: row level security is on with no policies and table grants are
-revoked. They call three functions with the public anon key:
+revoked. They call three functions with the project's publishable key:
 
 | Function | What it does | Rules |
 |---|---|---|
@@ -18,16 +18,42 @@ What becomes "needs admin" on the phone:
 - **wrong_device**: an event claiming to come from a different phone. Stored, not applied.
 - **not_applied**: anything else that failed (for example a payment for an order the server never received). Stored with the error message.
 
-Admins and owners sign in with Supabase Auth (phone or email + password).
-Their auth user is linked to a `people` row with role `owner` or `admin`, and
-they too only call functions (`20261111000000_kaunta_admin.sql`):
+Owners sign in with a username and password, managers with a username and a
+4-digit PIN (`20261121000000_kaunta_accounts.sql`): accounts live on the server
+(bcrypt, 5 wrong tries lock an account 15 minutes), and signing in
+(`account_sign_in`) gives a session token. Everything else goes through one
+function, `kaunta_admin(session, call, args)`, which runs the call as that
+account's `people` row in the bar (role `owner` or `admin`). The calls
+(`20261111000000_kaunta_admin.sql` and later):
 
 | Function | What it does | Rules |
 |---|---|---|
 | `admin_pull(since)` | Everything changed since the cursor, for the admin's local store: last 35 business days of sales, approvals, shifts, deliveries, day closes, stock movements, and the audit log with each event's detail. | R-AUD-1 |
 | `admin_push(events)` | Applies admin decisions and changes in order, idempotently by id: approvals (with a 2-minute undo), product and price changes, deliveries, shelf counts, kegs, unlock / PIN reset / add / archive people, revoke a phone, close the day. A change that can't apply (say another admin decided first) is answered `rejected` and changes nothing. | R-VOID-2…4, R-COMP-1, R-STOCK-2…4, R-KEG-1…3, R-PIN-1/2, R-DEV-2, R-DAY-3 |
 | `admin_create_pairing_code(name)` | A 6-digit code for a new counter phone, recorded as made by that admin. | R-DEV-1 |
+| `admin_bars`, `admin_me`, `admin_platform` | The bars they run (suspended bars left out); their account, how many bars they may own, bars suspended on them; their managers. | |
+| `admin_create_bar(name)` | An owner starts another bar, within the number Kaunta allows (`bar_limit`). | |
+| `admin_change_secret(current, next, counter_hash)` | Their own password or PIN. | |
+| `admin_create_manager`, `admin_add_manager`, `admin_remove_manager` | An owner adds a manager to one or more of their own bars, adds an existing manager of theirs to another bar, or takes one off a bar. Audited in each bar. | |
 
+Counter phones check owners' passwords and managers' PINs offline, so the app
+sends a PBKDF2 hash (`counter_hash`, the format of `src/domain/pin.ts`) with
+every new or changed password or PIN; it goes on the account's `people` row in
+each bar. The server's own bcrypt hash is only used to sign in.
+
+**Kaunta** (the super admin, `/super`) signs in with a password kept on the
+server (`super_sign_in`, 5 wrong tries lock it 15 minutes, sessions last 12
+hours) and calls `kaunta_super(session, call, args)`: `super_platform`,
+`super_create_owner`, `super_add_manager`, `super_reset_secret`,
+`super_set_bar_limit`, `super_set_bar_suspended`, `super_change_password`, and
+any bar's calls (`admin_pull`, `admin_push`, `admin_set_bar_code`…) as the
+person `kaunta`, so what Kaunta does is audited as Kaunta and the app leaves it
+out of owners' and managers' logs. A suspended bar: its owner and managers get
+`bar_suspended`, its phones get `{error: 'bar_suspended'}` from sync (and sign
+everyone out until access is given back), and its code no longer joins phones.
+
+People linked to Supabase Auth the old way (`people.auth_user_id`) can still
+call the admin functions directly; the app no longer uses that.
 Staff access (`20261118000000_kaunta_staff_access.sql`): owners and managers
 set counter staff's 4-digit PINs with the admin event `pin_changed` (staff
 can't: a counter's `pin_set` is refused). `people.pin_code` keeps the digits so
@@ -41,43 +67,42 @@ queued is still accepted.
 ## Set up a project
 
 1. Create a project at [supabase.com](https://supabase.com) (any region; `eu-central` or `af-south` are closest to Kenya).
-2. In **SQL Editor**, run the migrations in order: `supabase/migrations/20261110000000_kaunta_sync.sql`, then `20261111000000_kaunta_admin.sql`, then `20261112000000_kaunta_categories.sql` (the five counter categories), then `20261116000000_kaunta_multi_bar.sql` (many bars on one project), then `20261117000000_kaunta_bar_codes.sql` (each bar's counter code).
-3. For the sample data (Baraka Pub, as in the designs), also run `supabase/seed.sql`. For a real bar, create the first bar and its owner instead:
+2. Apply the migrations, in file-name order. With the CLI (recommended):
 
-   ```sql
-   insert into public.bar (id, name) values ('bar_kilimani', 'Kilimani Lounge');
-   insert into public.people (id, bar_id, name, initial, colour, role, login)
-   values ('p_owner', 'bar_kilimani', 'Amina', 'A', '#F2A0A0', 'owner', 'password');
+   ```sh
+   npx supabase login
+   npx supabase link --project-ref <your project ref>
+   npx supabase db push
    ```
 
-   Further bars are started by that owner from the admin screens (the bar's name at the top → **Add a bar**).
-4. In **Project Settings → API**, copy the Project URL and the `anon` `public` key into `.env.local` (start from `.env.example`). Never use the `service_role` key in the app.
-5. Run `npm run dev`. The counter shows **Connect this phone**.
-6. Every bar has a counter code (`select name, counter_code from public.bar;`; the sample bar's is `BRKAPUB2`). On the phone, tap **Open the counter** and type it (shown as `BRKA-PUB2`). Or, for tighter control, make a one-time pairing code in the SQL Editor (valid 10 minutes, works once):
+   Or in **SQL Editor**, run each file in `supabase/migrations/` in order (`20261110000000_kaunta_sync.sql` first, `20261121000000_kaunta_accounts.sql` last). They need the `pgcrypto` extension, which Supabase has; the last migration turns it on if it is off.
+3. For the sample data (Baraka Pub, as in the designs), also run `supabase/seed.sql` (CLI: `psql "<connection string>" < supabase/seed.sql`). A real bar is created by Kaunta in step 5, so skip it for a real project.
+4. Set Kaunta's password, once, in **SQL Editor** (8+ characters; run it again to change it if it is lost, which also signs Kaunta out everywhere):
 
    ```sql
-   select create_pairing_code('Counter 1', 'd_counter1');  -- re-pair the sample "Counter 1"
-   select create_pairing_code('Counter 3');                 -- or a brand-new device
-   -- With more than one bar on the project, say which bar the phone is for:
-   select create_pairing_code('Counter 1', null, null, 'bar_kilimani');
+   select public.set_super_password('a long password only Kaunta knows');
    ```
 
-   Type the code on the phone. It pulls the menu, staff and open orders, then shows the staff list.
+5. In **Project Settings → API Keys**, copy the project URL and the **Publishable key** (`sb_publishable_…`) into `.env.local` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`; the file is there with both empty). A project still on legacy keys can use its `anon` key as the publishable key. Never put the secret key or `service_role` key in the app. Restart `npm run dev`.
+6. Open `/super`, sign in with Kaunta's password, and **Add an owner**: their name, username, the password Kaunta gives them, how many bars they may open, and their first bar (its code is made, or typed). Give the owner their username, password and the bar's code.
+7. The owner signs in at **Owner or manager sign in** (`/admin`), adds their menu and staff, and adds managers under **Staff & devices → Managers**.
+8. On each counter phone, **Open the counter** and type the bar's code (or a one-time 6-digit code from **Staff & devices → Add a counter phone**). Staff tap their name and type the PIN the owner or a manager set.
 
-7. Give the owner an admin sign-in. In **Authentication → Users → Add user**, create a user with the owner's phone number (or email) and a password, and tick *Auto confirm*. Copy the user's id and link it:
+On the sample data: `seed.sql`'s people have no accounts. To sign in to Baraka Pub as its owner, create an owner in `/super` and put them in it in **SQL Editor**:
 
-   ```sql
-   update public.people set auth_user_id = '<the user id>', phone = '+2547…' where id = 'p_njeri';
-   ```
+```sql
+update public.people set account_id = (select id from public.accounts where username = 'njeri') where id = 'p_njeri';
+update public.bar set owner_account_id = (select id from public.accounts where username = 'njeri') where id = 'bar_baraka';
+```
 
-   Open `/admin` and sign in. From there, **Staff & devices → Make pairing code** replaces step 6, and other admins are linked the same way.
+(Their first bar from step 6 stays theirs too; Kaunta can suspend it.)
 
 ## Many bars on one project
 
 Every bar-scoped row has a `bar_id`. The functions that work inside a bar (`sync_push`, `sync_pull`, `admin_push`, `admin_pull`, `admin_create_pairing_code`) run as the role `kaunta_api`, and row level security shows that role only the rows of one bar. The bar is fixed at the start of each call from something the caller cannot forge:
 
 - **A counter phone** belongs to the bar whose pairing code it used. Its device token decides the bar on every sync, so a phone only ever sees and writes its own bar.
-- **An owner or admin** has one `people` row per bar, all linked to the same sign-in. `admin_bars()` lists them; each admin call names a bar (`p_bar_id`) and is refused (`not_admin`) unless they are an owner or admin there.
+- **An owner or admin** has one `people` row per bar, all linked to the same account (`people.account_id`). `admin_bars()` lists them; each admin call names a bar (`p_bar_id`) and is refused (`not_admin`) unless they are an owner or admin there.
 - **An owner** starts another bar with `admin_create_bar(name)`: the bar with default settings, and them as its owner. It opens on first run (no products).
 
 A counter phone joins a bar with the bar's code (`pair_with_bar_code`), or a one-time 6-digit code (`pair_device`). Wrong codes of either kind count toward one rate limit (20 in 10 minutes). Owners replace a leaked code with `admin_new_bar_code(bar)`; phones already joined keep working and can be revoked one by one.
@@ -86,11 +111,10 @@ Categories are shared by all bars. Order numbers, day closes and sign-ins are pe
 
 The sample `seed.sql` is the counter's snapshot (five open orders at 22:20). The admin demo without a server runs on the whole sample night instead (`src/domain/sampleDay.ts`), so Today shows the design's totals there; on a server it shows whatever the counters have recorded.
 
-With the CLI instead: `supabase link` then `supabase db push`, and `psql < supabase/seed.sql` for the sample data.
 
 ## Tests
 
-`npm test` runs this migration in PGlite (real Postgres compiled to WebAssembly, no Docker), with Supabase's `anon`/`authenticated`/`service_role` roles created first:
+`npm test` runs the migrations in PGlite (real Postgres compiled to WebAssembly, no Docker, with pgcrypto), with Supabase's `anon`/`authenticated`/`service_role` roles created first:
 
 - `supabase/sync.test.ts`: every function, each event type, each conflict rule, and that the anon role cannot read tables or make pairing codes.
 - `supabase/phones.test.ts`: real phone stores (IndexedDB) syncing with the database, including two counters and an offline price change.
@@ -98,4 +122,5 @@ With the CLI instead: `supabase link` then `supabase db push`, and `psql < supab
 - `supabase/adminSync.test.ts`: the admin's local store syncing with the database (changes up, rows down, a refused change re-pulled).
 - `supabase/firstRun.test.ts`: a project with the migrations only (no seed) has the categories and takes the first-run presets.
 - `supabase/multiBar.test.ts`: an owner lists and starts bars; each bar sees only its rows; a change aimed at another bar's row is refused; an admin of one bar is not an admin of another; a phone paired by one bar syncs only that bar and numbers its own day.
+- `supabase/accounts.test.ts`: Kaunta's password and lock; owners created with their first bar and a bar limit; sign-in, lockout and changing a password; owners adding and removing managers (and not taking another owner's); a suspended bar shutting out its owner, managers and phones but not Kaunta; Kaunta's changes audited as `kaunta`; the publishable key reaching only the entry points.
 - `supabase/seed.test.ts`: `seed.sql` still matches `kaunta-handoff/data/seed.json`. After changing the seed, run `npm run seed:sql`.

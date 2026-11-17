@@ -1,5 +1,9 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { PGlite } from '@electric-sql/pglite';
+import { pgcrypto } from '@electric-sql/pglite/contrib/pgcrypto';
+
+/** Supabase has pgcrypto (accounts' passwords are hashed with it). */
+const extensions = { pgcrypto };
 
 const migrationsDir = new URL('./migrations/', import.meta.url);
 /** Every migration, in file-name order, as `supabase db push` runs them. */
@@ -30,7 +34,7 @@ const SUPABASE_ROLES = `
  */
 export async function freshDb(): Promise<PGlite> {
   template ??= (async () => {
-    const pg = new PGlite();
+    const pg = new PGlite({ extensions });
     await pg.exec(SUPABASE_ROLES);
     for (const migration of migrations) await pg.exec(migration);
     await pg.exec(seed);
@@ -38,7 +42,7 @@ export async function freshDb(): Promise<PGlite> {
     await pg.close();
     return dump;
   })();
-  return new PGlite({ loadDataDir: await template });
+  return new PGlite({ loadDataDir: await template, extensions });
 }
 
 export async function call<T = Record<string, unknown>>(pg: PGlite, sql: string, params: unknown[] = []): Promise<T> {
@@ -48,7 +52,7 @@ export async function call<T = Record<string, unknown>>(pg: PGlite, sql: string,
 
 /** A real Postgres with the migrations only, as a real bar's project starts (no seed.sql). */
 export async function migratedDb(): Promise<PGlite> {
-  const pg = new PGlite();
+  const pg = new PGlite({ extensions });
   await pg.exec(SUPABASE_ROLES);
   for (const migration of migrations) await pg.exec(migration);
   return pg;

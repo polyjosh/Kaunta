@@ -1,6 +1,7 @@
 import { isPairingCode, normaliseBarCode } from '../domain/barCode';
 import type { KauntaEvent, OutboxEntry } from '../data/events';
 import type { Id, Instant } from '../domain/types';
+import { restHeaders } from './config';
 import type { ServerConfig } from './config';
 
 /** What goes over the wire: the event, without this phone's queue bookkeeping. */
@@ -32,7 +33,7 @@ export interface PushResult {
   duplicate: boolean;
 }
 
-export type PushResponse = { server_time: Instant; results: PushResult[] } | { error: 'unknown_device' };
+export type PushResponse = { server_time: Instant; results: PushResult[] } | { error: 'unknown_device' | 'bar_suspended' };
 
 export type Row = Record<string, unknown>;
 export const PULL_TABLES = [
@@ -52,9 +53,9 @@ export const PULL_TABLES = [
 export type PullTable = (typeof PULL_TABLES)[number];
 
 export type PullData = { cursor: Instant; server_time: Instant } & Record<PullTable, Row[]>;
-export type PullResponse = PullData | { error: 'unknown_device' | 'revoked_device' };
+export type PullResponse = PullData | { error: 'unknown_device' | 'revoked_device' | 'bar_suspended' };
 
-export type PairResponse = { device_id: Id; token: string } | { error: 'invalid_code' | 'too_many_attempts' };
+export type PairResponse = { device_id: Id; token: string } | { error: 'invalid_code' | 'too_many_attempts' | 'bar_suspended' };
 
 /** How the phone talks to the server. The engine only knows this interface. */
 export interface SyncTransport {
@@ -89,11 +90,7 @@ export class SupabaseTransport implements SyncTransport {
     try {
       response = await this.fetchImpl(`${this.config.url}/rest/v1/rpc/${fn}`, {
         method: 'POST',
-        headers: {
-          apikey: this.config.anonKey,
-          Authorization: `Bearer ${this.config.anonKey}`,
-          'Content-Type': 'application/json',
-        },
+        headers: restHeaders(this.config),
         body: JSON.stringify(body),
         signal: controller.signal,
       });

@@ -2,21 +2,15 @@ import { liveQuery } from 'dexie';
 import type { AdminOutboxEntry } from '../data/adminEvents';
 import type { KauntaDB } from '../data/db';
 import type { Id, Instant } from '../domain/types';
+import { restHeaders } from '../sync/config';
 import type { ServerConfig } from '../sync/config';
+import type { Account, Platform } from '../platform/platform';
 import { backoffDelay } from '../sync/engine';
 import { normaliseRow } from '../sync/apply';
 import { PULL_TABLES, TransportError } from '../sync/transport';
 import type { Row } from '../sync/transport';
 import type { PairingCode } from './AdminSession';
 import type { BarSummary } from './bars';
-
-export interface AuthSession {
-  access_token: string;
-  refresh_token: string;
-  /** ms since epoch */
-  expires_at: number;
-  user_id: string;
-}
 
 export type SignInError = 'wrong_password' | 'network' | 'server';
 
@@ -39,34 +33,63 @@ interface AdminPushResult {
   reason: string | null;
 }
 
-const STORAGE_KEY = 'kaunta.adminAuth';
+/** What the server says back when it refuses a call (raised in the migrations). */
+const KNOWN_REASONS = ['not_admin', 'not_owner', 'name_required', 'bar_limit', 'bar_suspended', 'signed_out'] as const;
 
-/** Supabase Auth and the three admin functions, over plain fetch (like the counter's transport). */
+/** An account's sign-in answer (account_sign_in), shaped like the demo's signIn(). */
+export type AccountSignIn =
+  | { ok: true; account: Account }
+  | { ok: false; reason: 'wrong'; triesLeft: number | null }
+  | { ok: false; reason: 'locked'; until: Instant };
+
+/** Who is signed in and what Kaunta lets them do (admin_me). */
+export interface AccountMe {
+  account: Account;
+  bar_limit: { used: number; max: number | null };
+  /** Names of their bars Kaunta suspended. */
+  suspended: string[];
+}
+
+export type ServerAnswer = { error: string } | { ok: true };
+
+const STORAGE_KEY = 'kaunta.adminSession';
+const SUPER_STORAGE_KEY = 'kaunta.superServerSession';
+
+/**
+ * The server for owners and managers (or, with `kaunta`, for Kaunta), over
+ * plain fetch like the counter's transport. Sign-in gives a session token;
+ * every call goes through kaunta_admin (or kaunta_super) with it, sent with
+ * the publishable key only.
+ */
 export class AdminServer {
-  private session: AuthSession | null;
+  private session: string | null;
 
   constructor(
     private readonly config: ServerConfig,
     private readonly fetchImpl: typeof fetch = (...args) => fetch(...args),
     private readonly storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null = typeof localStorage === 'undefined' ? null : localStorage,
+    readonly kaunta = false,
   ) {
     this.session = this.load();
   }
 
-  private load(): AuthSession | null {
+  private get key() {
+    return this.kaunta ? SUPER_STORAGE_KEY : STORAGE_KEY;
+  }
+
+  private load(): string | null {
     try {
-      const raw = this.storage?.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as AuthSession) : null;
+      return this.storage?.getItem(this.key) ?? null;
     } catch {
       return null;
     }
   }
 
-  private save(session: AuthSession | null): void {
+  private save(session: string | null): void {
     this.session = session;
     try {
-      if (session) this.storage?.setItem(STORAGE_KEY, JSON.stringify(session));
-      else this.storage?.removeItem(STORAGE_KEY);
+      if (session) this.storage?.setItem(this.key, session);
+      else this.storage?.removeItem(this.key);
     } catch {
       // A session that is not remembered just means signing in again.
     }
@@ -76,83 +99,91 @@ export class AdminServer {
     return this.session !== null;
   }
 
-  private async auth(grant: 'password' | 'refresh_token', body: object): Promise<AuthSession> {
+  private async post<T>(fn: string, body: Record<string, unknown>): Promise<T> {
     let response: Response;
     try {
-      response = await this.fetchImpl(`${this.config.url}/auth/v1/token?grant_type=${grant}`, {
-        method: 'POST',
-        headers: { apikey: this.config.anonKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-    } catch (error) {
-      throw new TransportError(`network: ${(error as Error).message}`);
-    }
-    if (response.status === 400 || response.status === 401) throw new TransportError('wrong_password', response.status);
-    if (!response.ok) throw new TransportError(`server answered ${response.status}`, response.status);
-    const data = (await response.json()) as { access_token: string; refresh_token: string; expires_in: number; user: { id: string } };
-    const session = { access_token: data.access_token, refresh_token: data.refresh_token, expires_at: Date.now() + data.expires_in * 1000, user_id: data.user.id };
-    this.save(session);
-    return session;
-  }
-
-  async signIn(login: string, password: string): Promise<void> {
-    await this.auth('password', { ...normaliseLogin(login), password });
-  }
-
-  signOut(): void {
-    this.save(null);
-  }
-
-  /** A valid access token, refreshed a minute before it runs out. */
-  private async token(): Promise<string> {
-    if (!this.session) throw new TransportError('signed_out', 401);
-    if (this.session.expires_at - Date.now() < 60_000) {
-      try {
-        await this.auth('refresh_token', { refresh_token: this.session.refresh_token });
-      } catch (error) {
-        if ((error as TransportError).status === 400 || (error as TransportError).status === 401) this.save(null);
-        throw error;
-      }
-    }
-    return this.session!.access_token;
-  }
-
-  private async rpc<T>(fn: string, body: Record<string, unknown>): Promise<T> {
-    const token = await this.token();
-    let response: Response;
-    try {
-      response = await this.fetchImpl(`${this.config.url}/rest/v1/rpc/${fn}`, {
-        method: 'POST',
-        headers: { apikey: this.config.anonKey, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+      response = await this.fetchImpl(`${this.config.url}/rest/v1/rpc/${fn}`, { method: 'POST', headers: restHeaders(this.config), body: JSON.stringify(body) });
     } catch (error) {
       throw new TransportError(`network: ${(error as Error).message}`);
     }
     if (!response.ok) {
       const text = await response.text().catch(() => '');
-      const known = ['not_admin', 'not_owner', 'name_required'].find((reason) => text.includes(reason));
+      const known = KNOWN_REASONS.find((reason) => text.includes(reason));
+      if (known === 'signed_out') this.save(null);
       throw new TransportError(known ?? `server answered ${response.status}`, response.status);
     }
-    return (await response.json()) as T;
+    const text = await response.text();
+    return (text ? JSON.parse(text) : null) as T;
   }
 
-  /** The bars this sign-in may run (owner or admin in each). */
-  bars = (): Promise<BarSummary[]> => this.rpc<BarSummary[]>('admin_bars', {});
+  /** One call through the entry point, with this session. */
+  call<T>(fn: string, args: Record<string, unknown> = {}): Promise<T> {
+    if (!this.session) return Promise.reject(new TransportError('signed_out', 401));
+    return this.post<T>(this.kaunta ? 'kaunta_super' : 'kaunta_admin', { p_session: this.session, p_call: fn, p_args: args });
+  }
 
-  /** An owner starts another bar; they are its owner. */
-  createBar = (name: string): Promise<BarSummary> => this.rpc<BarSummary>('admin_create_bar', { p_name: name });
+  /** Owners: username + password; managers: username + PIN. */
+  async signIn(username: string, secret: string): Promise<AccountSignIn> {
+    const r = await this.post<{ ok: boolean; token?: string; account?: Account; reason?: 'wrong' | 'locked'; tries_left?: number | null; until?: Instant }>(
+      'account_sign_in',
+      { p_username: username, p_secret: secret },
+    );
+    if (r.ok && r.token && r.account) {
+      this.save(r.token);
+      return { ok: true, account: r.account };
+    }
+    return r.reason === 'locked' ? { ok: false, reason: 'locked', until: r.until! } : { ok: false, reason: 'wrong', triesLeft: r.tries_left ?? null };
+  }
+
+  /** Kaunta: its password. */
+  async superSignIn(password: string): Promise<'ok' | 'wrong' | 'locked' | 'not_set'> {
+    const r = await this.post<{ ok: boolean; token?: string; reason?: 'wrong' | 'locked' | 'not_set' }>('super_sign_in', { p_password: password });
+    if (r.ok && r.token) {
+      this.save(r.token);
+      return 'ok';
+    }
+    return r.reason ?? 'wrong';
+  }
+
+  signOut(): void {
+    const session = this.session;
+    this.save(null);
+    if (session) void this.post(this.kaunta ? 'super_sign_out' : 'account_sign_out', { p_session: session }).catch(() => {});
+  }
+
+  /** The bars this sign-in may run (owner or admin in each; suspended bars left out). */
+  bars = (): Promise<BarSummary[]> => this.call<BarSummary[]>('admin_bars');
+
+  /** An owner starts another bar (within Kaunta's limit); they are its owner. */
+  createBar = (name: string): Promise<BarSummary> => this.call<BarSummary>('admin_create_bar', { p_name: name });
+
+  me = (): Promise<AccountMe> => this.call<AccountMe>('admin_me');
+
+  /** An owner's platform (their account, managers, bars and who runs them); Kaunta's is everything. */
+  platform = (): Promise<Platform> => this.call<Platform>(this.kaunta ? 'super_platform' : 'admin_platform');
+
+  changeSecret = (current: string, next: string, counterHash: string) =>
+    this.call<ServerAnswer>('admin_change_secret', { p_current: current, p_next: next, p_counter_hash: counterHash });
+
+  createManager = (barIds: string[], input: { name: string; username: string; pin: string }, counterHash: string) =>
+    this.call<{ account: Account } | { error: string }>('admin_create_manager', {
+      p_bar_ids: barIds, p_name: input.name, p_username: input.username, p_pin: input.pin, p_counter_hash: counterHash,
+    });
+
+  addManager = (accountId: string, barId: string) => this.call<ServerAnswer>('admin_add_manager', { p_account: accountId, p_bar: barId });
+
+  removeManager = (accountId: string, barId: string) => this.call<ServerAnswer>('admin_remove_manager', { p_account: accountId, p_bar: barId });
 
   /** The admin functions for one bar. The server checks this sign-in may run it. */
   forBar(barId: string): BarServer {
     return {
-      pull: (since) => this.rpc<AdminPull>('admin_pull', { p_bar_id: barId, p_since: since }),
-      push: (events) => this.rpc<{ server_time: Instant; results: AdminPushResult[] }>('admin_push', { p_bar_id: barId, p_events: events }),
-      createPairingCode: (deviceName) => this.rpc<PairingCode>('admin_create_pairing_code', { p_bar_id: barId, p_device_name: deviceName }),
+      pull: (since) => this.call<AdminPull>('admin_pull', { p_bar_id: barId, p_since: since }),
+      push: (events) => this.call<{ server_time: Instant; results: AdminPushResult[] }>('admin_push', { p_bar_id: barId, p_events: events }),
+      createPairingCode: (deviceName) => this.call<PairingCode>('admin_create_pairing_code', { p_bar_id: barId, p_device_name: deviceName }),
       changeBarCode: async (code) => {
         const answer = code
-          ? await this.rpc<{ counter_code?: string; error?: 'invalid' | 'taken' }>('admin_set_bar_code', { p_bar_id: barId, p_code: code })
-          : await this.rpc<{ counter_code: string }>('admin_new_bar_code', { p_bar_id: barId });
+          ? await this.call<{ counter_code?: string; error?: 'invalid' | 'taken' }>('admin_set_bar_code', { p_bar_id: barId, p_code: code })
+          : await this.call<{ counter_code: string }>('admin_new_bar_code', { p_bar_id: barId });
         return 'error' in answer && answer.error ? { error: answer.error } : { code: answer.counter_code! };
       },
     };

@@ -8,7 +8,7 @@ import { ThemeProvider } from '../lib/ThemeProvider';
 import { AdminApp } from './AdminApp';
 import { AdminServer, normaliseLogin } from './server';
 
-const config = { url: 'https://example.supabase.co', anonKey: 'anon' };
+const config = { url: 'https://example.supabase.co', publishableKey: 'sb_publishable_test' };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 const memory = () => {
   const data = new Map<string, string>();
@@ -25,42 +25,48 @@ describe('normaliseLogin', () => {
 });
 
 describe('AdminServer', () => {
-  it('signs in with Supabase Auth and calls the admin functions with the access token', async () => {
+  it('signs in with a username and password, then calls kaunta_admin with the session (publishable key only)', async () => {
     const fetchMock = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
       const u = String(url);
-      if (u.includes('/auth/v1/token?grant_type=password')) {
-        expect(JSON.parse(String(init!.body))).toEqual({ phone: '+254712345678', password: 'secret' });
-        return json({ access_token: 'at1', refresh_token: 'rt1', expires_in: 3600, user: { id: 'u1' } });
+      expect(init!.headers).toEqual({ apikey: 'sb_publishable_test', 'Content-Type': 'application/json' });
+      if (u.endsWith('/rpc/account_sign_in')) {
+        expect(JSON.parse(String(init!.body))).toEqual({ p_username: 'njeri', p_secret: 'Baraka@2026' });
+        return json({ ok: true, token: 'tok1', account: { id: 'acct_1', username: 'njeri' } });
       }
-      expect(u).toBe('https://example.supabase.co/rest/v1/rpc/admin_pull');
-      expect((init!.headers as Record<string, string>).Authorization).toBe('Bearer at1');
-      expect(JSON.parse(String(init!.body))).toEqual({ p_bar_id: 'bar_1', p_since: null });
+      expect(u).toBe('https://example.supabase.co/rest/v1/rpc/kaunta_admin');
+      expect(JSON.parse(String(init!.body))).toEqual({ p_session: 'tok1', p_call: 'admin_pull', p_args: { p_bar_id: 'bar_1', p_since: null } });
       return json({ me: 'p_njeri' });
     });
-    const server = new AdminServer(config, fetchMock as typeof fetch, memory());
-    await server.signIn('0712 345 678', 'secret');
+    const storage = memory();
+    const server = new AdminServer(config, fetchMock as typeof fetch, storage);
+    expect(await server.signIn('njeri', 'Baraka@2026')).toMatchObject({ ok: true });
     expect(server.signedIn).toBe(true);
+    expect(storage.getItem('kaunta.adminSession')).toBe('tok1');
     expect((await server.forBar('bar_1').pull(null)).me).toBe('p_njeri');
   });
 
-  it('refreshes a token that is about to run out', async () => {
-    const storage = memory();
-    storage.setItem('kaunta.adminAuth', JSON.stringify({ access_token: 'old', refresh_token: 'rt', expires_at: Date.now() + 10_000, user_id: 'u1' }));
-    const calls: string[] = [];
-    const fetchMock = vi.fn(async (url: RequestInfo | URL, init?: RequestInit) => {
-      calls.push(String(url));
-      if (String(url).includes('grant_type=refresh_token')) return json({ access_token: 'new', refresh_token: 'rt2', expires_in: 3600, user: { id: 'u1' } });
-      expect((init!.headers as Record<string, string>).Authorization).toBe('Bearer new');
-      return json({ me: 'p_njeri' });
-    });
-    await new AdminServer(config, fetchMock as typeof fetch, storage).forBar('bar_1').pull(null);
-    expect(calls[0]).toContain('grant_type=refresh_token');
+  it('says how many tries are left, or until when the account is locked', async () => {
+    const answers = [{ ok: false, reason: 'wrong', tries_left: 3 }, { ok: false, reason: 'locked', until: '2026-11-17T10:15:00Z' }];
+    const server = new AdminServer(config, (async () => json(answers.shift())) as typeof fetch, memory());
+    expect(await server.signIn('njeri', 'nope')).toEqual({ ok: false, reason: 'wrong', triesLeft: 3 });
+    expect(await server.signIn('njeri', 'nope')).toEqual({ ok: false, reason: 'locked', until: '2026-11-17T10:15:00Z' });
+    expect(server.signedIn).toBe(false);
   });
 
-  it('a wrong password is said as such', async () => {
-    const server = new AdminServer(config, (async () => json({ error: 'invalid_grant' }, 400)) as typeof fetch, memory());
-    await expect(server.signIn('0712345678', 'nope')).rejects.toThrow('wrong_password');
+  it('an expired session signs out; Kaunta uses kaunta_super', async () => {
+    const storage = memory();
+    storage.setItem('kaunta.adminSession', 'old');
+    const server = new AdminServer(config, (async () => new Response('{"message":"signed_out"}', { status: 400 })) as typeof fetch, storage);
+    await expect(server.bars()).rejects.toThrow('signed_out');
     expect(server.signedIn).toBe(false);
+    const calls: string[] = [];
+    const kaunta = new AdminServer(config, (async (url: RequestInfo | URL) => {
+      calls.push(String(url));
+      return String(url).endsWith('super_sign_in') ? json({ ok: true, token: 'k1' }) : json({ version: 2, accounts: [], bars: [], members: [] });
+    }) as typeof fetch, memory(), true);
+    expect(await kaunta.superSignIn('kaunta-2026')).toBe('ok');
+    await kaunta.platform();
+    expect(calls.at(-1)).toBe('https://example.supabase.co/rest/v1/rpc/kaunta_super');
   });
 });
 
@@ -86,17 +92,16 @@ describe('admin with a server', () => {
     );
   }
 
-  it('asks to sign in, and says plainly when the account is not an admin', async () => {
-    const fetchMock = (async (url: RequestInfo | URL) =>
-      String(url).includes('/auth/')
-        ? json({ access_token: 'at', refresh_token: 'rt', expires_in: 3600, user: { id: 'u2' } })
-        : new Response('{"message":"not_admin"}', { status: 400 })) as typeof fetch;
+  it('asks for a username and password, and says plainly when they are wrong', async () => {
+    const fetchMock = (async () => json({ ok: false, reason: 'wrong', tries_left: 4 })) as typeof fetch;
     renderLive(new AdminServer(config, fetchMock, memory()));
     const user = userEvent.setup();
-    await user.type(await screen.findByLabelText('Phone number or email'), '0712345678');
-    await user.type(screen.getByLabelText('Password'), 'secret');
+    await user.type(await screen.findByLabelText('Username'), 'njeri');
+    await user.type(screen.getByLabelText('Password or PIN'), 'secret');
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('This account is not an owner or admin of this bar.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('4 tries left');
+    // No demo accounts are offered on a real server.
+    expect(screen.queryByText(/Baraka@2026/)).not.toBeInTheDocument();
   });
 
   it('someone with two bars picks one, and can switch from the bar’s name', async () => {
@@ -115,17 +120,20 @@ describe('admin with a server', () => {
     });
     const fetchMock = (async (url: RequestInfo | URL, init?: RequestInit) => {
       const u = String(url);
-      if (u.includes('/auth/')) return json({ access_token: 'at', refresh_token: 'rt', expires_in: 3600, user: { id: 'u1' } });
-      if (u.endsWith('/admin_bars')) return json(bars);
-      if (u.endsWith('/admin_pull')) {
-        const id = JSON.parse(String(init!.body)).p_bar_id as string;
+      const body = JSON.parse(String(init!.body)) as { p_call: string; p_args: { p_bar_id?: string } };
+      expect(u.endsWith('/kaunta_admin')).toBe(true);
+      if (body.p_call === 'admin_bars') return json(bars);
+      if (body.p_call === 'admin_me') return json({ account: { id: 'acct_1', username: 'njeri', secret: 'password', pin_set_by: 'self' }, bar_limit: { used: 1, max: 3 }, suspended: [] });
+      if (body.p_call === 'admin_platform') return json({ version: 2, accounts: [], bars: [], members: [] });
+      if (body.p_call === 'admin_pull') {
+        const id = body.p_args.p_bar_id!;
         pulled.push(id);
         return json(pull(bars.find((b) => b.id === id)!));
       }
       return json({ server_time: '2026-11-16T10:00:30.000Z', results: [] });
     }) as typeof fetch;
     const storage = memory();
-    storage.setItem('kaunta.adminAuth', JSON.stringify({ access_token: 'at', refresh_token: 'rt', expires_at: Date.now() + 3600_000, user_id: 'u1' }));
+    storage.setItem('kaunta.adminSession', 'tok');
     renderLive(new AdminServer(config, fetchMock, storage));
     const user = userEvent.setup();
 

@@ -80,5 +80,6 @@
   "login.noPin": "{name} has no PIN yet. Ask the owner or a manager to set one (admin → Staff & devices).",
   "sell.toAdmin": "Open admin",
   "bar.suspendedTitle": "This bar is suspended",
-  "bar.suspendedBody": "Kaunta has suspended {bar}. Nobody can sign in at its counter until access is given back. Speak to the owner."
+  "bar.suspendedBody": "Kaunta has suspended {bar}. Nobody can sign in at its counter until access is given back. Speak to the owner.",
+  "bar.suspendedJoin": "This bar is suspended by Kaunta. Phones can't join it until access is given back."
 }

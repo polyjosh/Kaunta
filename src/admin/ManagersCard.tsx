@@ -5,18 +5,16 @@ import { useI18n } from '../lib/I18nProvider';
 import type { MessageKey } from '../lib/i18n';
 import {
   accountById,
-  addManagerToBar,
-  createManager,
   managedBars,
   managersOf,
   membersOf,
   ownedBars,
-  removeManagerFromBar,
   usePlatform,
 } from '../platform/platform';
+import { addManagerToBar, createManager, removeManagerFromBar } from '../platform/actions';
+import type { KauntaDB } from '../data/db';
 import type { Account } from '../platform/platform';
 import { useAdmin } from './AdminSession';
-import { managerAdded, managerRemoved } from './bars';
 
 const PROBLEMS: Record<string, MessageKey> = {
   name: 'admin.managers.error.name',
@@ -55,8 +53,7 @@ export function ManagersCard() {
   const mine = ownedBars(me.id, p);
 
   const remove = async (manager: Account) => {
-    if (removeManagerFromBar(me.id, manager.id, bar.id)) return;
-    await managerRemoved(me, manager, bar.id, db);
+    if (await removeManagerFromBar(me, manager, bar.id, db)) return;
     setRemoving(null);
   };
 
@@ -84,18 +81,17 @@ export function ManagersCard() {
 
       {adding && (
         <AddManager
-          ownerId={me.id}
+          owner={me}
+          db={db}
           barId={bar.id}
           bars={mine.map((b) => ({ id: b.id, name: b.name }))}
           others={others}
           onCancel={() => setAdding(false)}
           onCreated={async (manager, barIds, pin) => {
-            for (const id of barIds) await managerAdded(me, manager, id, id === bar.id ? db : undefined);
             setAdding(false);
             setNotice({ kind: 'new', name: manager.name, username: manager.username, pin, bars: mine.filter((b) => barIds.includes(b.id)).map((b) => b.name).join(', ') });
           }}
           onAdded={async (manager) => {
-            await managerAdded(me, manager, bar.id, db);
             setAdding(false);
             setNotice({ kind: 'added', name: manager.name, bar: bar.name });
           }}
@@ -136,8 +132,9 @@ export function ManagersCard() {
   );
 }
 
-function AddManager({ ownerId, barId, bars, others, onCancel, onCreated, onAdded }: {
-  ownerId: string;
+function AddManager({ owner, db, barId, bars, others, onCancel, onCreated, onAdded }: {
+  owner: Account;
+  db: KauntaDB;
   barId: string;
   bars: { id: string; name: string }[];
   others: Account[];
@@ -162,11 +159,11 @@ function AddManager({ ownerId, barId, bars, others, onCancel, onCreated, onAdded
     try {
       if (mode === 'existing') {
         const manager = others.find((a) => a.id === existing);
-        const problem = manager ? addManagerToBar(ownerId, manager.id, barId) : 'notManager';
+        const problem = manager ? await addManagerToBar(owner, manager, barId, db) : 'notManager';
         if (problem || !manager) return setError(PROBLEMS[problem ?? 'notManager']!);
         await onAdded(manager);
       } else {
-        const result = await createManager(ownerId, bars.map((b) => b.id).filter((id) => chosen.includes(id)), { name, username, pin });
+        const result = await createManager(owner, bars.map((b) => b.id).filter((id) => chosen.includes(id)), { name, username, pin }, db, barId);
         if ('error' in result) return setError(PROBLEMS[result.error]!);
         await onCreated(result.account, chosen, pin);
       }

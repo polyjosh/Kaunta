@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { describeAudit, auditWho } from '../admin/auditText';
@@ -10,20 +10,13 @@ import type { MessageKey } from '../lib/i18n';
 import { formatKES } from '../lib/money';
 import { useTheme } from '../lib/ThemeProvider';
 import {
-  addManager,
   barLimit,
-  changeSuperPassword,
   MAX_BAR_LIMIT,
-  setBarLimit,
-  setBarSuspended,
   setSuperViewBar,
   checkCode,
-  createOwner,
   membersOf,
   MIN_PASSWORD,
   PRESET_SUPER_PASSWORD,
-  resetSecret,
-  setBarCode,
   setSuperSession,
   suggestCode,
   suggestPassword,
@@ -33,10 +26,24 @@ import {
   verifySuperPassword,
 } from './platform';
 import type { Account, AccountProblem, CodeProblem, Platform } from './platform';
-import { useBarSnapshots } from './superData';
+import { setSnapshotSource, useBarSnapshots } from './superData';
+import {
+  addManager,
+  changeSuperPassword,
+  createOwner,
+  kauntaRecord,
+  refreshPlatform,
+  resetSecret,
+  setBarCode,
+  setBarLimit,
+  setBarSuspended,
+  setPlatformServer,
+} from './actions';
+import { AdminServer, applyAdminPull } from '../admin/server';
+import { KauntaDB } from '../data/db';
+import { serverConfig } from '../sync/config';
+import type { ServerConfig } from '../sync/config';
 import type { BarSnapshot } from './superData';
-import { DEMO_SAMPLE_BAR, demoStore, ensureMemberPeople, syncAccountPeople } from '../admin/bars';
-import { KAUNTA_ACTOR, recordAdminEvent } from '../data/adminEvents';
 import { hashPin, isValidPin } from '../domain/pin';
 import type { Person } from '../domain/types';
 import '../admin/admin.css';
@@ -62,21 +69,54 @@ const codeInput = (v: string) => formatBarCode(normaliseBarCode(v).slice(0, BAR_
  * changed) opens it. It shows every bar and its data, creates owner accounts
  * with their first bar and code, and looks after owners' PINs.
  */
-export function SuperApp() {
-  const [signedIn, setSignedIn] = useState(superSession);
+export function SuperApp({ config = serverConfig() }: { config?: ServerConfig | null } = {}) {
+  // With a Supabase project, Kaunta signs in on the server (kaunta_super) and every screen reads and changes the server.
+  const server = useMemo(() => (config ? new AdminServer(config, undefined, undefined, true) : null), [config]);
+  const [signedIn, setSignedIn] = useState(() => (server ? server.signedIn : superSession()));
+  const [ready, setReady] = useState(!server);
+  useEffect(() => {
+    if (!server || !signedIn) return;
+    setPlatformServer(server);
+    setSnapshotSource(liveSnapshots(server));
+    let stopped = false;
+    const load = () =>
+      refreshPlatform().then(
+        () => !stopped && setReady(true),
+        () => {
+          if (!server.signedIn && !stopped) setSignedIn(false);
+        },
+      );
+    void load();
+    const every = setInterval(() => void load(), 30_000);
+    return () => {
+      stopped = true;
+      clearInterval(every);
+      setPlatformServer(null);
+      setSnapshotSource(null);
+    };
+  }, [server, signedIn]);
   if (!signedIn) {
     return (
       <SuperSignIn
+        live={!!server}
+        verify={async (password) => {
+          if (server) return server.superSignIn(password);
+          return (await verifySuperPassword(password)) ? 'ok' : 'wrong';
+        }}
         onSignedIn={() => {
+          // The demo's flag also tells admin that Kaunta may open a bar from here.
           setSuperSession(true);
           setSignedIn(true);
         }}
       />
     );
   }
+  if (!ready) return <div className="a-app" aria-busy="true" />;
   const signOut = () => {
+    server?.signOut();
     setSuperSession(false);
     setSignedIn(false);
+    setReady(!server);
   };
   return (
     <Routes>
@@ -91,22 +131,23 @@ export function SuperApp() {
   );
 }
 
-function SuperSignIn({ onSignedIn }: { onSignedIn: () => void }) {
+function SuperSignIn({ onSignedIn, verify, live }: { onSignedIn: () => void; verify: (password: string) => Promise<'ok' | 'wrong' | 'locked' | 'not_set'>; live: boolean }) {
   const { t, locale, setLocale } = useI18n();
   const { theme } = useTheme();
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
-  const [wrong, setWrong] = useState(false);
+  const [problem, setProblem] = useState<MessageKey | null>(null);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    setWrong(false);
+    setProblem(null);
     try {
-      if (await verifySuperPassword(password)) onSignedIn();
-      else {
-        setWrong(true);
-        setPassword('');
-      }
+      const answer = await verify(password);
+      if (answer === 'ok') return onSignedIn();
+      setPassword('');
+      setProblem(answer === 'locked' ? 'super.signIn.locked' : answer === 'not_set' ? 'super.signIn.notSet' : 'super.signIn.wrong');
+    } catch {
+      setProblem('admin.signIn.offline');
     } finally {
       setBusy(false);
     }
@@ -121,9 +162,9 @@ function SuperSignIn({ onSignedIn }: { onSignedIn: () => void }) {
           {t('super.signIn.password')}
           <input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
         </label>
-        {wrong && <p className="a-error" role="alert">{t('super.signIn.wrong')}</p>}
+        {problem && <p className="a-error" role="alert">{t(problem)}</p>}
         <button type="submit" className="a-btn a-btn-primary a-btn-lg" disabled={busy || !password}>{t('admin.signIn.submit')}</button>
-        <p className="a-note a-demo-hint">{t('super.signIn.demoHint', { password: PRESET_SUPER_PASSWORD })}</p>
+        {!live && <p className="a-note a-demo-hint">{t('super.signIn.demoHint', { password: PRESET_SUPER_PASSWORD })}</p>}
         <div className="a-seg">
           <button type="button" aria-pressed={locale === 'en'} onClick={() => setLocale('en')}>English</button>
           <button type="button" aria-pressed={locale === 'sw'} onClick={() => setLocale('sw')}>Kiswahili</button>
@@ -306,13 +347,13 @@ function StaffPin({ barId, person }: { barId: string; person: Person }) {
   const [confirming, setConfirming] = useState(false);
   // As an owner does it (signed out at once, off the counter's list), but as Kaunta: not in the owner's log.
   const setSuspended = async (suspend: boolean) => {
-    await recordAdminEvent(demoStore(barId), { person_id: KAUNTA_ACTOR }, { type: suspend ? 'person_suspended' : 'person_reinstated', payload: { person_id: person.id } });
+    await kauntaRecord(barId, { type: suspend ? 'person_suspended' : 'person_reinstated', payload: { person_id: person.id } });
     setConfirming(false);
   };
   const save = async () => {
     if (editing === null || !isValidPin(editing)) return;
     const pin_hash = await hashPin(editing);
-    await recordAdminEvent(demoStore(barId), { person_id: KAUNTA_ACTOR }, { type: 'pin_changed', payload: { person_id: person.id, pin_hash, pin_code: editing } });
+    await kauntaRecord(barId, { type: 'pin_changed', payload: { person_id: person.id, pin_hash, pin_code: editing } });
     setEditing(null);
     setOpen(true);
   };
@@ -385,10 +426,8 @@ function BarScreen() {
   const products = s ? s.lookups.products.filter((x) => !x.archived_at) : [];
 
   const saveCode = async () => {
-    const result = setBarCode(bar.id, code);
+    const result = await setBarCode(bar.id, code);
     if ('error' in result) return setCodeError(ERRORS[result.error]);
-    // The bar's own store shows the code in its admin too.
-    if (bar.id !== DEMO_SAMPLE_BAR) await demoStore(bar.id).bar.update(bar.id, { counter_code: result.code });
     setCode('');
     setCodeError(null);
   };
@@ -398,8 +437,6 @@ function BarScreen() {
     setManagerError(null);
     const result = await addManager(bar.id, manager);
     if ('error' in result) return setManagerError(ERRORS[result.error]);
-    // Their `people` row in the bar's store (admin opens the bar as them; the counter lists them).
-    await ensureMemberPeople(demoStore(bar.id), bar.id);
     setManagerDone(t('super.bar.managerDone', { name: result.account.name, username: result.account.username, pin: manager.pin }));
     setManager({ name: '', username: '', pin: '' });
   };
@@ -428,10 +465,10 @@ function BarScreen() {
         <div className="a-actions">
           <button type="button" className="a-btn a-btn-primary" onClick={openAdmin}>{t('super.bar.openAdmin')}</button>
           {bar.suspended_at ? (
-            <button type="button" className="a-btn" onClick={() => setBarSuspended(bar.id, false)}>{t('super.bar.reinstate')}</button>
+            <button type="button" className="a-btn" onClick={() => void setBarSuspended(bar.id, false)}>{t('super.bar.reinstate')}</button>
           ) : confirmSuspend ? (
             <>
-              <button type="button" className="a-btn a-btn-danger" onClick={() => { setBarSuspended(bar.id, true); setConfirmSuspend(false); }}>{t('super.bar.suspendConfirm', { name: bar.name })}</button>
+              <button type="button" className="a-btn a-btn-danger" onClick={() => { void setBarSuspended(bar.id, true); setConfirmSuspend(false); }}>{t('super.bar.suspendConfirm', { name: bar.name })}</button>
               <button type="button" className="a-btn" onClick={() => setConfirmSuspend(false)}>{t('common.cancel')}</button>
             </>
           ) : (
@@ -532,7 +569,6 @@ function OwnersScreen() {
   const accounts = [...p.accounts].sort((a, b) => a.name.localeCompare(b.name));
   const save = async (a: Account) => {
     if ((await resetSecret(a.id, pin)) === 'invalid') return setError(a.secret === 'password' ? 'super.error.password' : 'super.error.pin');
-    await syncAccountPeople(a.id);
     setDone(t(a.secret === 'password' ? 'super.owners.resetPasswordDone' : 'super.owners.resetDone', { name: a.name, pin }));
     setResetting(null);
     setPin('');
@@ -616,8 +652,8 @@ function BarLimitCell({ account }: { account: Account }) {
   const { used, max } = barLimit(account.id, p);
   const [editing, setEditing] = useState<string | null>(null);
   const [error, setError] = useState(false);
-  const save = (value: number | null) => {
-    if (setBarLimit(account.id, value) === 'invalid') return setError(true);
+  const save = async (value: number | null) => {
+    if ((await setBarLimit(account.id, value)) === 'invalid') return setError(true);
     setEditing(null);
     setError(false);
   };
@@ -634,8 +670,8 @@ function BarLimitCell({ account }: { account: Account }) {
   return (
     <div className="s-inline">
       <input className="a-input s-code-input" type="text" inputMode="numeric" aria-label={t('super.limit.label', { name: account.name })} value={editing} onChange={(e) => { setError(false); setEditing(e.target.value.replace(/\D/g, '').slice(0, 2)); }} />
-      <button type="button" className="a-btn a-btn-primary a-btn-sm" disabled={editing === ''} onClick={() => save(Number(editing))}>{t('super.limit.save')}</button>
-      <button type="button" className="a-btn a-btn-sm" onClick={() => save(null)}>{t('super.limit.noLimit')}</button>
+      <button type="button" className="a-btn a-btn-primary a-btn-sm" disabled={editing === ''} onClick={() => void save(Number(editing))}>{t('super.limit.save')}</button>
+      <button type="button" className="a-btn a-btn-sm" onClick={() => void save(null)}>{t('super.limit.noLimit')}</button>
       <button type="button" className="a-btn a-btn-sm" onClick={() => { setEditing(null); setError(false); }}>{t('common.cancel')}</button>
       {error && <p className="a-error" role="alert">{t('super.error.barLimit')}</p>}
       {!error && editing !== '' && Number(editing) < used && <p className="a-note">{t('super.limit.below', { used })}</p>}
@@ -748,4 +784,23 @@ function SettingsScreen() {
       </form>
     </>
   );
+}
+
+/** Kaunta on the server: each bar's figures come from pulling it as Kaunta into a store in this browser (wiped on sign-out). */
+function liveSnapshots(server: AdminServer) {
+  const stores = new Map<string, KauntaDB>();
+  const storeFor = (barId: string) => {
+    let db = stores.get(barId);
+    if (!db) stores.set(barId, (db = new KauntaDB(`kaunta-super-${barId}`)));
+    return db;
+  };
+  return {
+    storeFor,
+    prepare: async (bar: { id: string }) => {
+      const db = storeFor(bar.id);
+      const since = ((await db.meta.get('pull_cursor'))?.value as string | undefined) ?? null;
+      await applyAdminPull(db, await server.forBar(bar.id).pull(since));
+      return db;
+    },
+  };
 }

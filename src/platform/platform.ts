@@ -159,7 +159,24 @@ function migrate(stored: StoredPlatform): Platform {
   return { ...stored, version: 2, accounts: stored.accounts.map((a) => ({ ...a, secret: owns(a.id) ? 'password' : 'pin' })) };
 }
 
+/**
+ * With a Supabase project, the platform comes from the server (all of it for
+ * Kaunta, an owner's part for an owner) and is never written to this
+ * browser's storage. Changes then go to the server (src/platform/actions.ts).
+ */
+let live: Platform | null = null;
+
+export function setLivePlatform(next: Platform | null): void {
+  live = next;
+  listeners.forEach((l) => l());
+}
+
+export function isLivePlatform(): boolean {
+  return live !== null;
+}
+
 export function platform(): Platform {
+  if (live) return live;
   cache ??= read();
   return cache;
 }
@@ -176,6 +193,7 @@ function save(next: Platform): Platform {
 }
 
 function update(change: (p: Platform) => Platform): Platform {
+  if (live) throw new Error('The platform is on the server: change it with src/platform/actions.ts');
   return save(change(platform()));
 }
 
@@ -624,6 +642,11 @@ const SUPER_VIEW = 'kaunta.superView';
 export function superViewBar(): string | null {
   const id = readSession(SUPER_VIEW);
   return id && superSession() && platform().bars.some((b) => b.id === id) ? id : null;
+}
+
+/** The bar Kaunta asked to open, unchecked (on the server, the server checks Kaunta's session). */
+export function superViewRequest(): string | null {
+  return readSession(SUPER_VIEW);
 }
 
 export function setSuperViewBar(barId: string | null): void {

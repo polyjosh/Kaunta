@@ -14,7 +14,8 @@ export interface EngineState {
   /** When the next retry is due (ms since epoch), while backing off. */
   nextRetryAt: number | null;
   /** Why the engine has stopped trying, if it has. */
-  stopped: 'unpaired' | 'revoked' | null;
+  /** 'suspended': Kaunta suspended the bar; the periodic pull carries on and clears it once access is given back. */
+  stopped: 'unpaired' | 'revoked' | 'suspended' | null;
 }
 
 export interface EngineOptions {
@@ -152,7 +153,7 @@ export class SyncEngine {
         await noteAttempt(this.db, batch.map((e) => e.id));
         const response = await this.transport.push(token, batch.map(toWire));
         if ('error' in response) {
-          this.set({ sending: 0, stopped: 'unpaired', lastError: response.error });
+          this.set({ sending: 0, stopped: response.error === 'bar_suspended' ? 'suspended' : 'unpaired', lastError: response.error });
           return;
         }
         await applyPushResults(this.db, batch, response.results, response.server_time);
@@ -162,7 +163,7 @@ export class SyncEngine {
       const pulled = await this.transport.pull(token, ((await this.db.meta.get('pull_cursor'))?.value as string) ?? null);
       if ('error' in pulled) {
         // A revoked phone keeps sending (the server quarantines), but gets nothing back.
-        this.set({ stopped: pulled.error === 'revoked_device' ? 'revoked' : 'unpaired', lastError: pulled.error });
+        this.set({ stopped: pulled.error === 'revoked_device' ? 'revoked' : pulled.error === 'bar_suspended' ? 'suspended' : 'unpaired', lastError: pulled.error });
         return;
       }
       // If something was recorded while we pulled, go round again before writing.

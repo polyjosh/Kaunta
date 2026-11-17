@@ -139,5 +139,7 @@
   "super.limit.noLimit": "Bila kikomo",
   "super.limit.below": "Tayari wanamiliki {used}. Wanazibakiza, lakini hawawezi kufungua zaidi.",
   "super.form.maxBars": "Baa wanazoweza kufungua",
-  "super.form.maxBarsHint": "Ikiwemo hii ya kwanza. 1 hadi {max}; acha tupu kwa bila kikomo. Unaweza kubadilisha baadaye kwenye Wamiliki na mameneja."
+  "super.form.maxBarsHint": "Ikiwemo hii ya kwanza. 1 hadi {max}; acha tupu kwa bila kikomo. Unaweza kubadilisha baadaye kwenye Wamiliki na mameneja.",
+  "super.signIn.locked": "Majaribio mengi yasiyo sahihi. Jaribu tena baada ya dakika 15.",
+  "super.signIn.notSet": "Nenosiri la Kaunta bado halijawekwa kwenye seva. Liweke mara moja kwenye kihariri cha SQL cha Supabase (tazama supabase/README.md)."
 }

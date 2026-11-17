@@ -264,9 +264,9 @@ describe('normaliseRow', () => {
 });
 
 describe('SupabaseTransport', () => {
-  const config = { url: 'https://abc.supabase.co', anonKey: 'anon-key' };
+  const config = { url: 'https://abc.supabase.co', publishableKey: 'sb_publishable_test' };
 
-  it('calls the RPC functions with the anon key and the device token in the body', async () => {
+  it('calls the RPC functions with the publishable key (apikey only) and the device token in the body', async () => {
     const calls: { url: string; init: RequestInit }[] = [];
     const transport = new SupabaseTransport(config, async (url, init) => {
       calls.push({ url: String(url), init: init! });
@@ -274,7 +274,7 @@ describe('SupabaseTransport', () => {
     });
     await transport.push('tok', []);
     expect(calls[0]!.url).toBe('https://abc.supabase.co/rest/v1/rpc/sync_push');
-    expect(calls[0]!.init.headers).toMatchObject({ apikey: 'anon-key', Authorization: 'Bearer anon-key' });
+    expect(calls[0]!.init.headers).toEqual({ apikey: 'sb_publishable_test', 'Content-Type': 'application/json' });
     expect(JSON.parse(String(calls[0]!.init.body))).toEqual({ p_token: 'tok', p_events: [] });
   });
 
@@ -289,9 +289,12 @@ describe('SupabaseTransport', () => {
 
   it('reads its settings from the environment, and is off without them', () => {
     expect(serverConfig({})).toBeNull();
-    expect(serverConfig({ VITE_SUPABASE_URL: 'https://abc.supabase.co/', VITE_SUPABASE_ANON_KEY: ' k ' })).toEqual({
+    expect(serverConfig({ VITE_SUPABASE_URL: '', VITE_SUPABASE_PUBLISHABLE_KEY: '' })).toBeNull();
+    expect(serverConfig({ VITE_SUPABASE_URL: 'https://abc.supabase.co/', VITE_SUPABASE_PUBLISHABLE_KEY: ' sb_publishable_k ' })).toEqual({
       url: 'https://abc.supabase.co',
-      anonKey: 'k',
+      publishableKey: 'sb_publishable_k',
     });
+    // A project still on the legacy anon key works too.
+    expect(serverConfig({ VITE_SUPABASE_URL: 'https://abc.supabase.co', VITE_SUPABASE_ANON_KEY: 'eyJ.legacy' })?.publishableKey).toBe('eyJ.legacy');
   });
 });

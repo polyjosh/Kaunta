@@ -139,5 +139,7 @@
   "super.limit.noLimit": "No limit",
   "super.limit.below": "They already own {used}. They keep them, but can't open more.",
   "super.form.maxBars": "Bars they can open",
-  "super.form.maxBarsHint": "Counting this first one. 1 to {max}; leave empty for no limit. You can change it later under Owners & managers."
+  "super.form.maxBarsHint": "Counting this first one. 1 to {max}; leave empty for no limit. You can change it later under Owners & managers.",
+  "super.signIn.locked": "Too many wrong tries. Try again in 15 minutes.",
+  "super.signIn.notSet": "Kaunta's password is not set on the server yet. Set it once in the Supabase SQL editor (see supabase/README.md)."
 }

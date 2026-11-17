@@ -83,7 +83,7 @@ export function DemoCounterGate({ children }: { children: ReactNode }) {
 }
 
 /** The counter of a bar Kaunta suspended. */
-function SuspendedBar({ name, onChangeBar }: { name: string; onChangeBar: () => void }) {
+export function SuspendedBar({ name, onChangeBar }: { name: string; onChangeBar?: () => void }) {
   const { t } = useI18n();
   return (
     <div className="c-screen">
@@ -99,7 +99,7 @@ function SuspendedBar({ name, onChangeBar }: { name: string; onChangeBar: () => 
             <h1>{t('bar.suspendedTitle')}</h1>
             <p>{t('bar.suspendedBody', { bar: name })}</p>
           </div>
-          <button type="button" className="c-btn c-btn-link" onClick={onChangeBar}>{t('bar.change')}</button>
+          {onChangeBar && <button type="button" className="c-btn c-btn-link" onClick={onChangeBar}>{t('bar.change')}</button>}
         </div>
       </main>
     </div>

@@ -24,7 +24,7 @@ afterEach(() => pg.close());
 
 describe('an owner with more than one bar', () => {
   it('lists her bars, starts another, and is its owner there', async () => {
-    expect(await bars()).toEqual([{ id: 'bar_baraka', name: 'Baraka Pub', role: 'owner', person_id: 'p_njeri' }]);
+    expect(await bars()).toEqual([{ id: 'bar_baraka', name: 'Baraka Pub', role: 'owner', person_id: 'p_njeri', counter_code: 'BRKAPUB2' }]);
     const lounge = await createBar('  Baraka Lounge ');
     expect(lounge).toMatchObject({ name: 'Baraka Lounge', role: 'owner' });
     expect((await bars()).map((b) => b.name)).toEqual(['Baraka Lounge', 'Baraka Pub']);

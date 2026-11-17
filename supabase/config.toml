@@ -1,0 +1,4 @@
+# For the Supabase CLI (`npx supabase link`, `npx supabase db push`). Everything
+# else uses the CLI's defaults; Kaunta needs no local Supabase stack to run its
+# tests (they use PGlite, see supabase/README.md).
+project_id = "kaunta"

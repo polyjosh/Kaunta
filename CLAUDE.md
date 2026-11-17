@@ -2,7 +2,7 @@
 
 Instructions, non-negotiables and the build order live in `kaunta-handoff/CLAUDE.md`; read it and `kaunta-handoff/docs/` first. This file records where the build stands.
 
-Last updated: 2026-11-17 (Kaunta: bar limits, suspending bars and staff, opening a bar's admin).
+Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, suspension, managers).
 
 ## Build order
 
@@ -16,12 +16,13 @@ Last updated: 2026-11-17 (Kaunta: bar limits, suspending bars and staff, opening
 | 6. Empty and error states | ✅ Done | see below; `supabase/migrations/20261112000000_kaunta_categories.sql` |
 | + Brand, landing page, many bars (asked for after step 6) | ✅ Done | see below; `supabase/migrations/20261116000000_kaunta_multi_bar.sql` |
 | + Bar codes, demo that works end to end in one browser, installable app | ✅ Done | see below; `supabase/migrations/20261117000000_kaunta_bar_codes.sql` |
-| + Super admin, owner accounts (username + PIN), owner-chosen bar codes | ✅ Demo (browser); server: codes only | see below; `src/platform/` |
+| + Super admin, owner accounts (username + PIN), owner-chosen bar codes | ✅ Demo and server | see below; `src/platform/`, `supabase/migrations/20261121000000_kaunta_accounts.sql` |
 | + Staff access: PINs set and seen by owners/managers, suspend, owners and managers sell at the counter | ✅ Demo; server: PINs + suspend | see below; `supabase/migrations/20261118000000_kaunta_staff_access.sql` |
 | + Adding stock: typed quantities, remove lines, packs per product, remove sizes, warning level per mode | ✅ | see below; `supabase/migrations/20261119000000_kaunta_stock_packs.sql` |
-| + Owners add managers to their own bars | ✅ Demo (accounts are browser-only) | see below; `src/admin/ManagersCard.tsx` |
+| + Owners add managers to their own bars | ✅ Demo and server | see below; `src/admin/ManagersCard.tsx` |
 | + Stock per size (250 ml and 750 ml apart) | ✅ | see below; `supabase/migrations/20261120000000_kaunta_size_stock.sql` |
-| + Kaunta: bar limits, suspend bars and staff, open a bar's admin, hidden from owners' logs | ✅ Demo (platform is browser-only) | see below; `src/platform/` |
+| + Kaunta: bar limits, suspend bars and staff, open a bar's admin, hidden from owners' logs | ✅ Demo and server | see below; `src/platform/` |
+| + Everything on the live server (accounts, Kaunta, keys) | ✅ Migrations + app; not yet run against a real project | see below; `supabase/README.md` → Set up a project |
 
 ### Step 6 detail (`docs/screens.md` → Empty and error states)
 
@@ -110,6 +111,16 @@ Last updated: 2026-11-17 (Kaunta: bar limits, suspending bars and staff, opening
 - Server: none of this yet (accounts and the platform are demo-only; see Not yet done).
 - Tests: `src/platform/platform.test.ts`, `src/platform/kaunta.test.tsx`.
 
+## On the live server (asked for after the Kaunta controls)
+
+- **Keys**: `.env.local` (git-ignored) has `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, both empty, so the app stays the browser demo until they are filled (`.env.example` explains them). The app sends only the publishable key, in the `apikey` header (`restHeaders`, `src/sync/config.ts`); a legacy `anon` key works too (`VITE_SUPABASE_ANON_KEY` fallback). No secret or `service_role` key anywhere in the app.
+- **Migration** `20261121000000_kaunta_accounts.sql`: `accounts` (bcrypt via pgcrypto, lockout, `max_bars`), `account_sessions`, `platform_settings` (Kaunta's password, set once with `set_super_password` in the SQL editor), `super_sessions`; `people.account_id`; `bar.owner_account_id/created_by/created_at/suspended_at`. Entry points for the publishable key: `account_sign_in`, `kaunta_admin(session, call, args)`, `super_sign_in`, `kaunta_super(session, call, args)`, plus pairing and sync (which refuse a suspended bar). `current_admin` now also knows accounts and Kaunta (the person `kaunta`). All other functions are revoked from `anon`/`authenticated` again (functions made after the last revoke had kept PUBLIC execute).
+- **App**: admin signs in with username + password/PIN on the server too (`AdminServer`, sessions; Supabase Auth sign-in removed, `AdminSignIn.tsx` deleted). `src/platform/actions.ts` does every platform change in the demo or on the server; with a server the screens' platform is the server's (`setLivePlatform`), never browser storage. `/super` signs in on the server and reads each bar by pulling it as Kaunta (`kaunta-super-<bar>` stores, `setSnapshotSource`). Kaunta's "Open this bar's admin" on the server: `KauntaLiveBar`. A suspended bar's counter shows the suspended screen (`stopped: 'suspended'`) and recovers by itself when access is given back.
+- Passwords and PINs: the server keeps bcrypt for sign-in; the app sends the PBKDF2 hash counters check offline (`counter_hash`) with every new or changed one.
+- `supabase/config.toml` (minimal) for `npx supabase link` / `db push`.
+- Tests: `supabase/accounts.test.ts` (functions), `supabase/liveClient.test.ts` (the app's own client against the migrations through a REST-to-SQL fetch, as `anon`), `src/admin/live.test.tsx`.
+- Not done: never run against a real Supabase project; the super admin pulls each bar in full to show its figures (fine for a handful of bars, slow for hundreds); seed.sql's sample people have no accounts (README shows how to attach one).
+
 ## How step 5 is put together
 
 - Admin has its own local store (Dexie, `kaunta-admin`, or `kaunta-admin-demo` in demo mode). Screens read only from it.
@@ -120,7 +131,7 @@ Last updated: 2026-11-17 (Kaunta: bar limits, suspending bars and staff, opening
 
 ## Tests
 
-- `npm test`: 497 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
+- `npm test`: 507 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
 - Counter UI and phone-sync tests pin the clock to the 22:20 snapshot; before 2026-11-11 they used the real clock and broke when the business day rolled over.
 - `npm run test:e2e`: 17 Playwright tests (landing and counter at 360×800, admin at 390 px and desktop). `e2e/fullLoop.spec.ts` does the whole loop in one browser: add a bar, its code, presets, add a person, the code at the counter, one-time code → PIN, a sale, the sale in admin.
 
@@ -157,9 +168,9 @@ Last updated: 2026-11-17 (Kaunta: bar limits, suspending bars and staff, opening
 
 - Everything is committed: steps 1–5 in `3617480`, up to staff access in `b155a53`, stock, managers, stock per size and Kaunta controls in `48cb153`.
 - Not deployed anywhere: installing on a phone needs the app on an HTTPS address.
-- **The live server has not got accounts yet.** With `.env.local`, admin still signs in with Supabase Auth (phone/email + password) and there is no `/super` backed by the server. Server work needed: an accounts table (username, PIN hash, lockout), session tokens for the admin functions in place of `auth.uid()`, super admin functions behind a server-side password, and owner/bar creation (`create_owner`). Chosen bar codes are on the server already.
+- **The server side is written and tested (PGlite) but has never run on a real Supabase project.** Fill `.env.local` and follow `supabase/README.md` → Set up a project.
 - In the demo, all of this is in one browser's storage: anyone with access to the browser can read it. It is for testing, not for real bars' data.
-- A person's first bar still needs SQL by hand: the `bar` row and the owner's `people` row (`supabase/README.md`). Later bars: **Add a bar** in admin.
-- Adding an existing admin to a second bar has no screen yet: today it is a `people` row in that bar with the same `auth_user_id` (SQL).
+- An owner's first bar is made by Kaunta at `/super` (on the server too); later bars with **Add a bar** in admin, within Kaunta's limit.
+- Kaunta's password on a server is set in the SQL editor (`set_super_password`); there is no reset by email.
 - The admin side has not been run against a live Supabase project, only against PGlite in tests.
 - No settings screen: bar settings (foam allowance, void window, lockout) can only be changed in the database. The Kegs screen's foam note says "change it in settings".

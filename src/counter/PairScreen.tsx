@@ -5,6 +5,7 @@ import { useI18n } from '../lib/I18nProvider';
 import type { MessageKey } from '../lib/i18n';
 import { resetForPairing } from '../sync/apply';
 import { BarCodeScreen } from './BarCodeScreen';
+import { SuspendedBar } from './DemoCounterGate';
 import { useEngineState, useSync } from '../sync/SyncProvider';
 
 /**
@@ -16,8 +17,12 @@ export function PairingGate({ enabled, children }: { enabled: boolean; children:
     const [token, synced] = await Promise.all([d.meta.get('device_token'), d.meta.get('last_sync_at')]);
     return { paired: typeof token?.value === 'string', synced: typeof synced?.value === 'string' };
   });
+  const { stopped } = useEngineState();
+  const bar = useQuery((d) => d.bar.toCollection().first());
   if (!enabled) return <>{children}</>;
   if (!state) return null;
+  // Kaunta suspended the bar: nobody signs in (whoever was in is out) until access is given back.
+  if (stopped === 'suspended') return <SuspendedBar name={bar?.name ?? 'Kaunta'} />;
   return state.paired && state.synced ? <>{children}</> : <PairScreen paired={state.paired} />;
 }
 
@@ -59,7 +64,7 @@ export function PairScreen({ paired }: { paired: boolean }) {
   const join = async (code: string): Promise<MessageKey | null> => {
     if (!online || !transport) return 'pair.offline';
     const answer = await transport.pair(code, null, navigator.userAgent.slice(0, 120));
-    if ('error' in answer) return answer.error === 'too_many_attempts' ? 'pair.tooMany' : 'bar.invalid';
+    if ('error' in answer) return answer.error === 'too_many_attempts' ? 'pair.tooMany' : answer.error === 'bar_suspended' ? 'bar.suspendedJoin' : 'bar.invalid';
     // The engine starts by itself once the token is stored, and pulls everything.
     await resetForPairing(db, answer.device_id, answer.token);
     return null;

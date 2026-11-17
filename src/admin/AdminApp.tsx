@@ -8,12 +8,14 @@ import { businessDayOf } from '../domain/time';
 import type { MessageKey } from '../lib/i18n';
 import { serverConfig } from '../sync/config';
 import type { ServerConfig } from '../sync/config';
-import { AdminSignIn } from './AdminSignIn';
 import { AdminServer, AdminSync, applyAdminPull } from './server';
+import type { AccountMe } from './server';
+import { refreshPlatform, setPlatformServer } from '../platform/actions';
+import { hashSecret } from '../domain/pin';
 import { AdminSessionProvider, useAdmin } from './AdminSession';
 import type { AccountChoice, BarChoice } from './AdminSession';
 import { NoBars, OwnerSignIn } from './OwnerSignIn';
-import { accountById, barLimit, barsFor, changeSecret, createBar as createPlatformBar, DEMO_OWNER, ownerSession, setOwnerSession, setSuperViewBar, superViewBar, suspendedBarsFor, usePlatform } from '../platform/platform';
+import { accountById, barLimit, barsFor, changeSecret, createBar as createPlatformBar, DEMO_OWNER, ownerSession, setOwnerSession, setSuperViewBar, superViewBar, superViewRequest, suspendedBarsFor, usePlatform } from '../platform/platform';
 import type { Account } from '../platform/platform';
 import { BarPicker } from './BarSwitcher';
 import {
@@ -89,11 +91,17 @@ interface AdminAppProps {
  * Without a server this is a demo on the sample day, signed in as the owner.
  */
 export function AdminApp({ db, config = serverConfig(), server }: AdminAppProps) {
-  if (server || config) return <AdminLive server={server ?? new AdminServer(config!)} db={db} />;
+  if (server || config) {
+    // Kaunta opened a bar from /super (signed in to the server as Kaunta): that bar, as Kaunta.
+    const kaunta = config && !server ? new AdminServer(config, undefined, undefined, true) : null;
+    const view = superViewRequest();
+    if (kaunta?.signedIn && view) return <KauntaLiveBar server={kaunta} barId={view} db={db} />;
+    return <AdminLive server={server ?? new AdminServer(config!)} db={db} />;
+  }
   return <AdminDemo db={db} />;
 }
 
-type LiveState = 'signedOut' | 'bars' | 'pick' | 'loading' | 'ready';
+type LiveState = 'signedOut' | 'bars' | 'pick' | 'loading' | 'ready' | 'suspended';
 
 const byName = (a: BarSummary, b: BarSummary) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id);
 
@@ -111,6 +119,8 @@ function AdminLive({ server: given, db }: { server: AdminServer; db?: KauntaDB }
   const [state, setState] = useState<LiveState>(server.signedIn ? 'bars' : 'signedOut');
   const [notice, setNotice] = useState<MessageKey | null>(null);
   const [me, setMe] = useState<string | null>(null);
+  // The signed-in account (server accounts): limits, bars suspended, changing the password or PIN.
+  const [who, setWho] = useState<AccountMe | null>(null);
 
   const fail = useCallback(
     (error: unknown) => {
@@ -139,8 +149,19 @@ function AdminLive({ server: given, db }: { server: AdminServer; db?: KauntaDB }
     void (async () => {
       let list: BarSummary[];
       try {
-        list = [...(await server.bars())].sort(byName);
+        const [bars, account] = await Promise.all([server.bars(), server.me().catch(() => null)]);
+        list = [...bars].sort(byName);
         cacheBars(list);
+        if (account && !cancelled) {
+          setWho(account);
+          // The owner's platform (their managers), for Staff & devices → Managers.
+          setPlatformServer(server);
+          await refreshPlatform().catch(() => {});
+        }
+        if (list.length === 0 && account?.suspended.length) {
+          if (!cancelled) setState('suspended');
+          return;
+        }
       } catch (error) {
         const cached = cachedBars();
         if (!(error as Error).message.startsWith('network') || !cached?.length) {
@@ -202,6 +223,8 @@ function AdminLive({ server: given, db }: { server: AdminServer; db?: KauntaDB }
 
   const signOut = useCallback(() => {
     server.signOut();
+    setPlatformServer(null);
+    setWho(null);
     setMe(null);
     setNotice(null);
     setState('signedOut');
@@ -221,9 +244,11 @@ function AdminLive({ server: given, db }: { server: AdminServer; db?: KauntaDB }
       const list = [...bars.filter((b) => b.id !== bar.id), bar].sort(byName);
       setBars(list);
       cacheBars(list);
+      setWho(await server.me().catch(() => who));
+      await refreshPlatform().catch(() => {});
       open(bar.id);
     },
-    [server, bars, open],
+    [server, bars, open, who],
   );
 
   const changeBarCode = useCallback(
@@ -241,17 +266,90 @@ function AdminLive({ server: given, db }: { server: AdminServer; db?: KauntaDB }
     [barServer, store, barId, bars],
   );
 
+  const owner = bars.some((b) => b.role === 'owner');
   const choice = useMemo<BarChoice | null>(
-    () => (barId ? { bars, barId, switchBar: open, createBar: bars.some((b) => b.role === 'owner') ? createBar : undefined, changeBarCode } : null),
-    [bars, barId, open, createBar, changeBarCode],
+    () => (barId ? { bars, barId, switchBar: open, createBar: owner ? createBar : undefined, changeBarCode, barLimit: owner ? who?.bar_limit : undefined } : null),
+    [bars, barId, open, owner, createBar, changeBarCode, who],
+  );
+  const account = useMemo<AccountChoice | undefined>(
+    () =>
+      who
+        ? {
+            id: who.account.id,
+            username: who.account.username,
+            secret: who.account.secret,
+            pinSetByKaunta: who.account.pin_set_by === 'kaunta',
+            changePin: async (current, next) => {
+              const answer = await server.changeSecret(current, next, await hashSecret(next || '-'));
+              if ('error' in answer) return answer.error as 'current' | 'invalid' | 'same';
+              setWho({ ...who, account: { ...who.account, pin_set_by: 'self' } });
+              return null;
+            },
+          }
+        : undefined,
+    [who, server],
   );
 
-  if (state === 'signedOut') return <AdminSignIn server={server} notice={notice} onSignedIn={() => setState('bars')} />;
+  if (state === 'signedOut') return <OwnerSignIn signIn={(username, secret) => server.signIn(username, secret)} notice={notice} onSignedIn={() => setState('bars')} />;
+  if (state === 'suspended') return <NoBars onSignOut={signOut} suspended={who?.suspended ?? []} />;
   if (state === 'pick') return <BarPicker bars={bars} onPick={open} onSignOut={signOut} />;
   if (state !== 'ready' || !me || !store || !barServer || !choice) return <div className="a-app" aria-busy="true" />;
   return (
     <DbProvider key={barId} db={store} demo={false}>
-      <AdminSessionProvider personId={me} signOut={signOut} createPairingCode={barServer.createPairingCode} bars={choice}>
+      <AdminSessionProvider personId={me} signOut={signOut} createPairingCode={barServer.createPairingCode} bars={choice} account={account}>
+        <AdminRoutes />
+      </AdminSessionProvider>
+    </DbProvider>
+  );
+}
+
+/**
+ * Kaunta on the server, in one bar's admin (opened from /super): pulled and
+ * kept in step as Kaunta, every owner tab, even while the bar is suspended.
+ */
+function KauntaLiveBar({ server: given, barId, db }: { server: AdminServer; barId: string; db?: KauntaDB }) {
+  const [server] = useState(given);
+  const [store] = useState(() => db ?? new KauntaDB(`kaunta-super-admin-${barId}`));
+  const barServer = useMemo(() => server.forBar(barId), [server, barId]);
+  const [ready, setReady] = useState(false);
+  const [name, setName] = useState('');
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const since = ((await store.meta.get('pull_cursor'))?.value as string | undefined) ?? null;
+      try {
+        await applyAdminPull(store, await barServer.pull(since));
+      } catch {
+        // Offline: what this browser has.
+      }
+      const bar = await store.bar.get(barId);
+      if (!cancelled) {
+        setName(bar?.name ?? '');
+        setReady(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [store, barServer, barId]);
+  useEffect(() => {
+    if (!ready) return;
+    const sync = new AdminSync(store, barServer);
+    sync.start();
+    return () => sync.stop();
+  }, [ready, store, barServer]);
+  const back = useCallback(() => {
+    setSuperViewBar(null);
+    window.location.assign(`/super/bars/${barId}`);
+  }, [barId]);
+  const choice = useMemo<BarChoice>(
+    () => ({ bars: [{ id: barId, name, role: 'owner', counter_code: '' }], barId, switchBar: () => {}, changeBarCode: barServer.changeBarCode }),
+    [barId, name, barServer],
+  );
+  if (!ready) return <div className="a-app" aria-busy="true" />;
+  return (
+    <DbProvider key={barId} db={store} demo={false}>
+      <AdminSessionProvider asKaunta signOut={back} createPairingCode={barServer.createPairingCode} bars={choice}>
         <AdminRoutes />
       </AdminSessionProvider>
     </DbProvider>

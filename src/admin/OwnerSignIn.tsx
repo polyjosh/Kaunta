@@ -4,30 +4,44 @@ import { useI18n } from '../lib/I18nProvider';
 import { useTheme } from '../lib/ThemeProvider';
 import { DEMO_MANAGER, DEMO_OWNER, signIn } from '../platform/platform';
 import { hhmm } from './data';
+import type { MessageKey } from '../lib/i18n';
 
 /**
  * Owner or manager sign in: a username, then the owner's password or the
  * manager's 4-digit PIN (Kaunta created the account and set the first one).
  * Then the bars this person runs.
  */
-export function OwnerSignIn({ onSignedIn }: { onSignedIn: (accountId: string) => void }) {
+export function OwnerSignIn({
+  onSignedIn,
+  signIn: signInWith = signIn,
+  notice,
+}: {
+  onSignedIn: (accountId: string) => void;
+  /** With a server: account_sign_in. Without: the demo's accounts in this browser. */
+  signIn?: (username: string, secret: string) => Promise<Awaited<ReturnType<typeof signIn>>>;
+  notice?: MessageKey | null;
+}) {
+  const live = signInWith !== signIn;
   const { t, locale, setLocale } = useI18n();
   const { theme } = useTheme();
   const [username, setUsername] = useState('');
   const [pin, setPin] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const shown = error ?? (notice ? t(notice) : null);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError(null);
     try {
-      const result = await signIn(username, pin);
+      const result = await signInWith(username, pin);
       if (result.ok) return onSignedIn(result.account.id);
       setPin('');
       if (result.reason === 'locked') setError(t('admin.owner.locked', { time: hhmm(result.until) }));
       else setError(result.triesLeft === null ? t('admin.owner.wrong') : t('admin.owner.wrongLeft', { count: result.triesLeft }));
+    } catch (err) {
+      setError(t((err as Error).message.startsWith('network') ? 'admin.signIn.offline' : 'admin.signIn.failed'));
     } finally {
       setBusy(false);
     }
@@ -47,13 +61,13 @@ export function OwnerSignIn({ onSignedIn }: { onSignedIn: (accountId: string) =>
           {t('admin.owner.secret')}
           <input type="password" autoComplete="current-password" value={pin} onChange={(e) => setPin(e.target.value)} required />
         </label>
-        {error && <p className="a-error" role="alert">{error}</p>}
+        {shown && <p className="a-error" role="alert">{shown}</p>}
         <button type="submit" className="a-btn a-btn-primary a-btn-lg" disabled={busy || !username.trim() || !pin}>
           {busy ? t('admin.signIn.busy') : t('admin.signIn.submit')}
         </button>
-        <p className="a-note a-demo-hint">
+        {!live && <p className="a-note a-demo-hint">
           {t('admin.owner.demoHint', { owner: DEMO_OWNER.username, ownerPassword: DEMO_OWNER.password, manager: DEMO_MANAGER.username, managerPin: DEMO_MANAGER.pin })}
-        </p>
+        </p>}
         <div className="a-seg">
           <button type="button" aria-pressed={locale === 'en'} onClick={() => setLocale('en')}>English</button>
           <button type="button" aria-pressed={locale === 'sw'} onClick={() => setLocale('sw')}>Kiswahili</button>
