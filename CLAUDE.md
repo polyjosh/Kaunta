@@ -155,7 +155,7 @@ Last updated: 2026-11-17 (Kaunta: bar limits, suspending bars and staff, opening
 
 ## Not yet done
 
-- Everything up to staff access is committed (steps 1–5 in `3617480`, the rest in the commit after it).
+- Everything is committed: steps 1–5 in `3617480`, up to staff access in `b155a53`, stock, managers, stock per size and Kaunta controls in `48cb153`.
 - Not deployed anywhere: installing on a phone needs the app on an HTTPS address.
 - **The live server has not got accounts yet.** With `.env.local`, admin still signs in with Supabase Auth (phone/email + password) and there is no `/super` backed by the server. Server work needed: an accounts table (username, PIN hash, lockout), session tokens for the admin functions in place of `auth.uid()`, super admin functions behind a server-side password, and owner/bar creation (`create_owner`). Chosen bar codes are on the server already.
 - In the demo, all of this is in one browser's storage: anyone with access to the browser can read it. It is for testing, not for real bars' data.
