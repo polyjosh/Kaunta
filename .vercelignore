@@ -1,0 +1,13 @@
+# Never uploaded to Vercel: keys stay on this computer (Vercel gets them as project
+# environment variables), and nothing here is needed to build the app.
+.env.local
+.env*.local
+supabase/.temp
+brag-output
+.agents
+.claude
+node_modules
+dist
+coverage
+test-results
+playwright-report

@@ -12,3 +12,6 @@ supabase/.temp/
 
 # Brag video intermediates (frames, stills, scripts); the video, poster and copy are kept
 brag-output/work/
+
+.vercel
+.env*
