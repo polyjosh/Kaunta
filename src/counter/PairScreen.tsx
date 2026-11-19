@@ -22,7 +22,7 @@ export function PairingGate({ enabled, children }: { enabled: boolean; children:
   if (!enabled) return <>{children}</>;
   if (!state) return null;
   // Kaunta suspended the bar: nobody signs in (whoever was in is out) until access is given back.
-  if (stopped === 'suspended') return <SuspendedBar name={bar?.name ?? 'Kaunta'} />;
+  if (stopped === 'suspended') return <SuspendedBar name={bar?.name ?? 'Kaunta Book'} />;
   return state.paired && state.synced ? <>{children}</> : <PairScreen paired={state.paired} />;
 }
 
@@ -45,7 +45,7 @@ export function PairScreen({ paired }: { paired: boolean }) {
         <header className="c-topbar">
           <Logo />
           <div className="c-topbar-id">
-            <strong>Kaunta</strong>
+            <strong>Kaunta Book</strong>
           </div>
         </header>
         <main className="c-body c-pair c-pair-loading">

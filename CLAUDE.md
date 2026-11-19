@@ -148,6 +148,12 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 - Not yet: keys not set; never sent through real OneSignal (sending tested with stand-in `net`/`vault` in `supabase/notifications.test.ts`).
 - Tests: `supabase/notifications.test.ts`, `src/lib/push.test.tsx`.
 
+## Renamed Kaunta Book (2026-11-19)
+
+- The product is **Kaunta Book**: page title, installed-app name (`short_name` "Kaunta Book"), landing copy, install prompts, "Recorded in Kaunta Book", the counter's top bar before pairing, and the logo. **"Kaunta" stays** where it means the company/team that runs the platform (`/super` "Kaunta platform", "Kaunta set your password", "Kaunta has suspended…", the `kaunta` actor). Lowercase Kiswahili "kaunta" (counter) is unchanged.
+- Logo: `scripts/brand-wordmark.mjs` added "Book" to `public/brand/lockup-*.svg`, outlined from Manrope ExtraBold (`scripts/font-outline.mjs`, a dependency-free WOFF reader) after the original kerned "Kaunta"; stacked lockup re-centred; the stale C2PA credentials removed. `og-dark-1200x630.png` redrawn from the new lockup. The source files in `kaunta-handoff/design/logo` are the originals.
+- Why not plain "Kaunta": another Kenyan product (KRA/eTIMS compliance) uses it, including kaunta.vercel.app.
+
 ## How step 5 is put together
 
 - Admin has its own local store (Dexie, `kaunta-admin`, or `kaunta-admin-demo` in demo mode). Screens read only from it.

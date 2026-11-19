@@ -25,10 +25,10 @@ function renderLanding() {
 describe('landing', () => {
   it('shows the logo with its tagline and the promise, on Counter Night', () => {
     renderLanding();
-    const logo = screen.getByRole('img', { name: 'Kaunta · Till · Cash · Shelf' });
+    const logo = screen.getByRole('img', { name: 'Kaunta Book · Till · Cash · Shelf' });
     expect(logo).toHaveAttribute('src', '/brand/lockup-stacked-dark.svg');
     expect(screen.getByRole('heading', { level: 1 })).toContainElement(logo);
-    expect(screen.getByText('Kaunta shows you when your till, your cash, and your shelf don’t agree.')).toBeInTheDocument();
+    expect(screen.getByText('Kaunta Book shows you when your till, your cash, and your shelf don’t agree.')).toBeInTheDocument();
     expect(document.documentElement.dataset.theme).toBe('night');
   });
 

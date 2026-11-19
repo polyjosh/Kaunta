@@ -12,6 +12,9 @@ export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
   reporter: [['list']],
+  // Admin's demo builds the whole sample night in IndexedDB on first open; with
+  // every test in parallel on one machine that can take longer than 5 s.
+  expect: { timeout: 15_000 },
   use: {
     baseURL: `http://localhost:${PORT}`,
     channel: 'chrome',

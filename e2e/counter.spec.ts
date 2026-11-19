@@ -202,7 +202,7 @@ test('a wrong PIN counts down and the 5th locks the person', async ({ page }) =>
 
 test('the landing page shows the logo, fits a phone, and leads to the counter', async ({ page }) => {
   await page.goto('/');
-  const logo = page.getByRole('img', { name: 'Kaunta · Till · Cash · Shelf' });
+  const logo = page.getByRole('img', { name: 'Kaunta Book · Till · Cash · Shelf' });
   await expect(logo).toBeVisible();
   // The artwork loaded (not a broken image).
   expect(await logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);

@@ -165,7 +165,7 @@ export function AdminLayout({ children, wide = true }: { children: ReactNode; wi
     <div className="a-app">
       <header className="a-header">
         <div className="a-header-top">
-          <BarSwitcher name={bar?.name ?? 'Kaunta'} day={t('nav.businessDay', { date: dayLabel(day, locale) })} />
+          <BarSwitcher name={bar?.name ?? 'Kaunta Book'} day={t('nav.businessDay', { date: dayLabel(day, locale) })} />
           <div className="a-header-tools">
             <span className="k-chip k-tone-paid a-devices">
               <Icon name="cloud-check" size={16} />

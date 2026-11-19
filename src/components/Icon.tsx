@@ -55,13 +55,13 @@ export function Logo({ size = 30, label }: { size?: number; label?: string }) {
 }
 
 /** The logo with the wordmark (outlined artwork, so no font needed), in the scheme for the background. */
-/** lockup-horizontal-*.svg viewBox: 428.2 × 128. */
-const HORIZONTAL_RATIO = 428.2 / 128;
+/** lockup-horizontal-*.svg viewBox: 624.26 × 128 (Kaunta Book; scripts/brand-wordmark.mjs added "Book"). */
+const HORIZONTAL_RATIO = 624.26 / 128;
 
 export function Lockup({ kind, scheme, height }: { kind: 'stacked' | 'horizontal'; scheme: 'dark' | 'light'; height: number }) {
   // Intrinsic sizes from the SVG viewBoxes, so the space is kept before the image loads.
-  const ratio = kind === 'stacked' ? 236.6 / 241.4 : HORIZONTAL_RATIO;
-  return <img className="k-lockup" src={`/brand/lockup-${kind}-${scheme}.svg`} alt="Kaunta · Till · Cash · Shelf" height={height} width={Math.round(height * ratio)} />;
+  const ratio = kind === 'stacked' ? 410.87 / 241.4 : HORIZONTAL_RATIO;
+  return <img className="k-lockup" src={`/brand/lockup-${kind}-${scheme}.svg`} alt="Kaunta Book · Till · Cash · Shelf" height={height} width={Math.round(height * ratio)} />;
 }
 
 type TokenIcon = Exclude<keyof typeof tokens.icons, 'note' | 'logo-tally'>;

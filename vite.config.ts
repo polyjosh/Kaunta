@@ -16,9 +16,9 @@ export default defineConfig({
       includeAssets: ['favicon.svg', 'favicon.ico', 'brand/apple-touch-icon-180.png', 'brand/app-icon-192.png', 'brand/app-icon-512.png'],
       manifest: {
         id: '/',
-        name: 'Kaunta · Till · Cash · Shelf',
-        short_name: 'Kaunta',
-        description: 'Kaunta shows you when your till, your cash, and your shelf don’t agree.',
+        name: 'Kaunta Book · Till · Cash · Shelf',
+        short_name: 'Kaunta Book',
+        description: 'Kaunta Book shows you when your till, your cash, and your shelf don’t agree.',
         lang: 'en',
         categories: ['business', 'productivity'],
         // The landing page; the installed app goes on to the way this device used last (counter or admin).

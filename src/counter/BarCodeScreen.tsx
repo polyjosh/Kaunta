@@ -56,7 +56,7 @@ export function BarCodeScreen({
       <header className="c-topbar">
         <Logo />
         <div className="c-topbar-id">
-          <strong>Kaunta</strong>
+          <strong>Kaunta Book</strong>
         </div>
       </header>
       <main className="c-body c-barcode">
