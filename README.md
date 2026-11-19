@@ -2,7 +2,7 @@
 
 **Kaunta Book shows you when your till, your cash, and your shelf don't agree.**
 
-Kaunta Book is a mobile-first, installable web app (PWA) for bars in Kenya. It is live at https://kaunta-app.vercel.app. Counter staff record what was served and confirm that it was paid for. Owners and managers see where money or stock went missing. Customers pay the bar directly by M-Pesa Till or cash. **Kaunta Book never takes or moves payments.**
+Kaunta Book is a mobile-first, installable web app (PWA) for bars in Kenya. It is live at https://kaunta-book.vercel.app. Counter staff record what was served and confirm that it was paid for. Owners and managers see where money or stock went missing. Customers pay the bar directly by M-Pesa Till or cash. **Kaunta Book never takes or moves payments.**
 
 It works in English and Kiswahili. It keeps working offline: every counter write goes to a local outbox first and syncs when the phone is back online.
 
