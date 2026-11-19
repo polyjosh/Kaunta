@@ -129,5 +129,9 @@
   "error.title": "Kuna tatizo kwenye skrini hii",
   "error.body": "Kilichorekodiwa kimehifadhiwa. Rudi ujaribu tena. Likiendelea, mwambie mmiliki ulichokuwa ukifanya na ujumbe huu:",
   "error.back": "Rudi kuuza",
-  "sync.review.voidDecided": "Msimamizi aliamua ombi la kufuta kabla malipo haya hayajafika. Uamuzi wake unabaki; ataangalia malipo."
+  "sync.review.voidDecided": "Msimamizi aliamua ombi la kufuta kabla malipo haya hayajafika. Uamuzi wake unabaki; ataangalia malipo.",
+  "push.enable": "Washa arifa",
+  "push.on": "Arifa zimewashwa kwenye simu hii.",
+  "push.blocked": "Arifa zimezuiwa. Ziruhusu kwa tovuti hii kwenye mipangilio ya kivinjari.",
+  "push.unsupported": "Kivinjari hiki hakiwezi kuonyesha arifa. Kwenye iPhone, ongeza Kaunta kwenye skrini ya mwanzo kwanza."
 }

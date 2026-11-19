@@ -116,3 +116,11 @@ button {
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
+
+/* Notifications state (PushButton) in the counter and admin menus */
+.k-push-state {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 15px;
+  color: var(--k-text-2);
+}

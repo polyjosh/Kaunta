@@ -42,9 +42,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,woff2,json}'],
+        // OneSignal's worker is fetched by the browser itself, never from this cache.
+        globIgnores: ['push/**'],
         navigateFallback: '/index.html',
         // Never cache the sync API: it must always reach the server or fail.
-        navigateFallbackDenylist: [/^\/rest\//, /^\/auth\//],
+        navigateFallbackDenylist: [/^\/rest\//, /^\/auth\//, /^\/push\//],
         cleanupOutdatedCaches: true,
         // The first install takes charge of the open page at once, so it works offline
         // from the first visit. Updates still wait (no skipWaiting).
@@ -55,7 +57,7 @@ export default defineConfig({
   ],
   test: {
     // Tests run on the sample data, whatever .env.local says.
-    env: { VITE_SUPABASE_URL: '', VITE_SUPABASE_ANON_KEY: '' },
+    env: { VITE_SUPABASE_URL: '', VITE_SUPABASE_ANON_KEY: '', VITE_ONESIGNAL_APP_ID: '' },
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}', 'supabase/**/*.test.ts'],

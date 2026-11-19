@@ -11,6 +11,7 @@ import { useI18n } from '../lib/I18nProvider';
 import { formatKES } from '../lib/money';
 import { displayLabel, labelForTable, matchesSearch, productName, sizeLabel } from './labels';
 import type { TableChoice } from './labels';
+import { PushButton } from '../components/PushButton';
 import { DecisionNotices } from './DecisionNotices';
 import { useSession } from './Session';
 import { Avatar, Sheet, Toast, TopBar, withOffline } from './ui';
@@ -451,6 +452,7 @@ export function SellScreen() {
           >
             {t('sell.switchUser')}
           </button>
+          <PushButton className="c-btn c-btn-secondary" />
           <button type="button" className="c-btn c-btn-secondary" onClick={() => navigate('/counter/shift/expenses')}>
             {t('expense.title')}
           </button>

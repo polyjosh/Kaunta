@@ -117,7 +117,11 @@ The sample bar's counter is fixed at 22:20 and its admin at 02:14 on the sample 
 
 Full instructions, including the optional sample seed, how to attach an account to seeded people, and the full list of functions, are in [`supabase/README.md`](supabase/README.md).
 
-> The server side is tested against real Postgres (PGlite) but has **not yet been run on a live Supabase project**.
+> The server side is tested against real Postgres (PGlite) and runs on a live Supabase project (since 2026-11-18).
+
+### Push notifications
+
+Owners and managers are told when a request waits for them, stock runs low, or a shift starts or closes; counter phones when an order is still unpaid after 5 minutes and when an admin decides on their request. They go through [OneSignal](https://onesignal.com): put the **App ID** in `.env.local` (`VITE_ONESIGNAL_APP_ID`) and both the App ID and the **REST API Key** in Supabase Vault. Steps in [`supabase/README.md`](supabase/README.md#push-notifications-onesignal).
 
 ## Scripts
 

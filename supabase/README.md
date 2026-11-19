@@ -97,6 +97,43 @@ update public.bar set owner_account_id = (select id from public.accounts where u
 
 (Their first bar from step 6 stays theirs too; Kaunta can suspend it.)
 
+## Push notifications (OneSignal)
+
+Web push for owners, managers and counter phones, sent by the database (`20261125000000_kaunta_notifications.sql`).
+
+| Who | When |
+|---|---|
+| Owners and managers of the bar | A request waits for them (void, spilled or broken, on the house, expense, price to check, sold off the menu, removed phone); stock reaches its warning level; a counter shift starts or closes |
+| The counter phone | An order is still unpaid after `bar.unpaid_alert_minutes` (5); an admin approves or rejects a request made on that phone |
+
+Messages are in English and Kiswahili (OneSignal picks by the language set in the app).
+
+**Keys you provide** (OneSignal dashboard → your app → Settings → Keys & IDs):
+
+1. **App ID** (a UUID): into `.env.local` as `VITE_ONESIGNAL_APP_ID`, and into Supabase Vault (below). It is public.
+2. **REST API Key**: into Supabase Vault only. It is secret: never in `.env.local` or the app.
+3. Optional **Safari Web ID** (`web.onesignal.auto.…`, older Safari on Mac): `VITE_ONESIGNAL_SAFARI_WEB_ID`.
+
+**Set up once:**
+
+1. Create a OneSignal app, platform **Web**, "Typical site". Site URL: the address the app is served from (HTTPS; `http://localhost:5173` works for trying it out). Turn **off** OneSignal's own prompts and bell (Kaunta asks with its own button). Under advanced settings, the service worker is `push/onesignal/OneSignalSDKWorker.js` with scope `/push/onesignal/` (the app passes these itself; the file is in `public/`).
+2. In Supabase **SQL Editor**:
+   ```sql
+   select vault.create_secret('<OneSignal App ID>', 'onesignal_app_id');
+   select vault.create_secret('<OneSignal REST API Key>', 'onesignal_rest_api_key');
+   ```
+   To change one later: `select vault.update_secret((select id from vault.secrets where name = 'onesignal_rest_api_key'), '<new key>');`
+3. Put the App ID in `.env.local` (`VITE_ONESIGNAL_APP_ID=…`) and restart `npm run dev` (or rebuild).
+4. Check: `select public.kaunta_notifications_check();` should say `app_id_set`, `rest_api_key_set` and `timer_running` are all true. If `timer_running` is false, turn on **pg_net** and **pg_cron** under Database → Extensions, then run:
+   ```sql
+   select cron.schedule('kaunta-notifications', '15 seconds', 'select public.kaunta_notify_tick()');
+   ```
+5. In the app: owners and managers tap their avatar → **Turn on notifications**; on each counter phone, tap your name (top left on Sell) → **Turn on notifications**. iPhones need Kaunta added to the Home Screen first (iOS 16.4+).
+
+**How it works:** triggers on `approvals`, `products`, `sizes` and `shifts` put each message in `public.notifications` (an outbox the app never reads). Every 15 seconds pg_cron runs `kaunta_notify_tick()`: it adds the unpaid-order reminders, then sends what is waiting to `https://api.onesignal.com/notifications` with pg_net, addressed by OneSignal external id: `account_<accounts.id>` for owners and managers, `device_<devices.id>` for counter phones (the app logs in to OneSignal with those). Until both keys are in Vault nothing is sent; messages older than 10 minutes are dropped, so adding the keys later does not send a backlog. See what went out with `select kind, status, contents->>'en', created_at, error from public.notifications order by id desc limit 20;` and OneSignal's answers in `net._http_response`.
+
+Limits: one browser is one OneSignal user, so a browser used for both admin and a counter gets the notifications of whichever it signed in as last. Owners and managers need an account (made in `/super`); seed people without one get none.
+
 ## Many bars on one project
 
 Every bar-scoped row has a `bar_id`. The functions that work inside a bar (`sync_push`, `sync_pull`, `admin_push`, `admin_pull`, `admin_create_pairing_code`) run as the role `kaunta_api`, and row level security shows that role only the rows of one bar. The bar is fixed at the start of each call from something the caller cannot forge:

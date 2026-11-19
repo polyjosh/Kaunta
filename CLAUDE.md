@@ -140,6 +140,14 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 - `ApprovalStatus` gained `cancelled` (a trigger keeps it final on the server); `ApprovalKind` gained `expense`.
 - Server: `20261124000000_kaunta_counter_approvals.sql`. Tests: `src/counter/approvals.test.tsx`, `supabase/counterApprovals.test.ts`, `src/components/ErrorBoundary.test.tsx`, Approvals in `src/admin/admin.test.tsx`.
 
+## Push notifications, OneSignal (asked for after counter approvals)
+
+- **Server** (`20261125000000_kaunta_notifications.sql`): triggers on approvals (waiting → owners/managers; decided → the phone that asked), products/sizes (stock crossing its warning level), shifts (opened, closed) queue rows in `public.notifications` (outbox, RLS on, no grants). pg_cron runs `kaunta_notify_tick()` every 15 s: unpaid-order reminders (`bar.unpaid_alert_minutes`, default 5, one per order, to `device_<id>`), then `send_notifications()` posts to OneSignal with pg_net, key from Vault (`onesignal_app_id`, `onesignal_rest_api_key`). No keys: nothing sent; > 10 min old: expired. `kaunta_notifications_check()` for the SQL editor. The cron/pg_net block is skipped where the extensions are missing (PGlite).
+- **App** (`src/lib/push.ts`): OneSignal web SDK v16 loaded only with `VITE_ONESIGNAL_APP_ID` and a server; its service worker in its own scope (`public/push/onesignal/`, kept out of the app's precache). Counter phones log in as `device_<device id>` (`CounterPush` in App), owners/managers as `account_<account id>` (AdminLive; logout on sign-out). **Turn on notifications** in the counter's name menu and the admin avatar menu (`PushButton`).
+- **Keys the owner provides**: OneSignal App ID (`.env.local` + Vault), REST API Key (Vault only), optional Safari Web ID. Steps: `supabase/README.md` → Push notifications.
+- Not yet: keys not set; never sent through real OneSignal (sending tested with stand-in `net`/`vault` in `supabase/notifications.test.ts`).
+- Tests: `supabase/notifications.test.ts`, `src/lib/push.test.tsx`.
+
 ## How step 5 is put together
 
 - Admin has its own local store (Dexie, `kaunta-admin`, or `kaunta-admin-demo` in demo mode). Screens read only from it.
@@ -150,7 +158,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 
 ## Tests
 
-- `npm test`: 535 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
+- `npm test`: 550 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
 - Counter UI and phone-sync tests pin the clock to the 22:20 snapshot; before 2026-11-11 they used the real clock and broke when the business day rolled over.
 - `npm run test:e2e`: 17 Playwright tests (landing and counter at 360×800, admin at 390 px and desktop). `e2e/fullLoop.spec.ts` does the whole loop in one browser: add a bar, its code, presets, add a person, the code at the counter, one-time code → PIN, a sale, the sale in admin.
 

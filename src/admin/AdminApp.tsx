@@ -3,6 +3,8 @@ import { Navigate, Route, Routes, useParams } from 'react-router-dom';
 import { seedAdminDatabase } from '../data/adminSeed';
 import { KauntaDB } from '../data/db';
 import { DbProvider } from '../data/react';
+import { useI18n } from '../lib/I18nProvider';
+import { accountAudience, pushAs } from '../lib/push';
 import { useDemoServer } from '../data/demoServer';
 import { businessDayOf } from '../domain/time';
 import type { MessageKey } from '../lib/i18n';
@@ -112,6 +114,7 @@ const byName = (a: BarSummary, b: BarSummary) => a.name.localeCompare(b.name) ||
  * wiped on sign-out.
  */
 function AdminLive({ server: given, db }: { server: AdminServer; db?: KauntaDB }) {
+  const { locale } = useI18n();
   const [server] = useState(given);
   const [bars, setBars] = useState<BarSummary[]>([]);
   const [barId, setBarId] = useState<string | null>(null);
@@ -221,7 +224,14 @@ function AdminLive({ server: given, db }: { server: AdminServer; db?: KauntaDB }
     return () => sync.stop();
   }, [state, store, barServer]);
 
+  // Owners and managers receive their bars' notifications as their account, on every browser they sign in on.
+  const accountId = who?.account.id;
+  useEffect(() => {
+    if (accountId) void pushAs(accountAudience(accountId), locale);
+  }, [accountId, locale]);
+
   const signOut = useCallback(() => {
+    void pushAs(null);
     server.signOut();
     setPlatformServer(null);
     setWho(null);

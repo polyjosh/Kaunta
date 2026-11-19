@@ -1,0 +1,100 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { PushButton } from '../components/PushButton';
+import { I18nProvider } from './I18nProvider';
+import type { OneSignalApi } from './push';
+import { PUSH_WORKER_PATH, PUSH_WORKER_SCOPE, accountAudience, deviceAudience, pushConfig, resetPushForTests, startPush } from './push';
+
+const live = { VITE_SUPABASE_URL: 'https://x.supabase.co', VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_x' };
+
+function fakeSdk(permission = false) {
+  const listeners: ((granted: boolean) => void)[] = [];
+  const sdk = {
+    init: vi.fn(async () => {}),
+    login: vi.fn(async () => {}),
+    logout: vi.fn(async () => {}),
+    User: { setLanguage: vi.fn() },
+    Notifications: {
+      permission,
+      isPushSupported: () => true,
+      requestPermission: vi.fn(async () => {
+        sdk.Notifications.permission = true;
+        listeners.forEach((l) => l(true));
+      }),
+      addEventListener: (_: 'permissionChange', l: (granted: boolean) => void) => void listeners.push(l),
+    },
+  };
+  return sdk;
+}
+
+/** What OneSignal's page script does once it loads: runs everything queued in OneSignalDeferred. */
+async function sdkLoads(sdk: ReturnType<typeof fakeSdk>) {
+  const queue = window.OneSignalDeferred as ((s: OneSignalApi) => Promise<void>)[];
+  for (const fn of queue) await fn(sdk as unknown as OneSignalApi);
+}
+
+afterEach(() => {
+  resetPushForTests();
+  document.head.querySelectorAll('script').forEach((s) => s.remove());
+});
+
+describe('push notifications (OneSignal)', () => {
+  it('are on only with an app id and a server', () => {
+    expect(pushConfig({})).toBeNull();
+    expect(pushConfig({ VITE_ONESIGNAL_APP_ID: 'app-1' })).toBeNull(); // the demo: no server to send
+    expect(pushConfig({ ...live, VITE_ONESIGNAL_APP_ID: ' app-1 ' })).toEqual({ appId: 'app-1' });
+    expect(pushConfig({ ...live, VITE_ONESIGNAL_APP_ID: 'app-1', VITE_ONESIGNAL_SAFARI_WEB_ID: 'web.onesignal.auto.1' })).toEqual({ appId: 'app-1', safariWebId: 'web.onesignal.auto.1' });
+  });
+
+  it('load the SDK once, in its own service-worker scope, without prompting', async () => {
+    const sdk = fakeSdk();
+    const started = startPush({ appId: 'app-1' });
+    startPush({ appId: 'app-1' });
+    expect(document.head.querySelectorAll('script[src*="OneSignalSDK.page.js"]')).toHaveLength(1);
+    await sdkLoads(sdk);
+    expect(await started).toBe(sdk);
+    expect(sdk.init).toHaveBeenCalledWith(expect.objectContaining({
+      appId: 'app-1',
+      serviceWorkerPath: PUSH_WORKER_PATH,
+      serviceWorkerParam: { scope: PUSH_WORKER_SCOPE },
+      notifyButton: { enable: false },
+    }));
+  });
+
+  it('do nothing at all in the demo', async () => {
+    expect(await startPush(null)).toBeNull();
+    expect(document.head.querySelector('script')).toBeNull();
+  });
+
+  it('name counter phones and accounts the way the server sends to them', () => {
+    expect(deviceAudience('d_counter1')).toBe('device_d_counter1');
+    expect(accountAudience('acc_1')).toBe('account_acc_1');
+  });
+
+  it('are turned on with a tap, and then say so', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', live.VITE_SUPABASE_URL);
+    vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', live.VITE_SUPABASE_PUBLISHABLE_KEY);
+    vi.stubEnv('VITE_ONESIGNAL_APP_ID', 'app-1');
+    const sdk = fakeSdk();
+    render(
+      <I18nProvider initialLocale="en">
+        <PushButton className="x" />
+      </I18nProvider>,
+    );
+    await sdkLoads(sdk);
+    await userEvent.click(await screen.findByRole('button', { name: 'Turn on notifications' }));
+    expect(sdk.Notifications.requestPermission).toHaveBeenCalled();
+    expect(await screen.findByText('Notifications are on on this phone.')).toBeInTheDocument();
+    vi.unstubAllEnvs();
+  });
+
+  it('show nothing while push is not set up', () => {
+    const { container } = render(
+      <I18nProvider initialLocale="en">
+        <PushButton className="x" />
+      </I18nProvider>,
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
+});

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { PushButton } from '../components/PushButton';
 import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Icon } from '../components/Icon';
@@ -79,6 +80,7 @@ function AccountMenu() {
               {t(account.secret === 'password' ? 'admin.account.changePassword' : 'admin.account.changePin')}
             </Link>
           )}
+          {!kaunta && <PushButton className="a-menu-link" onDone={() => setOpen(false)} />}
           {/* Straight in at this bar's counter as themselves, without signing in again. */}
           {!kaunta && (
             <a className="a-menu-link" href="/counter/login?from=admin" onClick={() => demo && barId && rememberCounterBar(barId)}>

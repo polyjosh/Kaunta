@@ -129,5 +129,9 @@
   "error.title": "Something went wrong on this screen",
   "error.body": "What was recorded is saved. Go back and try again. If it keeps happening, tell the owner what you were doing and what this says:",
   "error.back": "Back to selling",
-  "sync.review.voidDecided": "An admin decided on the void request before this payment arrived. Their decision stands; they will check the payment."
+  "sync.review.voidDecided": "An admin decided on the void request before this payment arrived. Their decision stands; they will check the payment.",
+  "push.enable": "Turn on notifications",
+  "push.on": "Notifications are on on this phone.",
+  "push.blocked": "Notifications are blocked. Allow them for this site in the browser settings.",
+  "push.unsupported": "This browser cannot show notifications. On iPhone, add Kaunta to the Home Screen first."
 }
