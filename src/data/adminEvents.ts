@@ -189,6 +189,8 @@ export function approvalEffect(
       return decision === 'approved' ? { lines: null, stock: [] } : { lines: 'voided', stock: [...lineStock] };
     case 'price_mismatch':
     case 'revoked_device':
+    case 'expense':
+      // An expense changes no stock; rejecting it takes it off what the shift's cash expects (rejectedExpenses).
       return { lines: null, stock: [] };
   }
 }
@@ -239,7 +241,7 @@ export async function applyAdminEvent(db: KauntaDB, event: AdminEvent, { by, at 
     }
     case 'approval_undone': {
       const approval = await db.approvals.get(event.payload.approval_id);
-      if (!approval || approval.status === 'waiting' || !approval.decided_at) throw new Error('Nothing to undo');
+      if (!approval || approval.status === 'waiting' || approval.status === 'cancelled' || !approval.decided_at) throw new Error('Nothing to undo');
       if (Date.parse(at) - Date.parse(approval.decided_at) > UNDO_GRACE_MS) throw new Error('Too late to undo: the decision is final');
       const decision = approval.status;
       const effect = approvalEffect(approval, decision, await lineReturns(db, approval), await itemDeduct(db, approval));

@@ -3,7 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { useConnection, useDb, useQuery } from '../data/react';
 import { voidLines } from '../data/voids';
-import { orderTotal } from '../domain/orders';
+import { orderTotal, paidTotal } from '../domain/orders';
 import { localTime, minutesBetween } from '../domain/time';
 import type { Id, VoidReason } from '../domain/types';
 import { VOID_REASONS, clockMinutes, selfVoidMsLeft, voidRoute } from '../domain/voids';
@@ -45,14 +45,15 @@ export function VoidScreen() {
     async (d) => {
       const order = await d.orders.get(id);
       if (!order) return null;
-      const [bar, lines, people, products, sizes] = await Promise.all([
+      const [bar, lines, people, products, sizes, payments] = await Promise.all([
         d.bar.toCollection().first(),
         d.lines.where('order_id').equals(id).sortBy('created_at'),
         d.people.toArray(),
         d.products.toArray(),
         d.sizes.toArray(),
+        d.payments.where('order_id').equals(id).toArray(),
       ]);
-      return { order, bar, lines, people, products, sizes };
+      return { order, bar, lines, people, products, sizes, payments };
     },
     [id],
   );
@@ -77,11 +78,15 @@ export function VoidScreen() {
   const chosen = scope?.kind === 'line' ? active.filter((l) => l.id === scope.lineId) : scope ? active : [];
   // Before anything is chosen, the banner speaks for the whole order.
   const windowLines = chosen.length > 0 ? chosen : active;
-  const msLeft = selfVoidMsLeft(windowLines, me.id, now, data.bar?.self_void_minutes ?? 5);
+  const msLeft = selfVoidMsLeft(windowLines, me.id, now, data.bar?.self_void_minutes ?? 2);
   const oldest = windowLines.reduce((min, l) => (l.created_at < min ? l.created_at : min), windowLines[0]?.created_at ?? order.created_at);
-  const selfWindow = msLeft > 0;
+  // Voiding below what was already paid means giving money back: always an admin's call (as voidLines decides).
+  // One unit of a line, or every active line (what submit sends).
+  const voidAmount = scope?.kind === 'line' ? (chosen[0]?.unit_price_kes ?? 0) : orderTotal(active);
+  const moneyAtStake = paidTotal(data.payments) > orderTotal(data.lines) - voidAmount;
+  const selfWindow = msLeft > 0 && !moneyAtStake;
   // The live window switches the variant by itself; the chosen reason is kept.
-  const needsAdmin = reason ? voidRoute(reason, msLeft).route === 'approval' : !selfWindow;
+  const needsAdmin = reason ? voidRoute(reason, msLeft, moneyAtStake).route === 'approval' : !selfWindow;
 
   const orderRef = `${displayLabel(order.label, t)} ${order.short_no}`;
   const target = scope?.kind === 'line' ? describe(scope.lineId) : null;
@@ -126,6 +131,14 @@ export function VoidScreen() {
                   left: clockMinutes(msLeft),
                 })}
               </p>
+            </div>
+          </div>
+        ) : moneyAtStake ? (
+          <div className="c-banner k-tone-warning">
+            <Icon name="alert-triangle" size={26} />
+            <div>
+              <strong>{t('void.paidHead')}</strong>
+              <p>{t('void.paidBody')}</p>
             </div>
           </div>
         ) : (

@@ -1,6 +1,6 @@
 import { displayLabel, productName, sizeLabel } from '../counter/labels';
 import { lineTotal } from '../domain/orders';
-import type { ApprovalItem, AuditEvent, Delivery, Device, Order, OrderLine, Payment, Person, Product, ProductSize, Shift } from '../domain/types';
+import type { ApprovalItem, AuditEvent, Delivery, Device, Order, OrderLine, Payment, Person, Product, ProductSize, Shift, ShiftExpense } from '../domain/types';
 import type { TFunction } from '../lib/I18nProvider';
 import type { Locale, MessageKey } from '../lib/i18n';
 import { formatAmount, formatKES } from '../lib/money';
@@ -105,7 +105,7 @@ export function describeAudit(e: AuditEvent, l: AuditLookups, t: TFunction, loca
     case 'approval_undone': {
       const a = l.approvals.find((x) => x.id === d.approval_id);
       const o = order(a?.target.order_id);
-      const kind = a ? t(({ void: 'approvals.kind.void', write_off: 'approvals.kind.writeOff', comp: 'approvals.kind.comp', price_mismatch: 'approvals.kind.priceMismatch', archived_product: 'admin.kind.archived', revoked_device: 'admin.kind.revoked' } as const)[a.kind]) : '';
+      const kind = a ? t(({ void: 'approvals.kind.void', write_off: 'approvals.kind.writeOff', comp: 'approvals.kind.comp', price_mismatch: 'approvals.kind.priceMismatch', archived_product: 'admin.kind.archived', revoked_device: 'admin.kind.revoked', expense: 'admin.kind.expense' } as const)[a.kind]) : '';
       const subject = [kind, o?.short_no, a ? formatKES(a.amount_kes) : null].filter(Boolean).join(' · ');
       if (e.kind === 'approval_undone') return { what: t('admin.audit.undone', { what: subject }), changes: none };
       return {
@@ -181,6 +181,14 @@ export function describeAudit(e: AuditEvent, l: AuditLookups, t: TFunction, loca
     case 'shift_opened': {
       const s: Shift = d.shift;
       return { what: t('admin.audit.shiftOpened', { amount: formatKES(s.float_kes) }), changes: none };
+    }
+    case 'void_request_cancelled':
+      return { what: t('admin.audit.voidCancelled', { order: order(d.order_id)?.short_no ?? '' }), changes: none };
+    case 'shift_expense_added':
+    case 'shift_expense_removed': {
+      const x: ShiftExpense = d.expense;
+      const params = { label: x.label, amount: formatKES(x.amount_kes), from: t(x.paid_from === 'mpesa' ? 'expense.fromTill' : 'expense.fromCash') };
+      return { what: t(e.kind === 'shift_expense_added' ? 'admin.audit.expenseAdded' : 'admin.audit.expenseRemoved', params), changes: none };
     }
     case 'shift_closed': {
       const result: number = d.result_kes ?? 0;

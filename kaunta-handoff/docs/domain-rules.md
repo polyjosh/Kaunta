@@ -14,7 +14,7 @@ Rule IDs (e.g. **R-DAY-1**) are referenced from `screens.md`; write a unit test 
 ## Entities
 
 ```
-Bar            id, name, timezone="Africa/Nairobi", day_start="06:00", self_void_minutes=5,
+Bar            id, name, timezone="Africa/Nairobi", day_start="06:00", self_void_minutes=2,
                ageing_minutes=30, pin_attempts=5, lockout_minutes=5, keg_foam_allowance_cups=0
 Person         id, name, initial, colour, role: owner|admin|counter|server, pin_hash?, pin_locked_until?,
                failed_pin_attempts, archived_at?
@@ -69,7 +69,7 @@ AuditEvent     id, at, actor_id|"system", device_id, kind, summary, before?, aft
 
 ## Voids, comps, write-offs
 
-- **R-VOID-1** A line (or whole order) can be self-voided by the person who recorded it within `self_void_minutes` (5) of the line's `created_at`, for reasons *Entered by mistake*, *Customer changed their mind*, *Wrong size or product*.
+- **R-VOID-1** A line (or whole order) can be self-voided by the person who recorded it within `self_void_minutes` (2; was 5 until 2026-11-19) of the line's `created_at`, for reasons *Entered by mistake*, *Customer changed their mind*, *Wrong size or product*.
 - **R-VOID-2** Outside the window, or reason *Something else*, the void becomes an ApprovalItem; the line goes to `void_pending` and still counts toward the order total until approved.
 - **R-VOID-3** Reason *Spilled or broken* is a **write-off**: stock is not returned; always needs approval.
 - **R-VOID-4** Approved void returns stock (`void_return`). Rejected void restores the line to `active`.

@@ -3,7 +3,7 @@ import { orderDue, orderTotal, paidTotal } from '../domain/orders';
 import { nextShortNo, normaliseMpesaRef } from '../domain/payments';
 import { isSellable } from '../domain/stock';
 import { businessDayOf } from '../domain/time';
-import type { Id, Order, OrderLine, Payment, PaymentMethod } from '../domain/types';
+import type { ApprovalItem, Id, Order, OrderLine, Payment, PaymentMethod } from '../domain/types';
 import type { KauntaDB } from './db';
 import { nowOf, recordEvent } from './outbox';
 import type { RecordContext } from './outbox';
@@ -226,7 +226,20 @@ export async function recordPayment(
     const received = payments.reduce((sum, p) => sum + p.amount_kes, 0);
     if (received > due) throw new RangeError(`Only KES ${due} is still due on ${order.short_no}`);
 
+    // Paying the whole order, items waiting on a void request included: the request is
+    // taken back and they are sold as normal. A part payment leaves the request waiting.
+    const requests = received === due ? await pendingVoidRequests(db, order_id) : [];
+    if (requests.length > 0) {
+      await recordEvent(db, ctx, { type: 'void_request_cancelled', payload: { order_id, approval_ids: requests.map((a) => a.id) } });
+    }
     await recordEvent(db, ctx, { type: 'payment_recorded', payload: { order_id, payments } });
     return payments;
   });
+}
+
+/** Void (or write-off) requests on this order that nobody has decided yet: paying the order takes them back. */
+export async function pendingVoidRequests(db: KauntaDB, order_id: Id): Promise<ApprovalItem[]> {
+  return db.approvals
+    .filter((a) => a.status === 'waiting' && (a.kind === 'void' || a.kind === 'write_off') && a.target.order_id === order_id && a.target.line_ids.length > 0)
+    .toArray();
 }

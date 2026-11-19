@@ -88,6 +88,10 @@ test('a new bar from start to sale: super admin, owner, staff, counter, admin', 
   await expect(page.getByText('Test Bar', { exact: true })).toBeVisible();
   await page.locator('.c-staff-tile', { hasText: 'Baraka' }).click();
   await typePin(page, '1357');
+  // A new shift: the float counted into the drawer first.
+  await expect(page.getByRole('heading', { name: 'Start your shift, Baraka' })).toBeVisible();
+  for (const key of ['2', '0', '0', '0']) await page.locator('.c-numpad').getByRole('button', { name: key, exact: true }).click();
+  await page.getByRole('button', { name: 'Start shift · float KES 2,000' }).click();
   await page.getByRole('button', { name: 'Tusker Lager' }).click();
   await page.getByRole('button', { name: 'Record (pay later)' }).click();
   await expect(page.getByText(/Order #001 recorded/)).toBeVisible();
@@ -110,6 +114,7 @@ test('a new bar from start to sale: super admin, owner, staff, counter, admin', 
   await page.goto('/admin');
   await page.getByRole('button', { name: /Amina’s account/ }).click();
   await page.getByRole('link', { name: 'Sell at the counter' }).click();
+  await page.getByRole('button', { name: 'Start shift with no float' }).click();
   await expect(page.getByRole('button', { name: /Switch user · Amina/ })).toBeVisible();
   await page.getByRole('button', { name: 'Tusker Lager' }).click();
   await page.getByRole('button', { name: 'Record (pay later)' }).click();

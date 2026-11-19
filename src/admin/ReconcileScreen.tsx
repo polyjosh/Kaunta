@@ -5,7 +5,8 @@ import { StatusChip } from '../components/StatusChip';
 import { displayLabel } from '../counter/labels';
 import { recordAdminEvent } from '../data/adminEvents';
 import { useDb } from '../data/react';
-import { canCloseDay, mpesaRecon, mpesaVariance, shiftRecon } from '../domain/admin';
+import { canCloseDay, mpesaRecon, mpesaVariance, shiftRecon, tillPaidOut } from '../domain/admin';
+import { paidFromTill, rejectedExpenses } from '../domain/shifts';
 import { businessDayOf } from '../domain/time';
 import type { BusinessDay } from '../domain/types';
 import { useI18n } from '../lib/I18nProvider';
@@ -32,10 +33,12 @@ export function ReconcileScreen({ day }: { day: BusinessDay }) {
 
   if (!data) return <AdminLayout>{null}</AdminLayout>;
   const shifts = shiftRecon(data, day);
+  const rejected = rejectedExpenses(data.approvals);
   const mpesa = mpesaRecon(data);
   const closed = data.dayClose;
   const till = closed ? closed.till_total_kes : parseKes(tillText ?? '');
-  const variance = till === null ? null : mpesaVariance(mpesa.recorded_kes, till);
+  const paidOut = tillPaidOut(shifts);
+  const variance = till === null ? null : mpesaVariance(mpesa.recorded_kes, till, paidOut);
   const openShifts = shifts.filter((s) => s.shift.closed_at === null).length;
   const today = businessDayOf(clock, data.bar.day_start);
   const orderOf = (id: string) => data.orders.find((o) => o.id === id);
@@ -107,7 +110,7 @@ export function ReconcileScreen({ day }: { day: BusinessDay }) {
                     <td>
                       {formatAmount(r.expenses_kes)}
                       <div className="a-sub">
-                        {r.shift.expenses.map((e) => `${e.label} ${formatAmount(e.amount_kes)}`).join(' · ')}
+                        {r.shift.expenses.map((e) => `${e.label} ${formatAmount(e.amount_kes)}${paidFromTill(e) ? ` (${t('expense.fromTill')})` : ''}${e.id && rejected.has(e.id) ? ` (${t('admin.decided.rejected')})` : ''}`).join(' · ')}
                         {!r.result && r.shift.expenses.length === 0 && t('admin.recon.soFar')}
                       </div>
                     </td>
@@ -143,6 +146,7 @@ export function ReconcileScreen({ day }: { day: BusinessDay }) {
             <span className="a-tile-label">{t('recon.recorded')}</span>
             <span className="a-tile-money">{formatKES(mpesa.recorded_kes)}</span>
             <span className="a-note">{t('admin.recon.payments', { count: mpesa.payments, coded: mpesa.with_code })}</span>
+            {paidOut > 0 && <span className="a-note is-strong">{t('admin.recon.tillPaidOut', { amount: formatKES(paidOut), expected: formatKES(mpesa.recorded_kes - paidOut) })}</span>}
           </div>
           <label className="a-tile a-tile-input">
             <span className="a-tile-label is-strong">{t('recon.till')}</span>

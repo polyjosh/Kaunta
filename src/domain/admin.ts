@@ -4,7 +4,7 @@
  */
 import { kegFinishSummary, kegRecordedMl } from './kegs';
 import { lineTotal, orderDue, orderTotal, paidTotal } from './orders';
-import { expectedCash, expensesTotal, shiftPayments, shiftResult } from './shifts';
+import { expectedCash, expensesTotal, rejectedExpenses, shiftPayments, shiftResult, tillExpensesTotal } from './shifts';
 import type { ShiftResult } from './shifts';
 import { negativePools } from './stock';
 import { businessDayOf, localTime } from './time';
@@ -245,25 +245,30 @@ export function kegSummary(keg: Keg, data: Pick<DayData, 'bar' | 'sizes'> & { li
 export interface ShiftRecon {
   shift: Shift;
   cash_sales_kes: number;
+  /** Paid out of the cash drawer (taken off the cash expected). */
   expenses_kes: number;
+  /** Paid from the M-Pesa till (taken off what the till statement should show). */
+  till_expenses_kes: number;
   expected_kes: number;
   /** Null while the shift is open. */
   result: ShiftResult | null;
 }
 
 /** R-SHIFT-2, per shift that opened in this business day, oldest first. */
-export function shiftRecon(data: Pick<DayData, 'shifts' | 'bar'> & { payments: Payment[] }, day: BusinessDay): ShiftRecon[] {
+export function shiftRecon(data: Pick<DayData, 'shifts' | 'bar'> & { payments: Payment[]; approvals?: readonly ApprovalItem[] }, day: BusinessDay): ShiftRecon[] {
+  const rejected = rejectedExpenses(data.approvals ?? []);
   return data.shifts
     .filter((s) => businessDayOf(s.opened_at, data.bar.day_start) === day)
     .sort((a, b) => a.opened_at.localeCompare(b.opened_at))
     .map((shift) => {
       const mine = shiftPayments(shift, data.payments);
-      const expected_kes = expectedCash(shift, mine);
-      const cash_sales_kes = expected_kes - shift.float_kes + expensesTotal(shift);
+      const expected_kes = expectedCash(shift, mine, rejected);
+      const cash_sales_kes = expected_kes - shift.float_kes + expensesTotal(shift, rejected);
       return {
         shift,
         cash_sales_kes,
-        expenses_kes: expensesTotal(shift),
+        expenses_kes: expensesTotal(shift, rejected),
+        till_expenses_kes: tillExpensesTotal(shift, rejected),
         expected_kes,
         result: shift.closed_at !== null && shift.counted_cash_kes !== null ? shiftResult(shift.counted_cash_kes, expected_kes) : null,
       };
@@ -286,9 +291,18 @@ export function mpesaRecon(data: Pick<DayData, 'orders' | 'payments'>): MpesaRec
 
 export type MpesaVariance = { kind: 'matches'; amount_kes: 0 } | { kind: 'notOnTill' | 'notRecorded'; amount_kes: number };
 
-/** R-DAY-3: variance = recorded − till. Positive: recorded but not on the till. */
-export function mpesaVariance(recordedKes: number, tillKes: number): MpesaVariance {
-  const diff = recordedKes - tillKes;
+/** Paid from the M-Pesa till in these shifts: the till statement shows that much less than was recorded. */
+export function tillPaidOut(shifts: readonly Pick<ShiftRecon, 'till_expenses_kes'>[]): number {
+  return shifts.reduce((sum, s) => sum + s.till_expenses_kes, 0);
+}
+
+/**
+ * R-DAY-3: variance = expected on the till − till, where expected is what was
+ * recorded less anything paid out from the till (`tillPaidOutKes`). Positive:
+ * recorded but not on the till.
+ */
+export function mpesaVariance(recordedKes: number, tillKes: number, tillPaidOutKes = 0): MpesaVariance {
+  const diff = recordedKes - tillPaidOutKes - tillKes;
   if (diff === 0) return { kind: 'matches', amount_kes: 0 };
   return { kind: diff > 0 ? 'notOnTill' : 'notRecorded', amount_kes: Math.abs(diff) };
 }
@@ -382,7 +396,7 @@ const GROUPS: Record<AuditGroup, string[]> = {
   products: ['product_saved'],
   stock: ['delivery_recorded', 'shelf_counted', 'keg_finished', 'keg_checked'],
   logins: ['login', 'logged_in', 'pin_failed', 'person_unlocked', 'pin_reset', 'pin_set', 'pin_changed', 'person_saved', 'person_archived', 'person_suspended', 'person_reinstated', 'device_paired', 'device_revoked'],
-  shifts: ['shift_opened', 'shift_closed', 'day_closed'],
+  shifts: ['shift_opened', 'shift_expense_added', 'shift_expense_removed', 'shift_closed', 'day_closed'],
 };
 export const AUDIT_GROUPS = Object.keys(GROUPS) as AuditGroup[];
 

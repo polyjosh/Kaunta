@@ -171,6 +171,22 @@ describe('Editing the stock figure', () => {
   });
 });
 
+describe('Saving next to Add stock', () => {
+  it('saves any change to the product from the stock card, without scrolling back up', async () => {
+    renderAt('/admin/products/pilsner');
+    const price = await screen.findByLabelText('Price of 500ml');
+    await user.clear(price);
+    await user.type(price, '330');
+    const addStock = screen.getByRole('link', { name: 'Add stock' });
+    const actions = addStock.closest('.a-actions') as HTMLElement;
+    await user.click(within(actions).getByRole('button', { name: 'Save product' }));
+    await screen.findByText(/^Saved\./);
+    expect((await db.sizes.where('product_id').equals('pilsner').first())!.price_kes).toBe(330);
+    const after = screen.getByRole('link', { name: 'Add stock' }).closest('.a-actions') as HTMLElement;
+    expect(within(after).queryByRole('button')).toBeNull();
+  });
+});
+
 describe('Stock per size at the counter', () => {
   let counter: KauntaDB;
   beforeEach(async () => {

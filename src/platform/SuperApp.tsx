@@ -146,8 +146,8 @@ function SuperSignIn({ onSignedIn, verify, live }: { onSignedIn: () => void; ver
       if (answer === 'ok') return onSignedIn();
       setPassword('');
       setProblem(answer === 'locked' ? 'super.signIn.locked' : answer === 'not_set' ? 'super.signIn.notSet' : 'super.signIn.wrong');
-    } catch {
-      setProblem('admin.signIn.offline');
+    } catch (error) {
+      setProblem(error instanceof Error && error.message.startsWith('network') ? 'admin.signIn.offline' : 'admin.signIn.failed');
     } finally {
       setBusy(false);
     }

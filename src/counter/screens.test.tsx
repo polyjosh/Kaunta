@@ -70,12 +70,12 @@ const freshOrder = (seconds: number) =>
 
 describe('5. Void request', () => {
   it('inside the window: blue banner with a live countdown, and you can void it yourself', async () => {
-    const order = await freshOrder(108);
+    const order = await freshOrder(48);
     renderAt(`/counter/orders/${order.id}/void`);
 
     expect(await screen.findByRole('heading', { name: `Void · Table 4 ${order.short_no}` })).toBeInTheDocument();
     expect(screen.getByText('You can void this yourself')).toBeInTheDocument();
-    expect(screen.getByText('Recorded 1:48 ago. The self-void window closes in 3:12.')).toBeInTheDocument();
+    expect(screen.getByText('Recorded 0:48 ago. The self-void window closes in 1:12.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Pick a reason' })).toBeDisabled();
 
     const what = screen.getByRole('radiogroup', { name: 'What to void' });
@@ -140,7 +140,7 @@ describe('5. Void request', () => {
   it('switches to the approval variant when the countdown reaches zero, keeping the chosen reason', async () => {
     vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
     vi.setSystemTime(new Date(NOW));
-    const order = await freshOrder(295); // 5 seconds of window left
+    const order = await freshOrder(115); // 5 seconds of window left
     renderAt(`/counter/orders/${order.id}/void`);
 
     expect(await screen.findByText(/closes in 0:05/)).toBeInTheDocument();
@@ -234,7 +234,7 @@ describe('6. Shift close', () => {
     expect(rows).toEqual([
       'Float at startKES 2,000',
       '+ Cash salesKES 11,950',
-      '− Expenses paid from tillKES 1,200',
+      '− Expenses from the drawer AddKES 1,200',
       'Expected in the drawerKES 12,750',
     ]);
     expect(screen.getByText(/M-Pesa this shift: KES 19,000 recorded/)).toBeInTheDocument(); // 18,400 + the 600 just taken

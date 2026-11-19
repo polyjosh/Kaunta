@@ -55,8 +55,14 @@ export function describeEntry(entry: OutboxEntry, { order, person }: Lookup, t: 
       return { what: t('login.reset.syncItem', { name: name(entry.payload.person_id) }), amount: null };
     case 'shift_opened':
       return { what: t('sync.item.shiftOpened'), amount: null };
+    case 'shift_expense_added':
+      return { what: t('sync.item.expenseAdded', { label: entry.payload.expense.label }), amount: entry.payload.expense.amount_kes };
+    case 'shift_expense_removed':
+      return { what: t('sync.item.expenseRemoved', { label: entry.payload.expense.label }), amount: entry.payload.expense.amount_kes };
     case 'shift_closed':
       return { what: t('sync.item.shiftClosed'), amount: entry.payload.counted_cash_kes };
+    case 'void_request_cancelled':
+      return { what: t('sync.item.voidCancelled', { no: no(entry.payload.order_id) }), amount: null };
     case 'order_handed_over':
       return { what: t('sync.item.handover', { no: no(entry.payload.order_id) }), amount: null };
     case 'handover_accepted':
@@ -72,6 +78,8 @@ export function reviewExplanation(entry: OutboxEntry, t: TFunction): string | nu
   switch (entry.review_reason) {
     case 'price_mismatch':
       return t('sync.review.priceMismatch', { product, recorded: money('recorded_price_kes'), server: money('server_price_kes') });
+    case 'void_already_decided':
+      return t('sync.review.voidDecided');
     case 'archived_product':
       return t('sync.review.archivedProduct', { product });
     case 'revoked_device':

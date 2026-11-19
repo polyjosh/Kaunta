@@ -194,8 +194,9 @@ export type VoidReason = 'mistake' | 'changed' | 'size' | 'spilled' | 'other';
  * rules (R-SYNC-3): a sale of a product archived meanwhile, and an event sent
  * by a phone after it was revoked (R-DEV-2).
  */
-export type ApprovalKind = 'void' | 'comp' | 'write_off' | 'price_mismatch' | 'archived_product' | 'revoked_device';
-export type ApprovalStatus = 'waiting' | 'approved' | 'rejected';
+export type ApprovalKind = 'void' | 'comp' | 'write_off' | 'price_mismatch' | 'archived_product' | 'revoked_device' | 'expense';
+/** `cancelled`: taken back by the counter before anyone decided (a void request paid instead, an expense removed). */
+export type ApprovalStatus = 'waiting' | 'approved' | 'rejected' | 'cancelled';
 
 /**
  * What an approval is about. Voids name lines on an order. A breakage
@@ -209,6 +210,9 @@ export interface ApprovalTarget {
   item?: { product_id: Id; size_id: Id; qty: number };
   /** revoked_device: the quarantined event. */
   event_id?: Id;
+  /** expense: the shift and the expense in it. */
+  shift_id?: Id;
+  expense_id?: Id;
 }
 
 export interface ApprovalItem {
@@ -230,9 +234,17 @@ export interface ApprovalItem {
   detail?: Record<string, unknown> | null;
 }
 
+/** Where the money for an expense came from: the counter's cash drawer, or the bar's M-Pesa till. */
+export type ExpenseSource = 'cash' | 'mpesa';
+
 export interface ShiftExpense {
+  /** Set for expenses recorded at the counter (the sample data's have none). */
+  id?: Id;
   label: string;
   amount_kes: number;
+  /** Missing on older records: those were paid from the cash drawer. */
+  paid_from?: ExpenseSource;
+  at?: Instant;
 }
 
 export interface Shift {

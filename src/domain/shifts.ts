@@ -1,10 +1,34 @@
-import type { Id, Order, OrderLine, Payment, Shift } from './types';
+import type { ApprovalItem, Id, Order, OrderLine, Payment, Shift, ShiftExpense } from './types';
 
 type ShiftMoney = Pick<Shift, 'float_kes' | 'expenses' | 'cash_baseline_kes'>;
 
-export function expensesTotal(shift: Pick<Shift, 'expenses'>): number {
-  return shift.expenses.reduce((sum, expense) => sum + expense.amount_kes, 0);
+/** Paid from the M-Pesa till; anything else (older records too) came out of the cash drawer. */
+export const paidFromTill = (expense: Pick<ShiftExpense, 'paid_from'>): boolean => expense.paid_from === 'mpesa';
+
+const NONE: ReadonlySet<Id> = new Set();
+
+/**
+ * Expenses an admin or manager rejected. Every expense waits for approval; it
+ * counts while it waits and once approved, and stops counting when rejected
+ * (whoever spent it is then short by that much).
+ */
+export function rejectedExpenses(approvals: readonly Pick<ApprovalItem, 'kind' | 'status' | 'target'>[]): Set<Id> {
+  return new Set(approvals.filter((a) => a.kind === 'expense' && a.status === 'rejected' && a.target.expense_id).map((a) => a.target.expense_id!));
 }
+
+const counts = (expense: Pick<ShiftExpense, 'id'>, rejected: ReadonlySet<Id>) => !expense.id || !rejected.has(expense.id);
+
+/** Expenses paid out of the cash drawer: what R-SHIFT-2 takes off the cash expected. */
+export function expensesTotal(shift: Pick<Shift, 'expenses'>, rejected: ReadonlySet<Id> = NONE): number {
+  return shift.expenses.reduce((sum, expense) => (paidFromTill(expense) || !counts(expense, rejected) ? sum : sum + expense.amount_kes), 0);
+}
+
+/** Expenses paid from the M-Pesa till: they lower what the till statement should show. */
+export function tillExpensesTotal(shift: Pick<Shift, 'expenses'>, rejected: ReadonlySet<Id> = NONE): number {
+  return shift.expenses.reduce((sum, expense) => (paidFromTill(expense) && counts(expense, rejected) ? sum + expense.amount_kes : sum), 0);
+}
+
+export const EXPENSE_LABEL_MAX = 60;
 
 /** Payments this person took on this device since the shift opened. */
 export function shiftPayments<P extends Pick<Payment, 'recorded_by' | 'device_id' | 'created_at' | 'method' | 'amount_kes'>>(
@@ -24,9 +48,9 @@ export function shiftCashSales(shift: ShiftMoney, payments: readonly Pick<Paymen
   return payments.reduce((sum, p) => (p.method === 'cash' ? sum + p.amount_kes : sum), shift.cash_baseline_kes);
 }
 
-/** R-SHIFT-2: expected = float + cash payments in the shift − expenses. */
-export function expectedCash(shift: ShiftMoney, payments: readonly Pick<Payment, 'method' | 'amount_kes'>[]): number {
-  return shift.float_kes + shiftCashSales(shift, payments) - expensesTotal(shift);
+/** R-SHIFT-2: expected = float + cash payments in the shift − expenses (rejected ones left out). */
+export function expectedCash(shift: ShiftMoney, payments: readonly Pick<Payment, 'method' | 'amount_kes'>[], rejected: ReadonlySet<Id> = NONE): number {
+  return shift.float_kes + shiftCashSales(shift, payments) - expensesTotal(shift, rejected);
 }
 
 export interface ShiftResult {

@@ -8,7 +8,7 @@ select * from jsonb_populate_recordset(null::public.bar, $seed$[
   "name": "Baraka Pub",
   "timezone": "Africa/Nairobi",
   "day_start": "06:00",
-  "self_void_minutes": 5,
+  "self_void_minutes": 2,
   "ageing_minutes": 30,
   "pin_attempts": 5,
   "lockout_minutes": 5,

@@ -293,6 +293,50 @@ describe('sync_push', () => {
     expect(await one("select handed_over_to, handover_pending from public.orders where id = 'o_047'"))
       .toEqual({ handed_over_to: 'p_kiprop', handover_pending: false });
   });
+
+  it('a shift keeps its float, and expenses from the drawer or the till are added once and can be taken off', async () => {
+    const shiftId = id('s');
+    const ice = { id: id('x'), label: 'Ice', amount_kes: 300, paid_from: 'cash', at: at() };
+    const airtime = { id: id('x'), label: 'Airtime', amount_kes: 100, paid_from: 'mpesa', at: at() };
+    const added = event('shift_expense_added', { shift_id: shiftId, expense: ice });
+    const { results } = await push([
+      event('shift_opened', {
+        shift: { id: shiftId, person_id: 'p_kiprop', device_id: 'd_counter1', opened_at: at(), float_kes: 2000, expenses: [], closed_at: null, counted_cash_kes: null, result_kes: null, cash_baseline_kes: 0, mpesa_baseline_kes: 0 },
+      }),
+      added,
+      { ...added, id: id('ev') },
+      event('shift_expense_added', { shift_id: shiftId, expense: airtime }),
+    ]);
+    expect(results.map((r) => r.status)).toEqual(['applied', 'applied', 'applied', 'applied']);
+    const row = await one<{ float_kes: number; expenses: { id: string; paid_from: string; amount_kes: number }[] }>('select float_kes, expenses from public.shifts where id = $1', [shiftId]);
+    expect(row.float_kes).toBe(2000);
+    expect(row.expenses.map((e) => [e.id, e.paid_from, e.amount_kes])).toEqual([[ice.id, 'cash', 300], [airtime.id, 'mpesa', 100]]);
+
+    await push([event('shift_expense_removed', { shift_id: shiftId, expense: ice })]);
+    expect((await one<{ expenses: { id: string }[] }>('select expenses from public.shifts where id = $1', [shiftId])).expenses.map((e) => e.id)).toEqual([airtime.id]);
+    expect((await pull()).shifts.find((s: { id: string }) => s.id === shiftId).expenses).toHaveLength(1);
+    expect(await all("select kind, ref_id from public.audit_events where kind like 'shift_expense%' order by at")).toEqual([
+      { kind: 'shift_expense_added', ref_id: shiftId },
+      { kind: 'shift_expense_added', ref_id: shiftId },
+      { kind: 'shift_expense_added', ref_id: shiftId },
+      { kind: 'shift_expense_removed', ref_id: shiftId },
+    ]);
+  });
+
+  it('an expense that is not whole KES, has no source, or is for a closed shift is set aside', async () => {
+    const shiftId = id('s');
+    const x = (over: object) => event('shift_expense_added', { shift_id: shiftId, expense: { id: id('x'), label: 'Ice', amount_kes: 300, paid_from: 'cash', ...over } });
+    await push([
+      event('shift_opened', {
+        shift: { id: shiftId, person_id: 'p_kiprop', device_id: 'd_counter1', opened_at: at(), float_kes: 0, expenses: [], closed_at: null, counted_cash_kes: null, result_kes: null, cash_baseline_kes: 0, mpesa_baseline_kes: 0 },
+      }),
+    ]);
+    const { results } = await push([x({ amount_kes: 10.5 }), x({ amount_kes: 0 }), x({ paid_from: 'card' }), x({ label: ' ' }), event('shift_expense_added', { shift_id: 'nope', expense: { id: id('x'), label: 'Ice', amount_kes: 1, paid_from: 'cash' } })]);
+    expect(results.map((r) => r.status)).toEqual(['needs_review', 'needs_review', 'needs_review', 'needs_review', 'needs_review']);
+    await push([event('shift_closed', { shift_id: shiftId, closed_at: at(), counted_cash_kes: 0, expected_cash_kes: 0, result_kes: 0 })]);
+    expect((await push([x({})])).results[0]!.status).toBe('needs_review');
+    expect((await one<{ expenses: unknown[] }>('select expenses from public.shifts where id = $1', [shiftId])).expenses).toEqual([]);
+  });
 });
 
 describe('revoked and mismatched devices (R-DEV-2, R-SYNC-3)', () => {

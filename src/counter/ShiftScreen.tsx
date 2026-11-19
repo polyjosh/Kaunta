@@ -1,11 +1,11 @@
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { STATUS } from '../components/StatusChip';
 import { useDb, useQuery } from '../data/react';
 import { closeShift, handOverOrder, shiftSummary } from '../data/shifts';
 import { orderDue, orderTotal, paidTotal } from '../domain/orders';
-import { expensesTotal, shiftResult } from '../domain/shifts';
+import { expensesTotal, shiftResult, tillExpensesTotal } from '../domain/shifts';
 import { localTime, minutesBetween } from '../domain/time';
 import { useI18n } from '../lib/I18nProvider';
 import { formatAmount, formatKES } from '../lib/money';
@@ -43,10 +43,29 @@ export function ShiftScreen() {
   );
   if (!me || data === undefined) return null;
   if (data === null) {
-    // No open shift (it was closed elsewhere): nothing to do here.
+    // No open shift for this person on this phone (closed elsewhere, or none was started): say so.
     return (
       <div className="c-screen">
         <BackBar to="/counter/sell" title={t('shift.title')} />
+        <main className="c-body c-locked">
+          <div className="c-locked-card">
+            <p className="c-locked-body">
+              <strong>{t('shift.none')}</strong> {t('shift.noneBody')}
+            </p>
+          </div>
+          <div className="c-locked-actions">
+            <button
+              type="button"
+              className="c-btn c-btn-primary"
+              onClick={() => {
+                session.logout();
+                navigate('/counter/login', { replace: true });
+              }}
+            >
+              {t('sell.switchUser')}
+            </button>
+          </div>
+        </main>
       </div>
     );
   }
@@ -149,8 +168,13 @@ export function ShiftScreen() {
             <dd>{formatKES(summary.cash_sales_kes)}</dd>
           </div>
           <div>
-            <dt>{t('shift.expenses')}</dt>
-            <dd>{formatKES(expensesTotal(shift))}</dd>
+            <dt>
+              {t('shift.expenses')}{' '}
+              <Link className="c-inline-link" to="/counter/shift/expenses">
+                {t('expense.addShort')}
+              </Link>
+            </dt>
+            <dd>{formatKES(expensesTotal(shift, summary.rejected))}</dd>
           </div>
           <div className="c-breakdown-total">
             <dt>{t('shift.expected')}</dt>
@@ -189,7 +213,10 @@ export function ShiftScreen() {
         <button type="button" className="c-btn c-btn-primary" disabled={!touched} onClick={() => void close()}>
           {t('shift.closeButton')}
         </button>
-        <p className="c-footnote c-center">{t('shift.mpesaNote', { amount: formatKES(summary.mpesa_kes) })}</p>
+        <p className="c-footnote c-center">
+          {t('shift.mpesaNote', { amount: formatKES(summary.mpesa_kes) })}
+          {tillExpensesTotal(shift, summary.rejected) > 0 && ` · ${t('shift.tillExpenses', { amount: formatKES(tillExpensesTotal(shift, summary.rejected)) })}`}
+        </p>
       </footer>
     </div>
   );

@@ -526,11 +526,20 @@
   "admin.product.stockNow": "Kwenye stoo sasa",
   "admin.product.stockNowHint": "Andika kilichopo kwenye rafu na uhifadhi. Kinawekwa kama hesabu kwenye kumbukumbu.",
   "admin.product.saveStock": "Hifadhi stoo",
+  "admin.product.saveProduct": "Hifadhi bidhaa",
   "admin.product.error.stock": "Andika kiasi kilichopo kwenye stoo.",
   "admin.size.stockNow": "{size} kwenye stoo sasa",
   "admin.kaunta.banner": "Uko kwenye baa hii kama Kaunta. Unaweza kutumia kila kichupo cha mmiliki. Unachofanya hapa hakionyeshwi kwenye kumbukumbu za mmiliki wala mameneja.",
   "admin.kaunta.back": "Rudi Kaunta",
   "admin.bars.limit": "Unaendesha baa nyingi kadiri mpango wako unavyoruhusu ({max}). Omba Kaunta iongeze.",
   "admin.owner.suspended": "Baa yako imesimamishwa",
-  "admin.owner.suspendedBody": "Kaunta imesimamisha {bars}. Hakuna anayeweza kuifungua kwenye admin wala kuingia kwenye kaunta zake hadi Kaunta irudishe ruhusa."
+  "admin.owner.suspendedBody": "Kaunta imesimamisha {bars}. Hakuna anayeweza kuifungua kwenye admin wala kuingia kwenye kaunta zake hadi Kaunta irudishe ruhusa.",
+  "admin.recon.tillPaidOut": "− {amount} zimelipwa kutoka till siku hii · tarajia {expected} kwenye taarifa",
+  "admin.audit.expenseAdded": "Matumizi · {label} {amount} · {from}",
+  "admin.audit.expenseRemoved": "Matumizi yameondolewa · {label} {amount} · {from}",
+  "admin.kind.expense": "Matumizi",
+  "admin.fact.shift": "Zamu",
+  "admin.effect.expenseCash": "Ukikubali, {amount} hazihesabiwi kwenye pesa inayotarajiwa droo. Ukikataa, zamu ya {name} inapungukiwa {amount}.",
+  "admin.effect.expenseTill": "Ukikubali, {amount} hazihesabiwi kwenye kiasi cha till ya M-Pesa. Ukikataa, zinahesabiwa kama zimepotea kwenye till.",
+  "admin.audit.voidCancelled": "Ombi la kufuta limeondolewa · {order} imelipwa badala yake"
 }

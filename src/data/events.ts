@@ -1,7 +1,7 @@
 import { statusAfterPayment } from '../domain/orders';
 import { saleDeduction } from '../domain/stock';
 import { shiftStock } from './pools';
-import type { ApprovalItem, Id, Instant, Order, OrderLine, Payment, Shift, VoidReason } from '../domain/types';
+import type { ApprovalItem, Id, Instant, Order, OrderLine, Payment, Shift, ShiftExpense, VoidReason } from '../domain/types';
 import type { KauntaDB } from './db';
 
 /** One line, or some units of it, being voided. `split_line_id` is the new line that carries the voided units. */
@@ -38,6 +38,12 @@ export type KauntaEvent =
   /** R-VOID-2/3: waits for an admin; the lines stay on the order as void_pending. */
   | { type: 'void_requested'; payload: { order_id: Id; parts: VoidPart[]; approval: ApprovalItem } }
   | { type: 'shift_opened'; payload: { shift: Shift } }
+  /** Money paid out during the shift, from the cash drawer or the M-Pesa till; an admin or manager approves it. */
+  | { type: 'shift_expense_added'; payload: { shift_id: Id; expense: ShiftExpense; approval?: ApprovalItem } }
+  /** An expense recorded by mistake, taken off before anyone decided on it. */
+  | { type: 'shift_expense_removed'; payload: { shift_id: Id; expense: ShiftExpense } }
+  /** The order was paid after all: its void requests are taken back and the lines stand (counts as a sale). */
+  | { type: 'void_request_cancelled'; payload: { order_id: Id; approval_ids: Id[] } }
   | {
       type: 'shift_closed';
       payload: { shift_id: Id; closed_at: Instant; counted_cash_kes: number; expected_cash_kes: number; result_kes: number };
@@ -146,6 +152,31 @@ export async function applyEvent(db: KauntaDB, event: KauntaEvent): Promise<void
     case 'shift_opened': {
       await db.shifts.add(event.payload.shift);
       return;
+    }
+    case 'shift_expense_added': {
+      const shift = await db.shifts.get(event.payload.shift_id);
+      if (shift && !shift.expenses.some((e) => e.id === event.payload.expense.id)) {
+        await db.shifts.update(shift.id, { expenses: [...shift.expenses, event.payload.expense] });
+      }
+      if (event.payload.approval) await db.approvals.put(event.payload.approval);
+      break;
+    }
+    case 'shift_expense_removed': {
+      const shift = await db.shifts.get(event.payload.shift_id);
+      if (shift) await db.shifts.update(shift.id, { expenses: shift.expenses.filter((e) => e.id !== event.payload.expense.id) });
+      await db.approvals
+        .filter((a) => a.kind === 'expense' && a.target.expense_id === event.payload.expense.id && a.status === 'waiting')
+        .modify({ status: 'cancelled' });
+      break;
+    }
+    case 'void_request_cancelled': {
+      const approvals = (await db.approvals.bulkGet(event.payload.approval_ids)).filter((a) => a?.status === 'waiting');
+      for (const a of approvals) {
+        await db.lines.where('id').anyOf(a!.target.line_ids).and((l) => l.status === 'void_pending').modify({ status: 'active' });
+        await db.approvals.update(a!.id, { status: 'cancelled' });
+      }
+      await refreshOrderStatus(db, event.payload.order_id);
+      break;
     }
     case 'shift_closed': {
       const { shift_id, closed_at, counted_cash_kes, result_kes } = event.payload;

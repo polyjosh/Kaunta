@@ -81,6 +81,25 @@ describe('Today (R-DAY-4)', () => {
 });
 
 describe('Approvals', () => {
+  it('an expense from the counter waits here; rejected, the shift no longer counts it', async () => {
+    const shift = (await db.shifts.get('s_p_akinyi'))!;
+    const at = shift.opened_at;
+    await db.shifts.update(shift.id, { expenses: [...shift.expenses, { id: 'x_ice', label: 'Ice blocks', amount_kes: 400, paid_from: 'cash', at }] });
+    await db.approvals.put({
+      id: 'a_x_ice', kind: 'expense', target: { order_id: null, line_ids: [], whole_order: false, shift_id: shift.id, expense_id: 'x_ice' },
+      amount_kes: 400, reason_code: 'cash', requested_by: shift.person_id, device_id: shift.device_id, requested_at: at,
+      status: 'waiting', decided_by: null, decided_at: null, detail: { label: 'Ice blocks' },
+    });
+    renderAt('/admin/approvals');
+    const card = (await screen.findByRole('heading', { name: 'Ice blocks' })).closest('article')!;
+    expect(within(card).getByText('Expense')).toBeInTheDocument();
+    expect(within(card).getByText('Cash drawer')).toBeInTheDocument();
+    expect(within(card).getByText(/Reject and Akinyi’s shift is short by KES 400/)).toBeInTheDocument();
+    await user.click(within(card).getByRole('button', { name: 'Reject' }));
+    expect(await within(card).findByText(/Rejected · Njeri/)).toBeInTheDocument();
+    expect((await db.approvals.get('a_x_ice'))!.status).toBe('rejected');
+  });
+
   it('approving a void takes it off the order, and Undo puts it back', async () => {
     renderAt('/admin/approvals');
     const card = (await screen.findByRole('heading', { name: '#039 Table 2 · Guinness 500ml ×1' })).closest('article')!;
@@ -120,6 +139,17 @@ describe('Reconcile (R-SHIFT-2, R-DAY-3)', () => {
     expect(screen.getAllByText('KES 750')).toHaveLength(2);
     expect(screen.getByText('Payments to check first: no M-Pesa code entered')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Close the business day' })).toBeDisabled();
+  });
+
+  it('takes expenses paid from the M-Pesa till off what the till should show, and leaves the cash alone', async () => {
+    const shift = (await db.shifts.get('s_p_akinyi'))!;
+    await db.shifts.update(shift.id, { expenses: [...shift.expenses, { id: 'x_1', label: 'Supplier', amount_kes: 750, paid_from: 'mpesa', at: '2026-11-10T20:00:00.000Z' }] });
+    renderAt('/admin/reconcile/2026-11-10');
+    expect(await screen.findByText('− KES 750 paid out from the till this day · expect KES 47,650 on the statement')).toBeInTheDocument();
+    expect(screen.getByText(/Supplier 750 \(M-Pesa till\)/)).toBeInTheDocument();
+    await user.type(screen.getByLabelText('Till total in KES'), '47650');
+    expect(screen.queryByText('Recorded but not on the till')).toBeNull();
+    expect(document.querySelector('.a-variance')).toHaveClass('k-tone-paid');
   });
 
   it('closes once every shift is closed, and keeps the difference on record', async () => {

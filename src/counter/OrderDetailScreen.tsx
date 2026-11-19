@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { StatusChip } from '../components/StatusChip';
-import { moveToNewOrder, recordPayment } from '../data/commands';
+import { moveToNewOrder, pendingVoidRequests, recordPayment } from '../data/commands';
 import type { PaymentPart } from '../data/commands';
 import { useConnection, useDb, useQuery } from '../data/react';
 import { lineTotal, orderDue, orderTotal, paidTotal, paymentState } from '../domain/orders';
@@ -51,14 +51,15 @@ export function OrderDetailScreen() {
     async (d) => {
       const order = await d.orders.get(id);
       if (!order) return null;
-      const [lines, payments, people, products, sizes] = await Promise.all([
+      const [lines, payments, people, products, sizes, voidRequests] = await Promise.all([
         d.lines.where('order_id').equals(id).sortBy('created_at'),
         d.payments.where('order_id').equals(id).sortBy('created_at'),
         d.people.toArray(),
         d.products.toArray(),
         d.sizes.toArray(),
+        pendingVoidRequests(d, id),
       ]);
-      return { order, lines, payments, people, products, sizes };
+      return { order, lines, payments, people, products, sizes, voidRequests };
     },
     [id],
   );
@@ -243,7 +244,22 @@ export function OrderDetailScreen() {
           subtitle={`${label} · ${order.short_no} · ${t('sell.serverChip', { name: server?.name ?? '' })}`}
           onClose={closeSheet}
         >
-          <PaymentForm due={due} initialPart={sheet.part} methodName={methodName} onConfirm={confirm} />
+          <PaymentForm
+            due={due}
+            initialPart={sheet.part}
+            methodName={methodName}
+            onConfirm={confirm}
+            voidNotice={
+              data.voidRequests.length > 0
+                ? t('pay.voidCancel', {
+                    items: lines
+                      .filter((l) => data.voidRequests.some((a) => a.target.line_ids.includes(l.id)))
+                      .map((l) => `${describe(l)} ×${l.qty}`)
+                      .join(', '),
+                  })
+                : null
+            }
+          />
         </Sheet>
       )}
 
@@ -391,10 +407,12 @@ interface PaymentFormProps {
   initialPart?: number;
   methodName: (method: 'cash' | 'mpesa') => string;
   onConfirm: (parts: PaymentPart[], methodLabel: string) => Promise<void>;
+  /** Paying all of it takes back the order's void requests: said here before confirming. */
+  voidNotice?: string | null;
 }
 
 /** Amount (all / part) · method (cash / M-Pesa / split) · optional M-Pesa last 4. */
-function PaymentForm({ due, initialPart, methodName, onConfirm }: PaymentFormProps) {
+function PaymentForm({ due, initialPart, methodName, onConfirm, voidNotice = null }: PaymentFormProps) {
   const { t } = useI18n();
   const [amount, setAmount] = useState<'full' | 'part'>(initialPart ? 'part' : 'full');
   const [part, setPart] = useState(initialPart ?? 0);
@@ -438,6 +456,12 @@ function PaymentForm({ due, initialPart, methodName, onConfirm }: PaymentFormPro
 
   return (
     <>
+      {voidNotice && received === due && (
+        <div className="c-banner k-tone-warning" role="alert">
+          <Icon name="alert-triangle" size={24} />
+          <p>{voidNotice}</p>
+        </div>
+      )}
       <div className="c-field">
         <span className="c-field-label">{t('pay.amountReceived')}</span>
         <div className="c-choice-grid c-choice-2">

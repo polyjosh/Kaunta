@@ -303,13 +303,21 @@ function StockField({ label, unit, value, onChange, hint }: { label: string; uni
   );
 }
 
-function StockActions({ product, dirty, onSave }: { product: Product; dirty: boolean; onSave: () => void }) {
+/**
+ * Save and Add stock together at the foot of the stock card, so an owner who
+ * changed the product further up saves it here, without scrolling back up,
+ * before adding stock. "Save stock" when only stock figures changed.
+ */
+function StockActions({ product, dirty, stockOnly, error, onSave }: { product: Product; dirty: boolean; stockOnly: boolean; error: string | null; onSave: () => void }) {
   const { t } = useI18n();
   return (
-    <div className="a-actions">
-      {dirty && <button type="button" className="a-btn a-btn-primary a-btn-sm" onClick={onSave}>{t('admin.product.saveStock')}</button>}
-      <Link className={`a-btn a-btn-sm${dirty ? '' : ' a-btn-primary'}`} to={`/admin/stock/new?product=${product.id}`}>{t('action.addStock')}</Link>
-    </div>
+    <>
+      {dirty && error && <p className="a-error">{error}</p>}
+      <div className="a-actions">
+        {dirty && <button type="button" className="a-btn a-btn-primary a-btn-sm" onClick={onSave}>{t(stockOnly ? 'admin.product.saveStock' : 'admin.product.saveProduct')}</button>}
+        <Link className={`a-btn a-btn-sm${dirty ? '' : ' a-btn-primary'}`} to={`/admin/stock/new?product=${product.id}`}>{t('action.addStock')}</Link>
+      </div>
+    </>
   );
 }
 
@@ -736,7 +744,7 @@ export function ProductEditorScreen() {
                   <strong>{stockText(product, t)}</strong>
                 </div>
               )}
-              <StockActions product={product} dirty={changes.length > 0} onSave={save} />
+              <StockActions product={product} dirty={dirty} stockOnly={!draftDirty} error={error} onSave={save} />
             </section>
           )}
           {product && tracked && !usePools && (
@@ -762,7 +770,7 @@ export function ProductEditorScreen() {
                   : t('admin.product.stockNowHint')}
               />
               <AlertField d={d} unit={unit} onChange={(v) => edit({ low_stock_at: { ...d.low_stock_at, [d.stock_mode]: v } })} />
-              <StockActions product={product} dirty={changes.length > 0} onSave={save} />
+              <StockActions product={product} dirty={dirty} stockOnly={!draftDirty} error={error} onSave={save} />
             </section>
           )}
           <section className="a-card">

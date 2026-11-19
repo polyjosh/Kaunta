@@ -11,6 +11,7 @@ import { useI18n } from '../lib/I18nProvider';
 import { formatKES } from '../lib/money';
 import { displayLabel, labelForTable, matchesSearch, productName, sizeLabel } from './labels';
 import type { TableChoice } from './labels';
+import { DecisionNotices } from './DecisionNotices';
 import { useSession } from './Session';
 import { Avatar, Sheet, Toast, TopBar, withOffline } from './ui';
 import type { ToastMessage } from './ui';
@@ -272,6 +273,7 @@ export function SellScreen() {
       </div>
 
       <main className="c-body c-grid-wrap">
+        <DecisionNotices personId={me.id} />
         {searching && <p className="c-results-label">{t('sell.resultsFor', { query: query.trim() })}</p>}
         <div className="c-grid">
           {visible.map((product) => {
@@ -448,6 +450,9 @@ export function SellScreen() {
             }}
           >
             {t('sell.switchUser')}
+          </button>
+          <button type="button" className="c-btn c-btn-secondary" onClick={() => navigate('/counter/shift/expenses')}>
+            {t('expense.title')}
           </button>
           <button type="button" className="c-btn c-btn-secondary" onClick={() => navigate('/counter/shift/close')}>
             {t('shift.title')}

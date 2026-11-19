@@ -22,7 +22,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 | + Owners add managers to their own bars | ✅ Demo and server | see below; `src/admin/ManagersCard.tsx` |
 | + Stock per size (250 ml and 750 ml apart) | ✅ | see below; `supabase/migrations/20261120000000_kaunta_size_stock.sql` |
 | + Kaunta: bar limits, suspend bars and staff, open a bar's admin, hidden from owners' logs | ✅ Demo and server | see below; `src/platform/` |
-| + Everything on the live server (accounts, Kaunta, keys) | ✅ Migrations + app; not yet run against a real project | see below; `supabase/README.md` → Set up a project |
+| + Everything on the live server (accounts, Kaunta, keys) | ✅ Migrations applied to the live project (2026-11-18, no seed) | see below; `supabase/README.md` → Set up a project |
 
 ### Step 6 detail (`docs/screens.md` → Empty and error states)
 
@@ -121,6 +121,25 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 - Tests: `supabase/accounts.test.ts` (functions), `supabase/liveClient.test.ts` (the app's own client against the migrations through a REST-to-SQL fetch, as `anon`), `src/admin/live.test.tsx`.
 - Not done: never run against a real Supabase project; the super admin pulls each bar in full to show its figures (fine for a handful of bars, slow for hundreds); seed.sql's sample people have no accounts (README shows how to attach one).
 
+## Shift float and expenses; save by Add stock (asked for after the live server)
+
+- **Float** (`StartShift` in `src/counter/LoginScreen.tsx`): after the PIN, someone with no open shift on this phone types the cash in the drawer (keypad; "Start shift with no float" for 0). `startShift(db, ctx, floatKes)`; an open shift carries on with its own float. Travels in `shift_opened` as before.
+- **Expenses** (`/counter/shift/expenses`, `ExpensesScreen`; in the account menu and as "Add" on Close shift): what for, amount, and **Cash drawer** or **M-Pesa till** (`ShiftExpense.paid_from`, missing = cash for older data). Events `shift_expense_added` / `shift_expense_removed` (the whole expense, for the audit log). Cash ones come off the cash expected (`expensesTotal`); till ones (`tillExpensesTotal`) come off what the M-Pesa till statement should show: Reconcile says "− KES X paid out from the till · expect Y" and `mpesaVariance(recorded, till, tillPaidOut)`. Close shift's row now reads "− Expenses from the drawer".
+- Server: `20261123000000_kaunta_shift_expenses.sql` (`apply_event` handles both events: shift on this device, open, whole KES > 0, cash/mpesa, added once). Pushed to the live project 2026-11-19.
+- **Products**: the Save button next to Add stock (`StockActions`) now saves any change to the product ("Save product"; "Save stock" when only stock changed), with the error shown there too.
+- Decision (confirmed with the product owner): "till" for expenses means the M-Pesa till, not the drawer.
+- Tests: `src/counter/expenses.test.tsx`, `supabase/sync.test.ts` (expenses), Reconcile in `src/admin/admin.test.tsx`, `src/admin/sizeStock.test.tsx` (Save product), `e2e/fullLoop.spec.ts` (float).
+
+## Approvals from the counter, 2-minute self-void (asked for after shift expenses)
+
+- **Expenses need approval**: `addExpense` also records an `expense` approval (target `shift_id` + `expense_id`, `reason_code` = cash/mpesa, `detail.label`). It counts while waiting and once approved; rejected, it stops counting (`rejectedExpenses`, passed to `expensesTotal` / `tillExpensesTotal` / `expectedCash`, used by Close shift, Expenses and Reconcile). Removing it is allowed only while it waits (approval → `cancelled`). Admin card: "Expense" in Approvals.
+- **Rejections at the counter** (`DecisionNotices` on Sell): the person who asked sees their rejected void, breakage or expense until they tap OK (seen ids in `localStorage` `kaunta.seenDecisions`). Expenses show Waiting / Approved / Rejected.
+- **Paying takes back a void request**: paying the whole amount of an order with waiting void/write-off requests records `void_request_cancelled` first (lines back to active, approval `cancelled`, off the admin list), then the payment. The payment sheet warns before confirming. A part payment leaves the request. On the server, a request already decided is kept and the event goes to review (`void_already_decided`).
+- **Self-void window 2 minutes** (seed, new bars, and live bars that had 5). A paid order still goes to an admin (money would go back; confirmed with the product owner), and the void screen now says so ("Already paid: an admin decides") instead of offering "Void item".
+- **Close shift went blank sometimes** (not reproduced on the demo): any error on a counter screen now shows `ScreenErrorBoundary` (message + Back to selling) instead of a blank page; login waits for the phone's own record before starting a shift (a shift with no device would never be found at close); Close shift with no open shift says so and offers Switch user.
+- `ApprovalStatus` gained `cancelled` (a trigger keeps it final on the server); `ApprovalKind` gained `expense`.
+- Server: `20261124000000_kaunta_counter_approvals.sql`. Tests: `src/counter/approvals.test.tsx`, `supabase/counterApprovals.test.ts`, `src/components/ErrorBoundary.test.tsx`, Approvals in `src/admin/admin.test.tsx`.
+
 ## How step 5 is put together
 
 - Admin has its own local store (Dexie, `kaunta-admin`, or `kaunta-admin-demo` in demo mode). Screens read only from it.
@@ -131,7 +150,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 
 ## Tests
 
-- `npm test`: 507 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
+- `npm test`: 535 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
 - Counter UI and phone-sync tests pin the clock to the 22:20 snapshot; before 2026-11-11 they used the real clock and broke when the business day rolled over.
 - `npm run test:e2e`: 17 Playwright tests (landing and counter at 360×800, admin at 390 px and desktop). `e2e/fullLoop.spec.ts` does the whole loop in one browser: add a bar, its code, presets, add a person, the code at the counter, one-time code → PIN, a sale, the sale in admin.
 
@@ -168,7 +187,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 
 - Everything is committed: steps 1–5 in `3617480`, up to staff access in `b155a53`, stock, managers, stock per size and Kaunta controls in `48cb153`, the live server (accounts, Kaunta, keys) in `753587c`.
 - Not deployed anywhere: installing on a phone needs the app on an HTTPS address.
-- **The server side is written and tested (PGlite) but has never run on a real Supabase project.** Fill `.env.local` and follow `supabase/README.md` → Set up a project.
+- **Migrations applied to the real Supabase project on 2026-11-18** (`npx supabase db push --remote`, no seed). Migration 4 needed `grant create on schema public to kaunta_api` around its owner changes (Supabase's migration role is not a superuser; PGlite is). Next: Kaunta's password (`set_super_password`), then `/super` → Add an owner.
 - In the demo, all of this is in one browser's storage: anyone with access to the browser can read it. It is for testing, not for real bars' data.
 - An owner's first bar is made by Kaunta at `/super` (on the server too); later bars with **Add a bar** in admin, within Kaunta's limit.
 - Kaunta's password on a server is set in the SQL editor (`set_super_password`); there is no reset by email.

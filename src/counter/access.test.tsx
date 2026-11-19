@@ -57,16 +57,22 @@ describe('owners and managers at the counter', () => {
     expect(await screen.findByText('Wrong password · 4 tries left')).toBeInTheDocument();
     await user.type(screen.getByLabelText('Password'), 'Baraka@2026');
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
+    // A new shift on this phone: the float first.
+    expect(await screen.findByRole('heading', { name: 'Start your shift, Njeri' })).toBeInTheDocument();
+    for (const key of ['1', '5', '0', '0']) await user.click(screen.getByRole('button', { name: key }));
+    await user.click(screen.getByRole('button', { name: 'Start shift · float KES 1,500' }));
     await user.click(await screen.findByRole('button', { name: 'Tusker Lager' }));
     await user.click(screen.getByRole('button', { name: 'Record (pay later)' }));
     expect(await screen.findByText(/Order #049 recorded/)).toBeInTheDocument();
     expect((await db.orders.toArray()).find((o) => o.short_no === '#049')?.recorded_by).toBe('p_njeri');
+    expect((await db.shifts.toArray()).find((x) => x.person_id === 'p_njeri' && x.closed_at === null)?.float_kes).toBe(1500);
   });
 
   it('a manager signs in with their 4-digit PIN, and can go to admin from the menu', async () => {
     renderApp();
     await user.click(await tile('Chebet'));
     await typePin('4826');
+    await user.click(await screen.findByRole('button', { name: 'Start shift with no float' }));
     await user.click(await screen.findByRole('button', { name: /Switch user · Chebet/ }));
     expect(screen.getByRole('button', { name: 'Open admin' })).toBeInTheDocument();
   });
@@ -74,6 +80,7 @@ describe('owners and managers at the counter', () => {
   it('whoever is signed in to admin on this browser goes straight in, without signing in again', async () => {
     setAdminHere({ bar_id: 'bar_baraka', person_id: 'p_njeri' });
     renderApp('/counter/login?from=admin');
+    await user.click(await screen.findByRole('button', { name: 'Start shift with no float' }));
     expect(await screen.findByRole('button', { name: 'Tusker Lager' })).toBeInTheDocument();
     expect((await db.outbox.toArray()).some((e) => e.type === 'logged_in' && e.recorded_by === 'p_njeri')).toBe(true);
   });

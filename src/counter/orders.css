@@ -1130,3 +1130,165 @@
   font-size: 14px;
   color: var(--k-text-3);
 }
+
+/* Expenses this shift */
+.c-expenses {
+  gap: 20px;
+}
+
+.c-expense-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.c-text-input {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 14px;
+  border-radius: var(--k-r-card);
+  border: 2px solid var(--k-line-strong);
+  background: var(--k-tile);
+  color: var(--k-text);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 700;
+  outline: none;
+}
+
+.c-text-input:focus {
+  border-color: var(--k-ember);
+}
+
+.c-text-input[aria-invalid='true'] {
+  border-color: var(--k-error);
+}
+
+.c-money-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--k-text-2);
+}
+
+.c-money-input .c-text-input {
+  font-variant-numeric: tabular-nums;
+}
+
+.c-form-error,
+.c-form-ok {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.c-form-error {
+  color: var(--k-error);
+}
+
+.c-form-ok {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--k-paid);
+}
+
+.c-section-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.c-expense-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.c-expense-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--k-r-card);
+  border: 1px solid var(--k-line);
+  background: var(--k-tile);
+}
+
+.c-expense-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c-expense-text strong {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.c-expense-text span {
+  font-size: 15px;
+  color: var(--k-text-3);
+}
+
+.c-expense-amount {
+  font-size: 17px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.c-inline-link {
+  color: var(--k-ember);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.c-expense-status {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--k-pending-fg, var(--k-text-2)) !important;
+}
+
+.c-expense-status.is-approved {
+  color: var(--k-paid) !important;
+}
+
+.c-expense-status.is-rejected {
+  color: var(--k-error) !important;
+}
+
+.c-expense-row.is-rejected .c-expense-amount {
+  text-decoration: line-through;
+  color: var(--k-text-3);
+}
+
+/* An admin's decision on one of my requests */
+.c-notices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.c-notice {
+  align-items: center;
+}
+
+.c-notice p {
+  flex: 1;
+  margin: 0;
+}
+
+.c-notice-ok {
+  flex: none;
+  width: auto;
+  min-height: 44px;
+  padding: 0 16px;
+}

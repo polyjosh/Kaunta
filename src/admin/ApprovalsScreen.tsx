@@ -25,6 +25,7 @@ const KIND: Record<ApprovalItem['kind'], { label: MessageKey; tone: string; icon
   price_mismatch: { label: 'approvals.kind.priceMismatch', tone: 'warning', icon: 'alert-triangle' },
   archived_product: { label: 'admin.kind.archived', tone: 'warning', icon: 'alert-triangle' },
   revoked_device: { label: 'admin.kind.revoked', tone: 'warning', icon: 'alert-triangle' },
+  expense: { label: 'admin.kind.expense', tone: 'neutral', icon: 'list' },
 };
 
 const VOID_REASONS: VoidReason[] = ['mistake', 'changed', 'size', 'spilled', 'other'];
@@ -140,6 +141,21 @@ export function approvalCard(a: ApprovalItem, data: AdminDay, t: TFunction, loca
         yes: t('admin.keepSale'),
         decidedYes: t('admin.decided.kept'),
       };
+    case 'expense': {
+      const label = String((a.detail as { label?: string } | null)?.label ?? '');
+      const shift = data.shifts.find((s) => s.id === a.target.shift_id);
+      const fromTill = a.reason_code === 'mpesa';
+      return {
+        ...plain,
+        title: label,
+        facts: [
+          [t('approvals.askedBy'), asked],
+          [t('expense.from'), t(fromTill ? 'expense.fromTill' : 'expense.fromCash')],
+          ...(shift ? [[t('admin.fact.shift'), `${personName(data.people, shift.person_id)} · ${hhmm(shift.opened_at)} – ${shift.closed_at ? hhmm(shift.closed_at) : t('admin.recon.stillOpen')}`] as [string, string]] : []),
+        ],
+        effect: t(fromTill ? 'admin.effect.expenseTill' : 'admin.effect.expenseCash', { amount, name: who }),
+      };
+    }
     case 'revoked_device':
       return {
         ...plain,
@@ -166,7 +182,7 @@ export function ApprovalsScreen() {
   const waiting = data.approvals.filter((a) => a.status === 'waiting').sort((a, b) => a.requested_at.localeCompare(b.requested_at));
   // Decided ones stay in view for the business day, newest decision first.
   const decided = data.approvals
-    .filter((a) => a.status !== 'waiting' && a.decided_at && businessDayOf(a.decided_at, data.bar.day_start) === day)
+    .filter((a) => (a.status === 'approved' || a.status === 'rejected') && a.decided_at && businessDayOf(a.decided_at, data.bar.day_start) === day)
     .sort((a, b) => b.decided_at!.localeCompare(a.decided_at!));
 
   const act = async (fn: () => Promise<unknown>) => {

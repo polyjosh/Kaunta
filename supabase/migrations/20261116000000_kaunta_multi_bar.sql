@@ -406,11 +406,15 @@ end $$;
 -- ---------------------------------------------------------------- access
 
 -- The bar-scoped API runs as kaunta_api, so RLS applies to everything it touches.
+-- A new owner needs CREATE on the schema (Supabase's migration role is not a
+-- superuser), so kaunta_api holds it only while the functions are handed over.
+grant create on schema public to kaunta_api;
 alter function public.sync_push(text, jsonb) owner to kaunta_api;
 alter function public.sync_pull(text, timestamptz) owner to kaunta_api;
 alter function public.admin_push(text, jsonb) owner to kaunta_api;
 alter function public.admin_pull(text, timestamptz) owner to kaunta_api;
 alter function public.admin_create_pairing_code(text, text, text) owner to kaunta_api;
+revoke create on schema public from kaunta_api;
 
 revoke execute on all functions in schema public from public, anon, authenticated;
 grant execute on all functions in schema public to kaunta_api;
