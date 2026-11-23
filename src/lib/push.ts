@@ -40,16 +40,15 @@ export const PUSH_WORKER_PATH = 'push/onesignal/OneSignalSDKWorker.js';
 export const PUSH_WORKER_SCOPE = '/push/onesignal/';
 
 export interface PushConfig {
+  /** OneSignal App ID (public). Safari on macOS 13+ and iOS 16.4+ uses standard web push: no Safari id. */
   appId: string;
-  safariWebId?: string;
 }
 
 export function pushConfig(env: Record<string, string | undefined> = import.meta.env): PushConfig | null {
   const appId = env.VITE_ONESIGNAL_APP_ID?.trim();
   // Only with a server: the server is what sends.
   if (!appId || !serverConfig(env)) return null;
-  const safariWebId = env.VITE_ONESIGNAL_SAFARI_WEB_ID?.trim();
-  return safariWebId ? { appId, safariWebId } : { appId };
+  return { appId };
 }
 
 let started: Promise<OneSignalApi | null> | null = null;
@@ -64,7 +63,6 @@ export function startPush(config: PushConfig | null = pushConfig(), doc: Documen
       try {
         await sdk.init({
           appId: config.appId,
-          ...(config.safariWebId ? { safari_web_id: config.safariWebId } : {}),
           serviceWorkerPath: PUSH_WORKER_PATH,
           serviceWorkerParam: { scope: PUSH_WORKER_SCOPE },
           allowLocalhostAsSecureOrigin: true,

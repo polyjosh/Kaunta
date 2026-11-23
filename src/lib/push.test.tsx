@@ -44,7 +44,6 @@ describe('push notifications (OneSignal)', () => {
     expect(pushConfig({})).toBeNull();
     expect(pushConfig({ VITE_ONESIGNAL_APP_ID: 'app-1' })).toBeNull(); // the demo: no server to send
     expect(pushConfig({ ...live, VITE_ONESIGNAL_APP_ID: ' app-1 ' })).toEqual({ appId: 'app-1' });
-    expect(pushConfig({ ...live, VITE_ONESIGNAL_APP_ID: 'app-1', VITE_ONESIGNAL_SAFARI_WEB_ID: 'web.onesignal.auto.1' })).toEqual({ appId: 'app-1', safariWebId: 'web.onesignal.auto.1' });
   });
 
   it('load the SDK once, in its own service-worker scope, without prompting', async () => {

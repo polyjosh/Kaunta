@@ -122,7 +122,7 @@ describe('sending', () => {
       create function net.http_post(url text, body jsonb, params jsonb default '{}', headers jsonb default '{}', timeout_milliseconds int default 5000) returns bigint
       language sql as $f$ insert into net.sent (url, headers, body) values (url, headers, body) returning id $f$;
     `);
-    if (keys) await pg.exec(`insert into vault.decrypted_secrets values ('onesignal_app_id', 'app-123'), ('onesignal_rest_api_key', 'rest-xyz')`);
+    if (keys) await pg.exec(`insert into vault.decrypted_secrets values ('onesignal_app_id', 'app-123'), ('onesignal_app_api_key', 'os_v2_app_xyz')`);
   }
 
   it('sends what waits to OneSignal with the key from Vault, by external id', async () => {
@@ -132,12 +132,22 @@ describe('sending', () => {
     expect(await call<number>(pg, 'select public.send_notifications() as r')).toBe(1);
     const sent = await one<{ url: string; headers: Record<string, string>; body: any }>('select url, headers, body from net.sent');
     expect(sent.url).toBe('https://api.onesignal.com/notifications?c=push');
-    expect(sent.headers.Authorization).toBe('Key rest-xyz');
+    expect(sent.headers.Authorization).toBe('Key os_v2_app_xyz');
     expect(sent.body).toMatchObject({ app_id: 'app-123', target_channel: 'push', headings: { en: 'Shift started' }, web_url: '/admin/reconcile' });
     expect(sent.body.include_aliases.external_id.sort()).toEqual(['account_acc_mgr', 'account_acc_njeri']);
     expect(await one("select status from public.notifications where kind = 'shift_opened'")).toEqual({ status: 'sent' });
     // Sent once.
     expect(await call<number>(pg, 'select public.send_notifications() as r')).toBe(0);
+  });
+
+  it('still reads a key saved under the old Vault name (onesignal_rest_api_key)', async () => {
+    await fakeSupabase(false);
+    await pg.exec(`insert into vault.decrypted_secrets values ('onesignal_app_id', 'app-123'), ('onesignal_rest_api_key', 'old-key')`);
+    expect(await one('select app_id, rest_key from public.onesignal_keys()')).toEqual({ app_id: 'app-123', rest_key: 'old-key' });
+    expect(await call(pg, 'select public.kaunta_notifications_check() as r')).toMatchObject({ app_id_set: true, app_api_key_set: true });
+    // Both there: the App API key wins.
+    await pg.exec(`insert into vault.decrypted_secrets values ('onesignal_app_api_key', 'os_v2_app_new')`);
+    expect(await one('select rest_key from public.onesignal_keys()')).toEqual({ rest_key: 'os_v2_app_new' });
   });
 
   it('without keys nothing is sent, and what is older than 10 minutes is dropped', async () => {
@@ -147,7 +157,7 @@ describe('sending', () => {
                           ('bar_baraka', 'test', '{account_acc_njeri}', '{"en":"y"}', '{"en":"y"}', now())`);
     expect(await call<number>(pg, 'select public.kaunta_notify_tick() as r')).toBe(0);
     expect((await all("select status from public.notifications where kind = 'test' order by id")).map((r: any) => r.status)).toEqual(['expired', 'pending']);
-    expect(await call(pg, 'select public.kaunta_notifications_check() as r')).toMatchObject({ app_id_set: false, rest_api_key_set: false, timer_running: false });
+    expect(await call(pg, 'select public.kaunta_notifications_check() as r')).toMatchObject({ app_id_set: false, app_api_key_set: false, timer_running: false });
   });
 
   it('the API keys cannot reach the outbox or the senders', async () => {

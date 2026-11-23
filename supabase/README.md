@@ -108,23 +108,23 @@ Web push for owners, managers and counter phones, sent by the database (`2026112
 
 Messages are in English and Kiswahili (OneSignal picks by the language set in the app).
 
-**Keys you provide** (OneSignal dashboard → your app → Settings → Keys & IDs):
+**Keys you provide** (OneSignal dashboard → your app → **Settings** (gear, bottom left) → **Keys & IDs**; names as OneSignal uses them since November 2024):
 
-1. **App ID** (a UUID): into `.env.local` as `VITE_ONESIGNAL_APP_ID`, and into Supabase Vault (below). It is public.
-2. **REST API Key**: into Supabase Vault only. It is secret: never in `.env.local` or the app.
-3. Optional **Safari Web ID** (`web.onesignal.auto.…`, older Safari on Mac): `VITE_ONESIGNAL_SAFARI_WEB_ID`.
+1. **App ID** (a UUID, e.g. `8a1c…-…`): into Vercel and `.env.local` as `VITE_ONESIGNAL_APP_ID`, and into Supabase Vault (below). It is public.
+2. **App API key**: on the same page, **Add Key** (name it e.g. "Kaunta server"). It starts with `os_v2_app_` and is shown **only once**, so copy it straight into Supabase Vault. It is secret: never in Vercel, `.env.local` or the app. Not the **Key ID** shown next to it afterwards (that one is refused), and not an **Organization API key** (that is for managing apps, not for sending). The server sends it as `Authorization: Key <App API key>` to `https://api.onesignal.com/notifications`. (An old-style "REST API key" from before November 2024 still works, but OneSignal no longer lets you create one.)
+3. Not needed: a Safari key. Safari on macOS 13+ and iPhones on iOS 16.4+ use standard web push, so the app has no Safari setting.
 
 **Set up once:**
 
-1. Create a OneSignal app, platform **Web**, "Typical site". Site URL: the address the app is served from (HTTPS; `http://localhost:5173` works for trying it out). Turn **off** OneSignal's own prompts and bell (Kaunta asks with its own button). Under advanced settings, the service worker is `push/onesignal/OneSignalSDKWorker.js` with scope `/push/onesignal/` (the app passes these itself; the file is in `public/`).
+1. Create a OneSignal app, platform **Web**, integration **Custom Code** (not "Typical Site": the app passes its own service worker path and scope, and OneSignal only honours those with Custom Code). Site URL: `https://kaunta-book.vercel.app` (for trying it out locally, `http://localhost:5173`). Don't add OneSignal's prompts or bell (Kaunta asks with its own button). The service worker is already in the app: `public/push/onesignal/OneSignalSDKWorker.js`, scope `/push/onesignal/`, Web SDK v16.
 2. In Supabase **SQL Editor**:
    ```sql
    select vault.create_secret('<OneSignal App ID>', 'onesignal_app_id');
-   select vault.create_secret('<OneSignal REST API Key>', 'onesignal_rest_api_key');
+   select vault.create_secret('<OneSignal App API key, os_v2_app_…>', 'onesignal_app_api_key');
    ```
-   To change one later: `select vault.update_secret((select id from vault.secrets where name = 'onesignal_rest_api_key'), '<new key>');`
-3. Put the App ID in `.env.local` (`VITE_ONESIGNAL_APP_ID=…`) and restart `npm run dev` (or rebuild).
-4. Check: `select public.kaunta_notifications_check();` should say `app_id_set`, `rest_api_key_set` and `timer_running` are all true. If `timer_running` is false, turn on **pg_net** and **pg_cron** under Database → Extensions, then run:
+   (A key saved earlier under the old name `onesignal_rest_api_key` still works; `onesignal_app_api_key` wins if both are there.) To change one later, e.g. after rotating the key in OneSignal: `select vault.update_secret((select id from vault.secrets where name = 'onesignal_app_api_key'), '<new key>');`
+3. Put the App ID in Vercel (Project → Settings → Environment Variables → `VITE_ONESIGNAL_APP_ID`, Production and Preview) and redeploy (`npx vercel deploy --prod`); for local runs also in `.env.local` and restart `npm run dev`.
+4. Check: `select public.kaunta_notifications_check();` should say `app_id_set`, `app_api_key_set` and `timer_running` are all true. If `timer_running` is false, turn on **pg_net** and **pg_cron** under Database → Extensions, then run:
    ```sql
    select cron.schedule('kaunta-notifications', '15 seconds', 'select public.kaunta_notify_tick()');
    ```
