@@ -120,7 +120,9 @@ export function usePush(): { state: PushState; enable: () => Promise<void> } {
     let live = true;
     void startPush().then((s) => {
       if (!live || !s) return;
-      setSdk(s);
+      // OneSignal's SDK object is a class (static members). Handed to setState as is, React would call it
+      // as an updater ("Class constructor … cannot be invoked without 'new'") and the screen would fail.
+      setSdk(() => s);
       const read = () => {
         if (s.Notifications.isPushSupported && !s.Notifications.isPushSupported()) return 'unsupported';
         if (s.Notifications.permission) return 'on';

@@ -89,6 +89,30 @@ describe('push notifications (OneSignal)', () => {
     vi.unstubAllEnvs();
   });
 
+  it('work with the real SDK’s shape: OneSignal hands over a class, not a plain object', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', live.VITE_SUPABASE_URL);
+    vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', live.VITE_SUPABASE_PUBLISHABLE_KEY);
+    vi.stubEnv('VITE_ONESIGNAL_APP_ID', 'app-1');
+    const plain = fakeSdk();
+    // Like OneSignal v16: everything is static on a class.
+    class OneSignal {
+      static init = plain.init;
+      static login = plain.login;
+      static logout = plain.logout;
+      static User = plain.User;
+      static Notifications = plain.Notifications;
+    }
+    render(
+      <I18nProvider initialLocale="en">
+        <PushButton className="x" />
+      </I18nProvider>,
+    );
+    await sdkLoads(OneSignal as unknown as ReturnType<typeof fakeSdk>);
+    await userEvent.click(await screen.findByRole('button', { name: 'Turn on notifications' }));
+    expect(plain.Notifications.requestPermission).toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
   it('show nothing while push is not set up', () => {
     const { container } = render(
       <I18nProvider initialLocale="en">
