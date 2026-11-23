@@ -18,6 +18,8 @@ export function Landing() {
   const install = useInstall();
 
   useEffect(() => {
+    // "← Kaunta Book" on a sign-in card comes back with ?home: stay here, or the installed app would bounce straight back.
+    if (new URLSearchParams(window.location.search).has('home')) return;
     const way = lastWay();
     if (way && isStandalone()) navigate(way, { replace: true });
   }, [navigate]);

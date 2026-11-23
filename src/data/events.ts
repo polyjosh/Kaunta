@@ -48,8 +48,10 @@ export type KauntaEvent =
       type: 'shift_closed';
       payload: { shift_id: Id; closed_at: Instant; counted_cash_kes: number; expected_cash_kes: number; result_kes: number };
     }
-  /** R-ORD-6: left for the next person who logs in on this device. */
-  | { type: 'order_handed_over'; payload: { order_id: Id; from: Id } }
+  /** A nickname or description on an open order; '' clears it. */
+  | { type: 'order_noted'; payload: { order_id: Id; note: string } }
+  /** R-ORD-6: to the person chosen (`to`); older phones left it for the next person who logs in on this device. */
+  | { type: 'order_handed_over'; payload: { order_id: Id; from: Id; to?: Id } }
   | { type: 'handover_accepted'; payload: { order_ids: Id[]; person_id: Id } };
 
 export type OutboxStatus = 'pending' | 'sent' | 'needs_review';
@@ -183,8 +185,13 @@ export async function applyEvent(db: KauntaDB, event: KauntaEvent): Promise<void
       await db.shifts.update(shift_id, { closed_at, counted_cash_kes, result_kes });
       return;
     }
+    case 'order_noted': {
+      await db.orders.update(event.payload.order_id, { note: event.payload.note || null });
+      return;
+    }
     case 'order_handed_over': {
-      await db.orders.update(event.payload.order_id, { handover_pending: true });
+      const { order_id, to } = event.payload;
+      await db.orders.update(order_id, to ? { handed_over_to: to, handover_pending: false } : { handover_pending: true });
       return;
     }
     case 'handover_accepted': {

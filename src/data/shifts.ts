@@ -1,4 +1,5 @@
 import { uuidv7 } from '../domain/ids';
+import { orderDue } from '../domain/orders';
 import { EXPENSE_LABEL_MAX, blocksShiftClose, expectedCash, rejectedExpenses, shiftCashSales, shiftPayments, shiftResult } from '../domain/shifts';
 import type { ShiftResult } from '../domain/shifts';
 import type { ApprovalItem, ExpenseSource, Id, Order, Payment, Shift, ShiftExpense } from '../domain/types';
@@ -52,6 +53,44 @@ export async function startShift(db: KauntaDB, ctx: RecordContext, floatKes = 0)
   });
 }
 
+export interface UnsettledShift {
+  shift: Shift;
+  /** That shift's phone, when this phone knows it. */
+  device_name: string | null;
+  orders: Order[];
+  due_kes: number;
+}
+
+/**
+ * Before a new shift starts on this phone: this person's other open shifts
+ * (on other phones) that still have unpaid orders. They have to be settled
+ * (paid, voided or handed over) first.
+ */
+export async function unsettledShiftsOf(db: KauntaDB, person_id: Id, device_id: Id): Promise<UnsettledShift[]> {
+  const shifts = (await db.shifts.where('person_id').equals(person_id).toArray()).filter(
+    (s) => s.closed_at === null && s.device_id !== device_id,
+  );
+  if (shifts.length === 0) return [];
+  const orders = await db.orders.where('status').equals('open').toArray();
+  const [lines, payments] = await Promise.all([
+    db.lines.where('order_id').anyOf(orders.map((o) => o.id)).toArray(),
+    db.payments.where('order_id').anyOf(orders.map((o) => o.id)).toArray(),
+  ]);
+  const out: UnsettledShift[] = [];
+  for (const shift of shifts) {
+    const mine = orders.filter((o) => blocksShiftClose(o, lines.filter((l) => l.order_id === o.id), shift));
+    if (mine.length === 0) continue;
+    const device = await db.devices.get(shift.device_id);
+    out.push({
+      shift,
+      device_name: device?.name ?? null,
+      orders: mine,
+      due_kes: mine.reduce((sum, o) => sum + orderDue(lines.filter((l) => l.order_id === o.id), payments.filter((p) => p.order_id === o.id)), 0),
+    });
+  }
+  return out;
+}
+
 export interface ShiftSummary {
   shift: Shift;
   /** Orders that must be paid, voided or handed over first (R-SHIFT-1). */
@@ -89,12 +128,20 @@ export async function shiftSummary(db: KauntaDB, person_id: Id, device_id: Id): 
   };
 }
 
-/** R-ORD-6: leave an open order for the next person who logs in on this device. */
-export async function handOverOrder(db: KauntaDB, ctx: RecordContext, order_id: Id): Promise<void> {
+/**
+ * R-ORD-6: gives an open order to the person chosen. It is theirs from then
+ * on: on their lists, and its sales counted as theirs. Without `to`, it is
+ * left for the next person who logs in on this device (the old way).
+ */
+export async function handOverOrder(db: KauntaDB, ctx: RecordContext, order_id: Id, to?: Id): Promise<void> {
   await db.transaction('rw', db.tables, async () => {
     const order = await db.orders.get(order_id);
     if (!order || order.status !== 'open') throw new Error(`Only an open order can be handed over: ${order_id}`);
-    await recordEvent(db, ctx, { type: 'order_handed_over', payload: { order_id, from: ctx.person_id } });
+    if (to !== undefined) {
+      const person = await db.people.get(to);
+      if (!person || to === ctx.person_id) throw new Error(`Cannot hand an order over to ${to}`);
+    }
+    await recordEvent(db, ctx, { type: 'order_handed_over', payload: to ? { order_id, from: ctx.person_id, to } : { order_id, from: ctx.person_id } });
   });
 }
 

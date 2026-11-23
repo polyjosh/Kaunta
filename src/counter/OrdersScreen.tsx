@@ -54,8 +54,8 @@ export function OrdersScreen() {
         items: lines.reduce((sum, l) => (l.status === 'voided' ? sum : sum + l.qty), 0),
         minutes: minutesBetween(order.created_at, now),
         old: isAgeing(order, now, ageingMinutes),
-        // Mine = I served it or I recorded it.
-        mine: order.server_id === person.id || order.recorded_by === person.id,
+        // Mine = handed over to me, or I served or recorded it and did not hand it over.
+        mine: order.handed_over_to ? order.handed_over_to === person.id : order.server_id === person.id || order.recorded_by === person.id,
         server: order.server_id === person.id ? t('common.me') : (data.people.find((p) => p.id === order.server_id)?.name ?? ''),
       };
     })
@@ -91,7 +91,10 @@ export function OrdersScreen() {
           return (
             <Link key={c.order.id} to={`/counter/orders/${c.order.id}`} className={`c-order-card${c.old ? ' is-old' : ''}`}>
               <span className="c-order-card-top">
-                <strong>{displayLabel(c.order.label, t)}</strong>
+                <strong>
+                  {displayLabel(c.order.label, t)}
+                  {c.order.note && <span className="c-order-card-note">{c.order.note}</span>}
+                </strong>
                 <span className="c-order-card-amount">{part ? t('orders.left', { amount: formatKES(c.due) }) : formatKES(c.due)}</span>
               </span>
               {part && (

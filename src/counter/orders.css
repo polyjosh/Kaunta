@@ -148,6 +148,7 @@
 }
 
 .c-order-card-top strong {
+  min-width: 0;
   font-size: 19px;
   font-weight: 800;
   white-space: nowrap;
@@ -1291,4 +1292,43 @@
   width: auto;
   min-height: 44px;
   padding: 0 16px;
+}
+
+/* Sales this shift */
+.c-order-card-amount.is-voided {
+  text-decoration: line-through;
+  color: var(--k-text-2);
+}
+
+.c-sale-void {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: var(--k-r-pill);
+  background: var(--tone-bg);
+  color: var(--tone-fg) !important;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* Nickname on an open order */
+.c-order-card-note {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--k-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.c-order-note {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--k-text-2);
+  overflow-wrap: anywhere;
+}
+
+.c-note-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }

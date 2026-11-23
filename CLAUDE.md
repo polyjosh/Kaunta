@@ -154,6 +154,23 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 - **Reset a bar** (`/super` → bar page → Start this bar again; typing the bar's name confirms): server `super_reset_bar` (`20261126000000_kaunta_bar_reset.sql`, through `kaunta_super`) deletes every record of the bar (orders, lines, payments, stock movements, approvals, shifts, events, audit log, deliveries, day closes, kegs, products, sizes, price history, devices, pairing codes, notifications) and every person but the owner; managers' accounts that run no other bar and own none are deleted. The bar, code, settings, owner and owner's account stay; one `bar_reset` audit row by Kaunta. The audit log's append-only trigger lets deletes through only while `kaunta.reset_bar` is set (inside the reset). `bar.reset_at` makes `applyAdminPull` drop a browser's copy and pull from the start; counter phones lose their device and ask for the bar code. Demo: `resetBarMembers` + the bar's store deleted (the sample bar comes back as the sample night).
 - Tests: `supabase/barReset.test.ts`, `src/platform/reset.test.tsx`, calendar tests in `src/admin/admin.test.tsx`.
 
+## Sales this shift at the counter; two fixes (2026-11-23)
+
+- **Sales this shift** (`/counter/shift/sales`, `ShiftSalesScreen`; in the counter's name menu): every order this person served, recorded or took over in their open shift on this phone, newest first, with filters **All / Pending / Paid / Cancelled**. Cancelled = voided, or with a void asked for or done on part of it; each such card says where it stands: "Void waiting for approval", "Void approved by X", "Void rejected by X · still sold", or "Voided at the counter · no approval needed" (inside the self-void window). A card opens the order; its back button returns to the list. Rules in `src/domain/shiftSales.ts` (tests next to it).
+- **Admin account menu on phones**: when the header wrapped, the avatar moved to the left and the menu (anchored to its right) ran off the screen. `.a-header-tools` now stays on the right; the menu scrolls if the screen is short.
+- **"← Kaunta Book" on the sign-in cards** (owner/manager and /super) goes to `/?home`; the landing page does not send the installed app back to its last way when `?home` is there (that redirect is why the link seemed dead). The lockup on the owner sign-in card links home too.
+
+## Counter changes: nicknames, handover to a person, shift block (2026-11-23)
+
+- **Hidden for now**: "Split bill" on an order and "Move to a new order" on a line (`SHOW_SPLIT_BILL` / `SHOW_MOVE` in `OrderDetailScreen.tsx`; the code and its tests stay, skipped). The Cash + M-Pesa split in the payment sheet is unchanged.
+- **Nickname on open orders** (`Order.note`, ≤ 60 characters): **Add a nickname** / **Change nickname** on an open order (empty removes it); shown on the order, on Open orders and on Sales this shift. Event `order_noted` (`noteOrder` in `src/data/commands.ts`); audit "Nickname on #047 Table 4: “…”".
+- **All** tab first on Sell, selected by default: every product on sale, grouped in tab order.
+- **Hand over to a person**: Close shift → Hand over → pick who (everyone who signs in at the counter but you). `order_handed_over` now carries `to`; the order is theirs at once (`handed_over_to`): on their Open orders "Mine" and Sales this shift, blocking their shift close (from any phone), and credited to them in admin's per-server sales (`byServer`). Audit: "Order #047 handed over to Kiprop". Without `to` (older phones) it still waits for the next login on that phone.
+- **No new shift while your last one has unpaid orders** (confirmed: the person's own shift only; two people can still share a phone). At login, with no open shift on this phone, `unsettledShiftsOf` looks for their open shifts on other phones with orders that would block its close; if any, "Your last shift is still open" (phone, since when, unpaid orders and amount) and no float/shift. A shift already open on this phone carries on as before.
+- **Lockout kept**: removing it was asked for and then undone the same day; 5 wrong PINs or passwords still lock for 15 minutes (counter, owners and managers, Kaunta).
+- Server: `20261127000000_kaunta_counter_handover_notes.sql` (`orders.note`, `apply_event` with `order_noted` and `order_handed_over`+`to`). **Not yet pushed to the live project.**
+- Tests: `supabase/handoverNotes.test.ts`, `src/data/handover.test.ts`, nickname in `src/counter/orders.test.tsx`, All / shift alert in `src/counter/counter.test.tsx`, hand over in `src/counter/screens.test.tsx`.
+
 ## Renamed Kaunta Book (2026-11-19)
 
 - The product is **Kaunta Book**: page title, installed-app name (`short_name` "Kaunta Book"), landing copy, install prompts, "Recorded in Kaunta Book", the counter's top bar before pairing, and the logo. **"Kaunta" stays** where it means the company/team that runs the platform (`/super` "Kaunta platform", "Kaunta set your password", "Kaunta has suspended…", the `kaunta` actor). Lowercase Kiswahili "kaunta" (counter) is unchanged.
@@ -170,7 +187,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 
 ## Tests
 
-- `npm test`: 559 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
+- `npm test`: 574 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
 - Counter UI and phone-sync tests pin the clock to the 22:20 snapshot; before 2026-11-11 they used the real clock and broke when the business day rolled over.
 - `npm run test:e2e`: 17 Playwright tests (landing and counter at 360×800, admin at 390 px and desktop). `e2e/fullLoop.spec.ts` does the whole loop in one browser: add a bar, its code, presets, add a person, the code at the counter, one-time code → PIN, a sale, the sale in admin.
 

@@ -50,7 +50,9 @@ export function OwnerSignIn({
   return (
     <div className="a-app a-signin-page">
       <form className="a-card a-signin" onSubmit={submit}>
-        <Lockup kind="horizontal" scheme={theme === 'night' ? 'dark' : 'light'} height={48} />
+        <a href="/?home" className="a-signin-home">
+          <Lockup kind="horizontal" scheme={theme === 'night' ? 'dark' : 'light'} height={48} />
+        </a>
         <h1>{t('admin.owner.title')}</h1>
         <p className="a-note">{t('admin.owner.body')}</p>
         <label className="a-field">
@@ -72,7 +74,7 @@ export function OwnerSignIn({
           <button type="button" aria-pressed={locale === 'en'} onClick={() => setLocale('en')}>English</button>
           <button type="button" aria-pressed={locale === 'sw'} onClick={() => setLocale('sw')}>Kiswahili</button>
         </div>
-        <a className="a-link" href="/">← Kaunta</a>
+        <a className="a-link" href="/?home">← Kaunta Book</a>
       </form>
     </div>
   );

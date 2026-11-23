@@ -186,6 +186,8 @@ export interface Order extends Recorded {
   status: OrderStatus;
   /** Who took the order over at a shift change (R-ORD-6). */
   handed_over_to: Id | null;
+  /** A nickname or description staff add to an open order, e.g. "Mzee in blue". */
+  note?: string | null;
   /** Handed over at shift close, waiting for the next person to log in on this device. */
   handover_pending?: boolean;
 }

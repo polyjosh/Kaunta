@@ -136,6 +136,22 @@ describe('1. PIN login', () => {
     expect(screen.getByRole('heading', { name: 'Who is at the counter?' })).toBeInTheDocument();
   });
 
+  it('will not start a new shift while their shift on another phone has unpaid orders', async () => {
+    await db.shifts.put({
+      id: 's_kiprop_2', person_id: 'p_kiprop', device_id: 'd_counter2', opened_at: '2026-11-10T15:00:00.000Z', float_kes: 0, expenses: [],
+      closed_at: null, counted_cash_kes: null, result_kes: null, cash_baseline_kes: 0, mpesa_baseline_kes: 0,
+    });
+    await db.orders.update('o_047', { recorded_by: 'p_kiprop', device_id: 'd_counter2' });
+    renderApp();
+    await user.click(await screen.findByRole('button', { name: 'Kiprop' }));
+    await typePin('8024');
+    expect(await screen.findByText('Your last shift is still open', {}, { timeout: 5000 })).toBeInTheDocument();
+    expect(screen.getByText('1 unpaid order · KES 1,250')).toBeInTheDocument();
+    expect(screen.queryByText(/float/i)).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByRole('heading', { name: 'Who is at the counter?' })).toBeInTheDocument();
+  });
+
   it('sends anyone not logged in back to the names', async () => {
     renderApp('/counter/sell');
     expect(await screen.findByRole('heading', { name: 'Who is at the counter?' })).toBeInTheDocument();
@@ -306,9 +322,21 @@ describe('2. Sell', () => {
     expect(await screen.findByRole('button', { name: '1 waiting' })).toBeInTheDocument();
   });
 
+  it('opens on All: every product on sale, before the category tabs', async () => {
+    renderSell();
+    const all = await screen.findByRole('tab', { name: 'All' });
+    expect(all).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getAllByRole('tab')[0]).toBe(all);
+    expect(screen.getByRole('button', { name: 'Tusker Lager' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Water' })).toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Beer' }));
+    expect(screen.queryByRole('button', { name: 'Water' })).toBeNull();
+  });
+
   it('works in Kiswahili with the same flow', async () => {
     renderSell('sw');
-    expect(await screen.findByRole('tab', { name: 'Bia' })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByRole('tab', { name: 'Zote' })).toHaveAttribute('aria-selected', 'true');
+    await user.click(screen.getByRole('tab', { name: 'Bia' }));
     expect(screen.getByRole('button', { name: /Tusker Cider/ })).toHaveTextContent('Kimeisha');
     await user.click(screen.getByRole('tab', { name: 'Soda na maji' }));
     await user.click(screen.getByRole('button', { name: 'Maji' }));

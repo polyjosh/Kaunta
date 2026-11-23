@@ -14,6 +14,8 @@ const extra = {
   plus: 'M12 5v14 M5 12h14',
   check: 'M20 6L9 17l-5-5',
   list: 'M4 6h16M4 12h16M4 18h10',
+  // A nickname on an open order.
+  pencil: 'M12 20h9 M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z',
   // Pick another day (Today, Reconcile).
   calendar: 'M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z M3 10h18 M8 3v4 M16 3v4',
   // Comp (on the house), as drawn in Approvals.dc.html.

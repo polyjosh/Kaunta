@@ -547,5 +547,8 @@
   "admin.day.title": "Sales · {date}",
   "admin.day.question": "Did I lose money on {date}?",
   "admin.day.backToday": "Back to today",
-  "admin.audit.barReset": "Bar reset to new · every earlier record cleared"
+  "admin.audit.barReset": "Bar reset to new · every earlier record cleared",
+  "admin.audit.handedOverTo": "Order {order} handed over to {name}",
+  "admin.audit.orderNoted": "Nickname on {order}: “{note}”",
+  "admin.audit.orderNoteCleared": "Nickname removed from {order}"
 }

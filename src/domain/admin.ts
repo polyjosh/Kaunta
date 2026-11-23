@@ -121,20 +121,21 @@ export interface ServerTotals {
   orders: number;
 }
 
-/** Sales are credited to the server; biggest first. */
+/** Sales are credited to the server, or to whoever the order was handed over to; biggest first. */
 export function byServer(data: Pick<DayData, 'orders' | 'lines' | 'payments'>): ServerTotals[] {
   const lines = byOrder(data.lines);
   const payments = byOrder(data.payments);
   const totals = new Map<Id, ServerTotals>();
   for (const order of data.orders) {
-    const t = totals.get(order.server_id) ?? { person_id: order.server_id, served_kes: 0, collected_kes: 0, not_paid_kes: 0, orders: 0 };
+    const who = order.handed_over_to ?? order.server_id;
+    const t = totals.get(who) ?? { person_id: who, served_kes: 0, collected_kes: 0, not_paid_kes: 0, orders: 0 };
     const l = lines.get(order.id) ?? [];
     const p = payments.get(order.id) ?? [];
     t.served_kes += orderTotal(l);
     t.collected_kes += paidTotal(p);
     t.not_paid_kes += order.status === 'open' ? orderDue(l, p) : 0;
     t.orders += 1;
-    totals.set(order.server_id, t);
+    totals.set(who, t);
   }
   return [...totals.values()].sort((a, b) => b.served_kes - a.served_kes || a.person_id.localeCompare(b.person_id));
 }
@@ -390,7 +391,7 @@ export function feedRows(audit: readonly AuditEvent[], data: Pick<DayData, 'orde
 export type AuditGroup = 'sales' | 'payments' | 'voids' | 'products' | 'stock' | 'logins' | 'shifts';
 
 const GROUPS: Record<AuditGroup, string[]> = {
-  sales: ['order_recorded', 'lines_added', 'lines_moved', 'order_handed_over', 'handover_accepted'],
+  sales: ['order_recorded', 'lines_added', 'lines_moved', 'order_handed_over', 'handover_accepted', 'order_noted'],
   payments: ['payment_recorded'],
   voids: ['void_recorded', 'void_requested', 'approval_decided', 'approval_undone'],
   products: ['product_saved'],

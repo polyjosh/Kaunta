@@ -64,7 +64,11 @@ export function describeEntry(entry: OutboxEntry, { order, person }: Lookup, t: 
     case 'void_request_cancelled':
       return { what: t('sync.item.voidCancelled', { no: no(entry.payload.order_id) }), amount: null };
     case 'order_handed_over':
-      return { what: t('sync.item.handover', { no: no(entry.payload.order_id) }), amount: null };
+      return entry.payload.to
+        ? { what: t('sync.item.handoverTo', { no: no(entry.payload.order_id), name: name(entry.payload.to) }), amount: null }
+        : { what: t('sync.item.handover', { no: no(entry.payload.order_id) }), amount: null };
+    case 'order_noted':
+      return { what: t('sync.item.orderNoted', { no: no(entry.payload.order_id) }), amount: null };
     case 'handover_accepted':
       return { what: t('sync.item.handoverAccepted'), amount: null };
   }

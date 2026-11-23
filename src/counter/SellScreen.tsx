@@ -29,6 +29,9 @@ const CATEGORY_KEY = {
   food: 'sell.cat.food',
 } as const;
 
+/** The "All" tab: every product on sale, before the category tabs. */
+const ALL = '__all';
+
 interface CartLine {
   size_id: Id;
   qty: number;
@@ -100,14 +103,18 @@ export function SellScreen() {
   if (!categories || !products || !sizes || !servers || target === undefined) return null;
   const adding = target?.status === 'open' ? target : null;
 
-  const activeCategory = category ?? categories[0]?.id ?? null;
+  const activeCategory = category ?? ALL;
   const searching = query.trim().length > 0;
-  const visible = products.filter(
-    (p) =>
-      !p.archived_at &&
-      sizesByProduct.has(p.id) &&
-      (searching ? matchesSearch(p, query) : p.category_id === activeCategory),
-  );
+  const categoryOrder = new Map(categories.map((c, i) => [c.id, i]));
+  const visible = products
+    .filter(
+      (p) =>
+        !p.archived_at &&
+        sizesByProduct.has(p.id) &&
+        (searching ? matchesSearch(p, query) : activeCategory === ALL || p.category_id === activeCategory),
+    )
+    // All: grouped by category in tab order, so it reads like the tabs one after another.
+    .sort((a, b) => (activeCategory === ALL && !searching ? (categoryOrder.get(a.category_id) ?? 99) - (categoryOrder.get(b.category_id) ?? 99) : 0));
 
   const qtyOfSize = (sizeId: Id) => cart.find((l) => l.size_id === sizeId)?.qty ?? 0;
   const qtyOfProduct = (productId: Id) =>
@@ -252,6 +259,18 @@ export function SellScreen() {
       </div>
 
       <div className="c-tabs" role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={!searching && activeCategory === ALL}
+          className="c-tab"
+          onClick={() => {
+            setCategory(ALL);
+            setQuery('');
+          }}
+        >
+          {t('sell.cat.all')}
+        </button>
         {categories.map((c) => {
           const selected = !searching && c.id === activeCategory;
           const key = CATEGORY_KEY[c.id as keyof typeof CATEGORY_KEY];
@@ -453,6 +472,9 @@ export function SellScreen() {
             {t('sell.switchUser')}
           </button>
           <PushButton className="c-btn c-btn-secondary" />
+          <button type="button" className="c-btn c-btn-secondary" onClick={() => navigate('/counter/shift/sales')}>
+            {t('sales.menu')}
+          </button>
           <button type="button" className="c-btn c-btn-secondary" onClick={() => navigate('/counter/shift/expenses')}>
             {t('expense.title')}
           </button>

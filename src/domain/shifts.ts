@@ -81,7 +81,9 @@ export function blocksShiftClose(
   shift: Pick<Shift, 'person_id' | 'device_id'>,
 ): boolean {
   if (order.status !== 'open' || order.handover_pending) return false;
-  if (order.device_id !== shift.device_id || orderOwner(order) !== shift.person_id) return false;
+  if (orderOwner(order) !== shift.person_id) return false;
+  // Orders opened on this phone, or handed over to this person from anywhere.
+  if (order.device_id !== shift.device_id && order.handed_over_to !== shift.person_id) return false;
   const live = lines.filter((line) => line.status !== 'voided');
   const voidRequested = live.length > 0 && live.every((line) => line.status === 'void_pending');
   return !voidRequested;

@@ -4,7 +4,9 @@ import { Icon, Logo } from '../components/Icon';
 import { useCounterBar } from './DemoCounterGate';
 import { attemptLogin, loginSignedInAdmin, signsInAtCounter } from '../data/login';
 import { useDb, useQuery } from '../data/react';
-import { openShiftOf, startShift } from '../data/shifts';
+import { openShiftOf, startShift, unsettledShiftsOf } from '../data/shifts';
+import type { UnsettledShift } from '../data/shifts';
+import { localTime } from '../domain/time';
 import { activeLock, lockCountdown } from '../domain/pin';
 import type { Id, Instant, Person } from '../domain/types';
 import { adminHere } from '../lib/adminHere';
@@ -24,7 +26,9 @@ type View =
   /** No PIN yet: only an owner or manager can set one. */
   | { name: 'noPin'; personId: Id }
   /** Signed in with no open shift on this phone: the cash float first. */
-  | { name: 'float'; personId: Id };
+  | { name: 'float'; personId: Id }
+  /** Their shift on another phone still has unpaid orders: no new shift until they are settled. */
+  | { name: 'unsettled'; personId: Id; shifts: UnsettledShift[] };
 
 const runsTheBar = (p: Person) => p.role === 'owner' || p.role === 'admin';
 
@@ -65,6 +69,8 @@ export function LoginScreen() {
   const enter = async (p: Person) => {
     if (!deviceId) return;
     if (await openShiftOf(db, p.id, deviceId)) return begin(p);
+    const unsettled = await unsettledShiftsOf(db, p.id, deviceId);
+    if (unsettled.length > 0) return setView({ name: 'unsettled', personId: p.id, shifts: unsettled });
     setView({ name: 'float', personId: p.id });
   };
 
@@ -167,6 +173,30 @@ export function LoginScreen() {
           <div className="c-locked-actions">
             <button type="button" className="c-btn c-btn-secondary" onClick={toNames}>
               {t('login.another')}
+            </button>
+          </div>
+        </main>
+      )}
+
+      {view.name === 'unsettled' && person && (
+        <main className="c-body c-locked">
+          {view.shifts.map(({ shift, device_name, orders, due_kes }) => (
+            <div key={shift.id} className="c-locked-card" role="alert">
+              <span className="c-locked-icon">
+                <Icon name="alert-triangle" size={34} />
+              </span>
+              <p className="c-locked-chip">{t('shift.openElsewhereHead')}</p>
+              <p className="c-locked-body">
+                {t('shift.openElsewhereBody', { device: device_name ?? t('shift.anotherPhone'), time: localTime(shift.opened_at) })}
+              </p>
+              <p className="c-locked-body">
+                <strong>{t('shift.openElsewhereOrders', { count: orders.length, amount: formatKES(due_kes) })}</strong>
+              </p>
+            </div>
+          ))}
+          <div className="c-locked-actions">
+            <button type="button" className="c-btn c-btn-secondary" onClick={toNames}>
+              {t('shift.openElsewhereBack')}
             </button>
           </div>
         </main>

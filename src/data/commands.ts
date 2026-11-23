@@ -243,3 +243,16 @@ export async function pendingVoidRequests(db: KauntaDB, order_id: Id): Promise<A
     .filter((a) => a.status === 'waiting' && (a.kind === 'void' || a.kind === 'write_off') && a.target.order_id === order_id && a.target.line_ids.length > 0)
     .toArray();
 }
+
+export const ORDER_NOTE_MAX = 60;
+
+/** A nickname or description on an open order ("Mzee in blue"); an empty one clears it. */
+export async function noteOrder(db: KauntaDB, ctx: RecordContext, order_id: Id, note: string): Promise<void> {
+  const text = note.trim().slice(0, ORDER_NOTE_MAX);
+  await db.transaction('rw', db.tables, async () => {
+    const order = await db.orders.get(order_id);
+    if (!order || order.status !== 'open') throw new Error(`Only an open order can take a note: ${order_id}`);
+    if ((order.note ?? '') === text) return;
+    await recordEvent(db, ctx, { type: 'order_noted', payload: { order_id, note: text } });
+  });
+}

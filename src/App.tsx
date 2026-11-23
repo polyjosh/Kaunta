@@ -10,6 +10,7 @@ import { SellScreen } from './counter/SellScreen';
 import { SessionProvider, useSession } from './counter/Session';
 import { ShiftScreen } from './counter/ShiftScreen';
 import { ExpensesScreen } from './counter/ExpensesScreen';
+import { ShiftSalesScreen } from './counter/ShiftSalesScreen';
 import { ScreenErrorBoundary } from './components/ErrorBoundary';
 import { deviceAudience, pushAs } from './lib/push';
 import { SyncScreen } from './counter/SyncScreen';
@@ -75,6 +76,7 @@ export function App({ db, config = serverConfig(), transport }: AppProps) {
               <Route path="/counter/orders/:id/void" element={<VoidScreen />} />
               <Route path="/counter/shift/close" element={<ShiftScreen />} />
               <Route path="/counter/shift/expenses" element={<ExpensesScreen />} />
+              <Route path="/counter/shift/sales" element={<ShiftSalesScreen />} />
               <Route path="/counter/*" element={<Navigate to="/counter/sell" replace />} />
             </Route>
             <Route path="*" element={<Navigate to="/counter/login" replace />} />

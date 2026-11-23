@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { StatusChip } from '../components/StatusChip';
-import { moveToNewOrder, pendingVoidRequests, recordPayment } from '../data/commands';
+import { ORDER_NOTE_MAX, moveToNewOrder, noteOrder, pendingVoidRequests, recordPayment } from '../data/commands';
 import type { PaymentPart } from '../data/commands';
 import { useConnection, useDb, useQuery } from '../data/react';
 import { lineTotal, orderDue, orderTotal, paidTotal, paymentState } from '../domain/orders';
@@ -17,10 +17,15 @@ import { Avatar, BackBar, NumberPad, Sheet, Toast, toastFromState, useNow, withO
 import type { ToastMessage } from './ui';
 
 type Method = 'cash' | 'mpesa' | 'split';
+
+/** Hidden for now (asked 2026-11-23): "Split bill" on an order, and "Move to a new order" on its lines. The code stays. */
+const SHOW_SPLIT_BILL = false;
+const SHOW_MOVE = false;
 type SheetState =
   | { kind: 'pay'; part?: number }
   | { kind: 'split' }
   | { kind: 'line'; lineId: Id }
+  | { kind: 'note' }
   | { kind: 'move'; lineId?: Id }
   | null;
 
@@ -124,7 +129,7 @@ export function OrderDetailScreen() {
   return (
     <div className="c-screen">
       <BackBar
-        to="/counter/orders"
+        to={(location.state as { back?: string } | null)?.back ?? '/counter/orders'}
         title={
           <span className="c-title-split">
             <span className="c-title-label">{label}</span> <span className="c-order-no">{order.short_no}</span>
@@ -140,7 +145,9 @@ export function OrderDetailScreen() {
             {t('sell.serverChip', { name: server?.name ?? '' })}
           </span>
           <span className="c-who-chip">{t('common.recordedBy', { name: nameOf(order.recorded_by) })}</span>
+          {order.handed_over_to && <span className="c-who-chip">{t('order.handedTo', { name: nameOf(order.handed_over_to) })}</span>}
         </div>
+        {order.note && <p className="c-order-note">“{order.note}”</p>}
 
         <section className="c-due-card">
           <div className="c-due-top">
@@ -216,9 +223,15 @@ export function OrderDetailScreen() {
               <Icon name="plus" size={20} strokeWidth={2.6} />
               {t('order.addItems')}
             </button>
-            <button type="button" className="c-btn c-btn-secondary" disabled={due <= 0} onClick={() => setSheet({ kind: 'split' })}>
-              {t('order.splitBill')}
+            <button type="button" className="c-btn c-btn-secondary" onClick={() => setSheet({ kind: 'note' })}>
+              <Icon name="pencil" size={20} strokeWidth={2.4} />
+              {order.note ? t('order.noteChange') : t('order.noteAdd')}
             </button>
+            {SHOW_SPLIT_BILL && (
+              <button type="button" className="c-btn c-btn-secondary" disabled={due <= 0} onClick={() => setSheet({ kind: 'split' })}>
+                {t('order.splitBill')}
+              </button>
+            )}
           </div>
         )}
         {open && activeLines.length > 0 && (
@@ -280,7 +293,7 @@ export function OrderDetailScreen() {
           </div>
           <p className="c-sheet-hint">{t('split.note')}</p>
           {/* Split by items = move lines to a new order (R-ORD-5). */}
-          {itemCount > 1 && (
+          {SHOW_MOVE && itemCount > 1 && (
             <button type="button" className="c-btn c-btn-secondary" onClick={() => setSheet({ kind: 'move' })}>
               {t('split.byItems')}
             </button>
@@ -291,9 +304,21 @@ export function OrderDetailScreen() {
         </Sheet>
       )}
 
+      {sheet?.kind === 'note' && (
+        <Sheet title={order.note ? t('order.noteChange') : t('order.noteAdd')} subtitle={`${label} · ${order.short_no}`} onClose={closeSheet}>
+          <NoteForm
+            initial={order.note ?? ''}
+            onSave={async (note) => {
+              await noteOrder(db, session.recordContext(), order.id, note);
+              setSheet(null);
+            }}
+          />
+        </Sheet>
+      )}
+
       {menuLine && (
         <Sheet title={describe(menuLine)} subtitle={`${label} · ${order.short_no}`} onClose={closeSheet}>
-          {itemCount > 1 && (
+          {SHOW_MOVE && itemCount > 1 && (
             <button type="button" className="c-btn c-btn-secondary" onClick={() => setSheet({ kind: 'move', lineId: menuLine.id })}>
               {t('order.moveToNew')}
             </button>
@@ -321,6 +346,43 @@ export function OrderDetailScreen() {
         </Sheet>
       )}
     </div>
+  );
+}
+
+/** A nickname or description for the order: "Mzee in blue", "group by the window". Empty clears it. */
+function NoteForm({ initial, onSave }: { initial: string; onSave: (note: string) => Promise<void> }) {
+  const { t } = useI18n();
+  const [note, setNote] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  return (
+    <form
+      className="c-note-form"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (busy) return;
+        setBusy(true);
+        try {
+          await onSave(note);
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <label className="c-field">
+        <span className="c-field-label">{t('order.noteLabel')}</span>
+        <input
+          className="c-text-input"
+          autoFocus
+          value={note}
+          maxLength={ORDER_NOTE_MAX}
+          placeholder={t('order.notePlaceholder')}
+          onChange={(e) => setNote(e.target.value)}
+        />
+      </label>
+      <button type="submit" className="c-btn c-btn-primary" disabled={busy || note.trim() === initial.trim()}>
+        {note.trim() === '' && initial ? t('order.noteClear') : t('order.noteSave')}
+      </button>
+    </form>
   );
 }
 

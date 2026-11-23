@@ -232,7 +232,8 @@ describe('4. Order detail and payment', () => {
     expect(screen.getByRole('button', { name: 'Confirm KES 600 received' })).toBeEnabled();
   });
 
-  it('R-ORD-5 split bill evenly: shows each share, and a share becomes a part payment', async () => {
+  // Hidden for now (SHOW_SPLIT_BILL in OrderDetailScreen).
+  it.skip('R-ORD-5 split bill evenly: shows each share, and a share becomes a part payment', async () => {
     await open('o_044'); // KES 850 left
     await user.click(screen.getByRole('button', { name: 'Split bill' }));
     const split = screen.getByRole('dialog', { name: 'Split bill' });
@@ -258,5 +259,31 @@ describe('4. Order detail and payment', () => {
     expect(screen.getByText('Paid')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Confirm payment/ })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Split bill' })).toBeNull();
+  });
+});
+
+describe('nickname on an open order', () => {
+  it('is added from the order, shown on it and on its card, and can be removed', async () => {
+    renderAt('/counter/orders/o_047');
+    await user.click(await screen.findByRole('button', { name: 'Add a nickname' }));
+    const sheet = screen.getByRole('dialog', { name: 'Add a nickname' });
+    await user.type(within(sheet).getByRole('textbox', { name: 'Nickname or description' }), '  Guy in red ');
+    await user.click(within(sheet).getByRole('button', { name: 'Save' }));
+    expect(await screen.findByText('“Guy in red”')).toBeInTheDocument();
+    expect((await db.orders.get('o_047'))?.note).toBe('Guy in red');
+    expect((await db.outbox.toArray()).at(-1)).toMatchObject({ type: 'order_noted', payload: { order_id: 'o_047', note: 'Guy in red' } });
+
+    await user.click(screen.getByRole('button', { name: 'Change nickname' }));
+    const again = screen.getByRole('dialog', { name: 'Change nickname' });
+    await user.clear(within(again).getByRole('textbox'));
+    await user.click(within(again).getByRole('button', { name: 'Remove nickname' }));
+    await vi.waitFor(async () => expect((await db.orders.get('o_047'))?.note).toBeNull());
+  });
+
+  it('shows on the Open orders card', async () => {
+    await db.orders.update('o_047', { note: 'Guy in red' });
+    renderAt('/counter/orders');
+    await screen.findByText('5 open · still to collect');
+    expect(cards()[3]).toHaveTextContent('Table 4Guy in red');
   });
 });

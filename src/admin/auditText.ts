@@ -203,7 +203,16 @@ export function describeAudit(e: AuditEvent, l: AuditLookups, t: TFunction, loca
       };
     }
     case 'order_handed_over':
-      return { what: t('admin.audit.handedOver', { order: orderName(order(d.order_id)) }), changes: none };
+      return {
+        what: d.to
+          ? t('admin.audit.handedOverTo', { order: orderName(order(d.order_id)), name: person(d.to) })
+          : t('admin.audit.handedOver', { order: orderName(order(d.order_id)) }),
+        changes: none,
+      };
+    case 'order_noted':
+      return d.note
+        ? { what: t('admin.audit.orderNoted', { order: orderName(order(d.order_id)), note: d.note }), changes: none }
+        : { what: t('admin.audit.orderNoteCleared', { order: orderName(order(d.order_id)) }), changes: none };
     case 'handover_accepted':
       return { what: t('admin.audit.handoverAccepted', { count: (d.order_ids ?? []).length }), changes: none };
     case 'day_closed': {

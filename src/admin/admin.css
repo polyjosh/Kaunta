@@ -71,6 +71,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  /* Stays at the right edge when it wraps under the bar's name, so the account menu opens onto the screen. */
+  margin-left: auto;
 }
 
 .a-devices {
@@ -97,6 +99,9 @@
   top: calc(100% + 6px);
   z-index: 20;
   width: min(300px, calc(100vw - 32px));
+  max-height: calc(100dvh - 96px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px;
   display: flex;
   flex-direction: column;

@@ -11,7 +11,9 @@ import { useI18n } from '../lib/I18nProvider';
 import { formatAmount, formatKES } from '../lib/money';
 import { displayLabel } from './labels';
 import { useSession } from './Session';
-import { BackBar, NumberPad, useNow } from './ui';
+import { signsInAtCounter } from '../data/login';
+import type { Id } from '../domain/types';
+import { Avatar, BackBar, NumberPad, Sheet, useNow } from './ui';
 
 /** Screen 6: settle open orders, then count the cash. Rules R-SHIFT-1, R-SHIFT-2, R-ORD-6. */
 export function ShiftScreen() {
@@ -22,6 +24,8 @@ export function ShiftScreen() {
   const now = useNow();
   const [counted, setCounted] = useState(0);
   const [touched, setTouched] = useState(false);
+  /** The order being handed over: pick who takes it. */
+  const [handing, setHanding] = useState<Id | null>(null);
   const busy = useRef(false);
 
   const me = session.person;
@@ -118,7 +122,7 @@ export function ShiftScreen() {
                   <button
                     type="button"
                     className="c-settle-hand"
-                    onClick={() => void handOverOrder(db, session.recordContext(), order.id)}
+                    onClick={() => setHanding(order.id)}
                   >
                     {t('shift.handOver')}
                   </button>
@@ -126,8 +130,32 @@ export function ShiftScreen() {
               </article>
             );
           })}
-          <p className="c-footnote">{t('shift.handOverNote')}</p>
+          <p className="c-footnote">{t('shift.handOverToNote')}</p>
         </main>
+        {handing && (
+          <Sheet title={t('shift.handOverTo')} subtitle={t('shift.handOverToHint')} onClose={() => setHanding(null)}>
+            <div className="c-rows">
+              {data.people
+                .filter((p) => p.id !== me.id && signsInAtCounter(p))
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="c-row c-server-row"
+                    onClick={() => {
+                      const id = handing;
+                      setHanding(null);
+                      void handOverOrder(db, session.recordContext(), id, p.id);
+                    }}
+                  >
+                    <Avatar person={p} size={40} />
+                    <span>{p.name}</span>
+                  </button>
+                ))}
+            </div>
+          </Sheet>
+        )}
         <footer className="c-bottom">
           <button type="button" className="c-btn c-btn-blocked" disabled>
             {t('shift.countBlocked', { count: blocking.length })}

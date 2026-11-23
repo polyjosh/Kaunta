@@ -170,7 +170,7 @@ function SuperSignIn({ onSignedIn, verify, live }: { onSignedIn: () => void; ver
           <button type="button" aria-pressed={locale === 'en'} onClick={() => setLocale('en')}>English</button>
           <button type="button" aria-pressed={locale === 'sw'} onClick={() => setLocale('sw')}>Kiswahili</button>
         </div>
-        <a className="a-link" href="/">← Kaunta</a>
+        <a className="a-link" href="/?home">← Kaunta Book</a>
       </form>
     </div>
   );

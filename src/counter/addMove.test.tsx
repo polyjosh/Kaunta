@@ -178,7 +178,16 @@ describe('Add items from Order detail', () => {
 });
 
 describe('Split by items from Order detail', () => {
-  it('from a line’s menu: moves one unit to a new order and opens it', async () => {
+  it('is hidden for now: no Split bill, and no Move to a new order on a line', async () => {
+    renderAt('/counter/orders/o_047');
+    await user.click(await screen.findByRole('button', { name: 'Options for Tusker Lager 500ml' }));
+    expect(screen.queryByRole('button', { name: 'Move to a new order' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Void this item' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Split bill' })).toBeNull();
+  });
+
+  // Hidden for now (SHOW_MOVE / SHOW_SPLIT_BILL in OrderDetailScreen); these come back with them.
+  it.skip('from a line’s menu: moves one unit to a new order and opens it', async () => {
     renderAt('/counter/orders/o_047');
     await user.click(await screen.findByRole('button', { name: 'Options for Tusker Lager 500ml' }));
     await user.click(screen.getByRole('button', { name: 'Move to a new order' }));
@@ -193,7 +202,7 @@ describe('Split by items from Order detail', () => {
     expect(screen.getByRole('button', { name: 'Confirm payment · KES 300' })).toBeInTheDocument();
   });
 
-  it('from Split bill: pick how many of each; the button explains what cannot move', async () => {
+  it.skip('from Split bill: pick how many of each; the button explains what cannot move', async () => {
     renderAt('/counter/orders/o_044'); // KES 400 already paid
     await user.click(await screen.findByRole('button', { name: 'Split bill' }));
     await user.click(screen.getByRole('button', { name: 'Split by items' }));

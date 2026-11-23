@@ -215,8 +215,14 @@ describe('6. Shift close', () => {
     }
 
     await user.click(within(cards[2]!).getByRole('button', { name: 'Hand over' }));
+    // Pick who takes it: everyone who signs in at the counter, but not me.
+    const sheet = screen.getByRole('dialog', { name: 'Hand over to…' });
+    expect(within(sheet).queryByRole('button', { name: /Wanjiku/ })).toBeNull();
+    await user.click(within(sheet).getByRole('button', { name: /Kiprop/ }));
     expect(await screen.findByText('2 orders are still open')).toBeInTheDocument();
-    expect(await db.orders.get('o_048')).toMatchObject({ handover_pending: true });
+    expect(await db.orders.get('o_048')).toMatchObject({ handed_over_to: 'p_kiprop', handover_pending: false });
+    const sent = (await pendingEvents(db)).find((e) => e.type === 'order_handed_over');
+    expect(sent?.payload).toEqual({ order_id: 'o_048', from: 'p_wanjiku', to: 'p_kiprop' });
   });
 
   it('Pay and Void on a card open that order', async () => {
