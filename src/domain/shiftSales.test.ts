@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { inFilter, shiftSales } from './shiftSales';
+import { daySales, inFilter, shiftSales } from './shiftSales';
 import type { ApprovalItem, Order, OrderLine, Payment, Shift } from './types';
 
 const shift: Shift = {
@@ -65,5 +65,19 @@ describe('shiftSales', () => {
     expect(ids('paid')).toEqual(['paid']);
     expect(ids('cancelled')).toEqual(['asked', 'voided']);
     expect(ids('all')).toHaveLength(5);
+  });
+});
+
+describe('daySales', () => {
+  const orders = [
+    order('mine9', { business_day: '2026-11-22', created_at: '2026-11-22T17:00:00.000Z' }),
+    order('otherPhone9', { business_day: '2026-11-22', device_id: 'd2', created_at: '2026-11-22T18:00:00.000Z' }),
+    order('handedAway9', { business_day: '2026-11-22', handed_over_to: 'x' }),
+    order('handedToMe9', { business_day: '2026-11-22', server_id: 'x', recorded_by: 'x', handed_over_to: 'me' }),
+    order('notMine9', { business_day: '2026-11-22', server_id: 'x', recorded_by: 'x' }),
+    order('today'),
+  ];
+  it('keeps this person’s orders on that business day from any phone, handed over ones going with the handover', () => {
+    expect(daySales('2026-11-22', 'me', orders, [], [], []).map((s) => s.order.id)).toEqual(['handedToMe9', 'otherPhone9', 'mine9']);
   });
 });

@@ -193,5 +193,15 @@
   "receipt.printed": "Printed {time}",
   "receipt.print": "Print receipt",
   "receipt.autoOn": "Receipt after each sale: On",
-  "receipt.autoOff": "Receipt after each sale: Off"
+  "receipt.autoOff": "Receipt after each sale: Off",
+  "sales.dayTitle": "My sales",
+  "sales.backToShift": "Back to this shift",
+  "sales.emptyDay": "No sales of yours on this day.",
+  "sales.pickDay": "Pick another day · {date}",
+  "sales.pickDayField": "Day",
+  "sales.filter.expenses": "Expenses · {count}",
+  "sales.expensesTotal_one": "{count} expense",
+  "sales.expensesTotal_other": "{count} expenses",
+  "sales.noExpenses": "No expenses.",
+  "sales.manageExpenses": "Add or remove expenses"
 }

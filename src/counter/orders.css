@@ -1337,3 +1337,61 @@
 .c-print-btn {
   width: 100%;
 }
+
+
+/* Sales this shift: another day */
+.c-sales-day {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 12px 0;
+}
+
+.c-daypick {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.c-daypick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The native date field opens from the button; it stays out of sight and out of the tab order. */
+.c-daypick-input {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  border: 0;
+  padding: 0;
+}
+
+.c-sales-back {
+  flex: none;
+  width: auto;
+  min-height: 44px;
+}
+
+/* Sales this shift: the expenses total under the sales total */
+.c-expenses-summary {
+  padding-top: 0;
+}
+
+.c-expenses-summary strong {
+  font-size: 20px;
+}
+
+.c-sales-manage {
+  flex: none;
+  margin-top: 4px;
+  color: var(--k-text) !important;
+  text-decoration: none;
+}

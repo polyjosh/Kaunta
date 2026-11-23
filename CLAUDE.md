@@ -160,6 +160,13 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 - **Admin account menu on phones**: when the header wrapped, the avatar moved to the left and the menu (anchored to its right) ran off the screen. `.a-header-tools` now stays on the right; the menu scrolls if the screen is short.
 - **"← Kaunta Book" on the sign-in cards** (owner/manager and /super) goes to `/?home`; the landing page does not send the installed app back to its last way when `?home` is there (that redirect is why the link seemed dead). The lockup on the owner sign-in card links home too.
 
+## Sales this shift: another day (2026-11-23, after receipts)
+
+- A calendar button on **Sales this shift** opens the phone's date picker. Picking a day shows **My sales** for that business day (`?day=YYYY-MM-DD`, kept when coming back from an order): this person's orders that day from any phone, handed-over orders going with the handover (`daySales` in `src/domain/shiftSales.ts`). Same All / Pending / Paid / Cancelled filters. **Back to this shift** returns. With no open shift, the screen shows today's sales instead of a dead end.
+- Days offered: from the oldest day this phone holds to today. Phones never prune, but a phone only downloads the last 2 business days when it is paired (`sync_pull`'s `from_day`), so days before its pairing show only what it recorded itself. No server change.
+- **Expenses on the same screen**: under the sales total, "N expenses · KES X" (rejected ones not counted, as at shift close), and an **Expenses · N** tab after Cancelled listing each one (what for, Cash drawer / M-Pesa till, time, Waiting / Approved / Rejected) with **Add or remove expenses** (the Expenses screen) in shift view. Shift view: this shift's expenses; day view: those of this person's shifts that started that business day, on any phone this one knows (phones get other phones' shifts for 2 days).
+- Tests: `src/counter/shiftSales.test.tsx`, `daySales` in `src/domain/shiftSales.test.ts`.
+
 ## Receipts (2026-11-23, after the counter changes)
 
 - **A receipt for every sale**: after **Record (pay later)** and **Record & paid** (`printAfterSale` in `SellScreen`), and **Print receipt** on any order (open, paid or voided) to print it again. Uses the phone's own print dialog (`window.print`), so it prints to whatever the phone can print to: a receipt printer through its Android print service, a Wi-Fi printer, or PDF. No printer drivers or Bluetooth code in the app.
@@ -196,7 +203,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 
 ## Tests
 
-- `npm test`: 580 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
+- `npm test`: 585 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
 - Counter UI and phone-sync tests pin the clock to the 22:20 snapshot; before 2026-11-11 they used the real clock and broke when the business day rolled over.
 - `npm run test:e2e`: 17 Playwright tests (landing and counter at 360×800, admin at 390 px and desktop). `e2e/fullLoop.spec.ts` does the whole loop in one browser: add a bar, its code, presets, add a person, the code at the counter, one-time code → PIN, a sale, the sale in admin.
 

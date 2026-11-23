@@ -1,5 +1,5 @@
 import { lineTotal, orderDue, orderTotal, paidTotal } from './orders';
-import type { ApprovalItem, ApprovalStatus, Id, Order, OrderLine, Payment, Shift } from './types';
+import type { ApprovalItem, ApprovalStatus, BusinessDay, Id, Order, OrderLine, Payment, Shift } from './types';
 
 export type SalesFilter = 'all' | 'pending' | 'paid' | 'cancelled';
 
@@ -34,8 +34,8 @@ export function shiftSales(
   payments: readonly Payment[],
   approvals: readonly ApprovalItem[],
 ): ShiftSale[] {
-  return orders
-    .filter(
+  return toSales(
+    orders.filter(
       (o) =>
         // Handed to me: while open, and once settled if it was opened or paid in this shift.
         (o.handed_over_to === personId &&
@@ -47,7 +47,45 @@ export function shiftSales(
           o.device_id === shift.device_id &&
           o.created_at >= shift.opened_at &&
           (o.server_id === personId || o.recorded_by === personId)),
-    )
+    ),
+    lines,
+    payments,
+    approvals,
+  );
+}
+
+/**
+ * This person's sales on one business day, on any phone this one has heard
+ * from: orders handed over to them, and orders they served or recorded and did
+ * not hand over. For "another shift" on the Sales screen. Newest first.
+ */
+export function daySales(
+  day: BusinessDay,
+  personId: Id,
+  orders: readonly Order[],
+  lines: readonly OrderLine[],
+  payments: readonly Payment[],
+  approvals: readonly ApprovalItem[],
+): ShiftSale[] {
+  return toSales(
+    orders.filter(
+      (o) =>
+        o.business_day === day &&
+        (o.handed_over_to ? o.handed_over_to === personId : o.server_id === personId || o.recorded_by === personId),
+    ),
+    lines,
+    payments,
+    approvals,
+  );
+}
+
+function toSales(
+  orders: readonly Order[],
+  lines: readonly OrderLine[],
+  payments: readonly Payment[],
+  approvals: readonly ApprovalItem[],
+): ShiftSale[] {
+  return orders
     .map((order) => {
       const own = lines.filter((l) => l.order_id === order.id);
       const paidIn = payments.filter((p) => p.order_id === order.id);

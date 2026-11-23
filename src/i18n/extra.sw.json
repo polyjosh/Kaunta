@@ -193,5 +193,15 @@
   "receipt.printed": "Imechapishwa {time}",
   "receipt.print": "Chapisha risiti",
   "receipt.autoOn": "Risiti baada ya kila mauzo: Imewashwa",
-  "receipt.autoOff": "Risiti baada ya kila mauzo: Imezimwa"
+  "receipt.autoOff": "Risiti baada ya kila mauzo: Imezimwa",
+  "sales.dayTitle": "Mauzo yangu",
+  "sales.backToShift": "Rudi kwenye zamu hii",
+  "sales.emptyDay": "Huna mauzo siku hii.",
+  "sales.pickDay": "Chagua siku nyingine · {date}",
+  "sales.pickDayField": "Siku",
+  "sales.filter.expenses": "Matumizi · {count}",
+  "sales.expensesTotal_one": "Matumizi {count}",
+  "sales.expensesTotal_other": "Matumizi {count}",
+  "sales.noExpenses": "Hakuna matumizi.",
+  "sales.manageExpenses": "Ongeza au ondoa matumizi"
 }
