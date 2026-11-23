@@ -54,7 +54,7 @@ function renderAt(path: string) {
 describe('Sales this shift: another day', () => {
   it('picks a day from the calendar and shows that day’s sales, then goes back to this shift', async () => {
     renderAt('/counter/shift/sales');
-    expect(await screen.findByRole('heading', { name: 'Sales this shift' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Sales History' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Pick another day · Tue 10 Nov' })).toBeInTheDocument();
     const field = screen.getByLabelText('Day');
     expect(field).toHaveAttribute('min', '2026-11-09');
@@ -68,7 +68,7 @@ describe('Sales this shift: another day', () => {
     expect(screen.getByRole('button', { name: 'Paid · 1' })).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: 'Back to this shift' }));
-    expect(await screen.findByRole('heading', { name: 'Sales this shift' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Sales History' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Table 7/ })).toBeNull();
   });
 

@@ -134,8 +134,8 @@
   "push.on": "Arifa zimewashwa kwenye simu hii.",
   "push.blocked": "Arifa zimezuiwa. Ziruhusu kwa tovuti hii kwenye mipangilio ya kivinjari.",
   "push.unsupported": "Kivinjari hiki hakiwezi kuonyesha arifa. Kwenye iPhone, ongeza Kaunta Book kwenye skrini ya mwanzo kwanza.",
-  "sales.title": "Mauzo ya zamu hii",
-  "sales.menu": "Mauzo ya zamu hii",
+  "sales.title": "Historia ya mauzo",
+  "sales.menu": "Historia ya mauzo",
   "sales.since": "Tangu {time}",
   "sales.filters": "Onyesha",
   "sales.filter.all": "Yote · {count}",
@@ -204,11 +204,13 @@
   "sales.expensesTotal_other": "Matumizi {count}",
   "sales.noExpenses": "Hakuna matumizi.",
   "sales.manageExpenses": "Ongeza au ondoa matumizi",
-  "receipt.paper": "Karatasi ya risiti",
   "push.prompt.title": "Washa arifa",
   "push.prompt.counter": "Pata arifa kwenye simu hii oda ikiwa bado haijalipwa, na msimamizi akikubali au kukataa ombi lako.",
   "push.prompt.admin": "Pata arifa ombi likikusubiri, bidhaa zikipungua, au zamu ikianza au kufungwa.",
   "push.prompt.allow": "Washa",
   "push.prompt.later": "Si sasa",
-  "push.prompt.ok": "Sawa"
+  "push.prompt.ok": "Sawa",
+  "error.backAdmin": "Rudi kwa Leo",
+  "error.backSuper": "Rudi kwa baa zote",
+  "error.reload": "Pakia upya"
 }

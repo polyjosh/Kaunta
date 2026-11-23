@@ -34,7 +34,8 @@ const DEFAULTS = {
   batchSize: 25,
   baseDelayMs: 1_000,
   maxDelayMs: 5 * 60_000,
-  pullEveryMs: 60_000,
+  // Other counters' sales and payments show here within about 20 seconds.
+  pullEveryMs: 20_000,
 };
 
 /** Exponential backoff with jitter: about 1s, 2s, 4s … capped at 5 minutes. */
@@ -59,6 +60,10 @@ export class SyncEngine {
   private again = false;
   private unsubscribeQueue: (() => void) | null = null;
   private readonly onOnline = () => void this.syncNow();
+  /** Back to the app (phones pause timers in the background): catch up at once. */
+  private readonly onVisible = () => {
+    if (document.visibilityState === 'visible' && this.state.nextRetryAt === null) void this.runOnce();
+  };
 
   constructor(
     private readonly db: KauntaDB,
@@ -97,6 +102,7 @@ export class SyncEngine {
     });
     this.unsubscribeQueue = () => subscription.unsubscribe();
     if (typeof window !== 'undefined') window.addEventListener('online', this.onOnline);
+    if (typeof document !== 'undefined') document.addEventListener('visibilitychange', this.onVisible);
     const tick = () => {
       if (this.state.nextRetryAt === null) void this.runOnce();
       this.pullTimer = this.opts.setTimer(tick, this.opts.pullEveryMs);
@@ -109,6 +115,7 @@ export class SyncEngine {
     this.unsubscribeQueue?.();
     this.unsubscribeQueue = null;
     if (typeof window !== 'undefined') window.removeEventListener('online', this.onOnline);
+    if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', this.onVisible);
     if (this.timer !== null) this.opts.clearTimer(this.timer);
     if (this.pullTimer !== null) this.opts.clearTimer(this.pullTimer);
     this.timer = this.pullTimer = null;

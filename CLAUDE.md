@@ -161,6 +161,15 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 - **Admin account menu on phones**: when the header wrapped, the avatar moved to the left and the menu (anchored to its right) ran off the screen. `.a-header-tools` now stays on the right; the menu scrolls if the screen is short.
 - **"← Kaunta Book" on the sign-in cards** (owner/manager and /super) goes to `/?home`; the landing page does not send the installed app back to its last way when `?home` is there (that redirect is why the link seemed dead). The lockup on the owner sign-in card links home too.
 
+## Sync fix, error screens, small changes (2026-11-23, after push notifications)
+
+- **Paid on one counter, still pending on another (fixed)**: `sync_pull` sent orders, lines and payments only while open or from today/yesterday (approvals: waiting or 2 days; shifts: open or opened in 2 days). An older order paid elsewhere matched neither once paid, so other phones kept it pending (seen live: 20 Nov orders paid on Counter 3 on 23 Nov, pending on Counter 2). `20261129000000_kaunta_pull_any_day.sql`: the window now applies only to a phone's first pull; after that every row changed since the cursor comes down. The migration also touches `updated_at` on rows changed in the last 14 days (no status column written, so no notification triggers) so phones that had skipped them take them once. Tests: `supabase/pullAnyDay.test.ts` (fails without the migration).
+- **Phones pull every 20 s** (was 60 s) and at once when the app comes back to the front (`visibilitychange` in `src/sync/engine.ts`).
+- **Admin and /super have the error screen** the counter has (`ScreenErrorBoundary` around both routes in `App.tsx`; "Back to Today" / "Back to all bars", and Reload): a failing screen shows its error message instead of a blank page. Reported: "the owner/manager page blanks out on mobile"; not reproduced (demo, live sign-in page on Pixel 7 / iPhone 13 sizes all fine, no console errors). The message on the error screen says what fails.
+- **"Sales this shift" is now "Sales History"** (title and name menu; Kiswahili "Historia ya mauzo").
+- **Receipt paper control removed** from the counter's name menu (receipts use 80 mm; `paperWidth()` still reads `kaunta.paperWidth` if set).
+- **No address on printed receipts**: `@page { margin: 0 }` is also in `receipt.css` (not only in the size set before printing), so browsers print no header/footer (title, URL, page numbers). If a print dialog still adds them, turn off "Headers and footers" in its settings.
+
 ## Sales this shift: another day (2026-11-23, after receipts)
 
 - A calendar button on **Sales this shift** opens the phone's date picker. Picking a day shows **My sales** for that business day (`?day=YYYY-MM-DD`, kept when coming back from an order): this person's orders that day from any phone, handed-over orders going with the handover (`daySales` in `src/domain/shiftSales.ts`). Same All / Pending / Paid / Cancelled filters. **Back to this shift** returns. With no open shift, the screen shows today's sales instead of a dead end.
@@ -174,7 +183,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 - **What it shows** (`loadReceipt`, `src/data/receipt.ts`; works offline): bar name, order number and table, nickname, date and time (Nairobi), **Served by** (the server on the sale), Recorded by + phone, each item (size, qty × price, line total; "void asked" on lines waiting for a decision), total, each payment (Cash / M-Pesa with last 4), then To pay / Balance to pay / Paid in full / Voided, "Printed …" and Kaunta Book.
 - **Layout** (`src/counter/Receipt.tsx`, `receipt.css`): drawn outside the app and shown only while printing (`body.k-printing`), black on white, monospace.
 - **The page fits the receipt, like a supermarket till roll** (`fitPageToReceipt` / `receiptPageCss` in `Receipt.tsx`): just before printing, the receipt is laid out off screen at the roll's width and measured, and the page is set to `@page { size: <roll>mm <receipt length + 4 mm>mm; margin: 0 }` (at least 30 mm). A short receipt is a short page, a long one is one long page (never split); a roll printer feeds to the last line and stops (and cuts). Checked in Chrome: 1 item → 80 × 80 mm, 18 items → 80 × 246 mm, each one page. The print service should be set to the roll (or "custom/continuous" size), not A4.
-- **Name menu → "Receipt paper: 80 mm / 58 mm"**, per phone (`localStorage` `kaunta.paperWidth`, 80 unless set). Printable width 72 mm on 80 mm paper, 48 mm on 58 mm; the receipt is centred in it.
+- Paper: 80 mm (printable 72 mm). The per-phone 80/58 mm choice was removed from the name menu on 2026-11-23; `kaunta.paperWidth` = 58 still works if set.
 - **Name menu → "Receipt after each sale: On/Off"**, per phone (`localStorage` `kaunta.printReceipts`, on unless turned off), for phones with no printer. Print receipt on an order works either way.
 - The order number printed straight after a sale is the phone's; when two phones record offline at once the server can renumber one (R-DAY-2), so a receipt may show a number that later changes.
 - Tests: `src/counter/receipt.test.tsx`. jsdom has no printing: `src/test/setup.ts` stubs `window.print`.
@@ -206,7 +215,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 
 ## Tests
 
-- `npm test`: 591 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
+- `npm test`: 593 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
 - Counter UI and phone-sync tests pin the clock to the 22:20 snapshot; before 2026-11-11 they used the real clock and broke when the business day rolled over.
 - `npm run test:e2e`: 17 Playwright tests (landing and counter at 360×800, admin at 390 px and desktop). `e2e/fullLoop.spec.ts` does the whole loop in one browser: add a bar, its code, presets, add a person, the code at the counter, one-time code → PIN, a sale, the sale in admin.
 

@@ -19,6 +19,12 @@
 }
 
 @media print {
+  /* No page margins: browsers then print no header or footer (page title, the site's address, page numbers).
+     Receipt.tsx sets the page size to the receipt just before printing; this holds even if that step is skipped. */
+  @page {
+    margin: 0;
+  }
+
 
   html:has(body.k-printing),
   body.k-printing {

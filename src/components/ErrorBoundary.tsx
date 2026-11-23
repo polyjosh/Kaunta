@@ -2,6 +2,7 @@ import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useI18n } from '../lib/I18nProvider';
+import type { MessageKey } from '../lib/i18n';
 import { Icon } from './Icon';
 
 interface Props {
@@ -35,16 +36,16 @@ class Boundary extends Component<Props, { error: Error | null; key: string }> {
  * A screen that fails shows what went wrong and a way back, instead of a
  * blank page. Everything recorded is in the local store already.
  */
-export function ScreenErrorBoundary({ children, home }: { children: ReactNode; home: string }) {
+export function ScreenErrorBoundary({ children, home, back = 'error.back' }: { children: ReactNode; home: string; back?: MessageKey }) {
   const location = useLocation();
   return (
-    <Boundary resetKey={location.pathname} fallback={(error) => <ErrorScreen error={error} home={home} />}>
+    <Boundary resetKey={location.pathname} fallback={(error) => <ErrorScreen error={error} home={home} back={back} />}>
       {children}
     </Boundary>
   );
 }
 
-function ErrorScreen({ error, home }: { error: Error; home: string }) {
+function ErrorScreen({ error, home, back }: { error: Error; home: string; back: MessageKey }) {
   const { t } = useI18n();
   const navigate = useNavigate();
   return (
@@ -62,7 +63,10 @@ function ErrorScreen({ error, home }: { error: Error; home: string }) {
         </div>
         <div className="c-locked-actions">
           <button type="button" className="c-btn c-btn-primary" onClick={() => navigate(home, { replace: true })}>
-            {t('error.back')}
+            {t(back)}
+          </button>
+          <button type="button" className="c-btn c-btn-secondary" onClick={() => window.location.reload()}>
+            {t('error.reload')}
           </button>
         </div>
       </main>

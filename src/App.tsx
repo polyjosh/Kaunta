@@ -97,8 +97,9 @@ export function App({ db, config = serverConfig(), transport }: AppProps) {
               <Route path="/" element={<Landing />} />
               <Route path="/dev/components" element={<ComponentsGallery />} />
               <Route path="/admin/dev/components" element={<ComponentsGallery />} />
-              <Route path="/admin/*" element={<AdminApp config={config} />} />
-              <Route path="/super/*" element={<SuperApp />} />
+              {/* A failing admin or platform screen shows its error and a way back, never a blank page. */}
+              <Route path="/admin/*" element={<ScreenErrorBoundary home="/admin" back="error.backAdmin"><AdminApp config={config} /></ScreenErrorBoundary>} />
+              <Route path="/super/*" element={<ScreenErrorBoundary home="/super" back="error.backSuper"><SuperApp /></ScreenErrorBoundary>} />
               {/* Demo: the counter first asks which bar (its code). A store handed in (tests) is already a bar's. */}
               <Route path="*" element={demo && !db ? <DemoCounterGate>{counter}</DemoCounterGate> : counter} />
             </Routes>
