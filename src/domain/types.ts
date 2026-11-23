@@ -81,6 +81,8 @@ export interface Device {
   revoked_at: Instant | null;
   revoked_reason: string | null;
   last_sync_at: Instant | null;
+  /** Deleted from Staff & devices: revoked too, and off the list. The row stays for history. */
+  deleted_at?: Instant | null;
 }
 
 export interface Category {

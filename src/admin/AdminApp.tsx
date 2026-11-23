@@ -4,7 +4,7 @@ import { seedAdminDatabase } from '../data/adminSeed';
 import { KauntaDB } from '../data/db';
 import { DbProvider } from '../data/react';
 import { useI18n } from '../lib/I18nProvider';
-import { accountAudience, pushAs } from '../lib/push';
+import { accountAudience, pushAs, watchPushSubscription } from '../lib/push';
 import { resetPushPrompt } from '../components/PushPrompt';
 import { useDemoServer } from '../data/demoServer';
 import { businessDayOf } from '../domain/time';
@@ -225,11 +225,21 @@ function AdminLive({ server: given, db }: { server: AdminServer; db?: KauntaDB }
     return () => sync.stop();
   }, [state, store, barServer]);
 
-  // Owners and managers receive their bars' notifications as their account, on every browser they sign in on.
+  // Owners and managers receive their bars' notifications as their account, on the latest browser they
+  // signed in on with notifications allowed: this one tells the server it is now that browser.
   const accountId = who?.account.id;
   useEffect(() => {
-    if (accountId) void pushAs(accountAudience(accountId), locale);
-  }, [accountId, locale]);
+    if (!accountId) return;
+    let stop: (() => void) | null = null;
+    let live = true;
+    void pushAs(accountAudience(accountId), locale)
+      .then(() => watchPushSubscription((id) => void server.call('admin_push_subscription', { p_subscription: id }).catch(() => undefined)))
+      .then((off) => (live ? (stop = off) : off()));
+    return () => {
+      live = false;
+      stop?.();
+    };
+  }, [accountId, locale, server]);
 
   const signOut = useCallback(() => {
     void pushAs(null);

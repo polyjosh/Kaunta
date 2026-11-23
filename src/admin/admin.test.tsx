@@ -333,6 +333,19 @@ describe('Staff & devices (R-PIN-1, R-DEV-2; PINs set by owners and managers)', 
     expect(await within(counter2).findByText('Revoked')).toBeInTheDocument();
     expect((await db.devices.get('d_counter2'))!.revoked_reason).toBe('Phone lost');
   });
+
+  it('deleting a phone confirms, revokes it and takes it off the list (its row stays)', async () => {
+    renderAt('/admin/staff');
+    const counter2 = (await screen.findByText('Counter 2')).closest<HTMLElement>('.a-device')!;
+    await user.click(within(counter2).getByRole('button', { name: 'Delete' }));
+    expect(within(counter2).getByText(/It stops working at once/)).toBeInTheDocument();
+    await user.click(within(counter2).getByRole('button', { name: 'Delete Counter 2' }));
+    await waitFor(() => expect(screen.queryByText('Counter 2')).toBeNull());
+    const row = (await db.devices.get('d_counter2'))!;
+    expect(row.deleted_at).toBeTruthy();
+    expect(row.revoked_at).toBeTruthy();
+    expect((await db.auditEvents.where('ref_id').equals('d_counter2').toArray()).map((a) => a.kind)).toContain('device_deleted');
+  });
 });
 
 describe('Audit log (R-AUD-1, R-AUD-2)', () => {

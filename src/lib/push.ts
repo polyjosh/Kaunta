@@ -18,7 +18,16 @@ export interface OneSignalApi {
   init(options: Record<string, unknown>): Promise<void>;
   login(externalId: string): Promise<void>;
   logout(): Promise<void>;
-  User: { setLanguage(language: string): void };
+  User: {
+    setLanguage(language: string): void;
+    /** This browser's push subscription (OneSignal v16). `id` may be null until it exists. */
+    PushSubscription?: {
+      readonly id?: string | null;
+      readonly optedIn?: boolean;
+      addEventListener(event: 'change', listener: (change: { current?: { id?: string | null; optedIn?: boolean } }) => void): void;
+      removeEventListener?(event: 'change', listener: (change: { current?: { id?: string | null; optedIn?: boolean } }) => void): void;
+    };
+  };
   Notifications: {
     readonly permission: boolean;
     readonly isPushSupported?: () => boolean;
@@ -105,6 +114,29 @@ export async function pushAs(externalId: string | null, locale?: string): Promis
   } catch (error) {
     console.warn('[Kaunta] push sign-in failed:', error);
   }
+}
+
+/**
+ * Calls `report` with this browser's push subscription id whenever it is
+ * subscribed: at once if it already is, and when it becomes so (notifications
+ * allowed). The server keeps only the latest per account (owners and
+ * managers get notifications on the last browser they signed in on).
+ */
+export async function watchPushSubscription(report: (subscriptionId: string) => void): Promise<() => void> {
+  const sdk = await startPush();
+  const sub = sdk?.User.PushSubscription;
+  if (!sub) return () => undefined;
+  let last: string | null = null;
+  const send = (id: string | null | undefined, optedIn: boolean | undefined) => {
+    if (id && optedIn && id !== last) {
+      last = id;
+      report(id);
+    }
+  };
+  send(sub.id, sub.optedIn);
+  const onChange = (change: { current?: { id?: string | null; optedIn?: boolean } }) => send(change.current?.id, change.current?.optedIn);
+  sub.addEventListener('change', onChange);
+  return () => sub.removeEventListener?.('change', onChange);
 }
 
 export const deviceAudience = (deviceId: string) => `device_${deviceId}`;

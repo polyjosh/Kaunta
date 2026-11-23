@@ -178,6 +178,8 @@ export function describeAudit(e: AuditEvent, l: AuditLookups, t: TFunction, loca
       return { what: t('admin.audit.devicePaired', { name: l.devices.find((x) => x.id === e.ref_id)?.name ?? e.ref_id ?? '' }), changes: none };
     case 'device_revoked':
       return { what: t('admin.audit.deviceRevoked', { name: l.devices.find((x) => x.id === d.device_id)?.name ?? d.device_id, reason: d.reason }), changes: none };
+    case 'device_deleted':
+      return { what: t('admin.audit.deviceDeleted', { name: l.devices.find((x) => x.id === d.device_id)?.name ?? d.device_id }), changes: none };
     case 'shift_opened': {
       const s: Shift = d.shift;
       return { what: t('admin.audit.shiftOpened', { amount: formatKES(s.float_kes) }), changes: none };

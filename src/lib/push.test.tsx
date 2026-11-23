@@ -5,7 +5,7 @@ import { PushButton } from '../components/PushButton';
 import { PushPrompt, resetPushPrompt } from '../components/PushPrompt';
 import { I18nProvider } from './I18nProvider';
 import type { OneSignalApi } from './push';
-import { PUSH_WORKER_PATH, PUSH_WORKER_SCOPE, accountAudience, deviceAudience, pushConfig, resetPushForTests, startPush } from './push';
+import { PUSH_WORKER_PATH, PUSH_WORKER_SCOPE, accountAudience, deviceAudience, pushConfig, resetPushForTests, startPush, watchPushSubscription } from './push';
 
 const live = { VITE_SUPABASE_URL: 'https://x.supabase.co', VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_x' };
 
@@ -110,6 +110,28 @@ describe('push notifications (OneSignal)', () => {
     await sdkLoads(OneSignal as unknown as ReturnType<typeof fakeSdk>);
     await userEvent.click(await screen.findByRole('button', { name: 'Turn on notifications' }));
     expect(plain.Notifications.requestPermission).toHaveBeenCalled();
+    vi.unstubAllEnvs();
+  });
+
+  it('report this browser’s subscription once it is subscribed, and again only if it changes', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', live.VITE_SUPABASE_URL);
+    vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', live.VITE_SUPABASE_PUBLISHABLE_KEY);
+    vi.stubEnv('VITE_ONESIGNAL_APP_ID', 'app-1');
+    const sdk = fakeSdk();
+    let onChange: ((c: { current?: { id?: string | null; optedIn?: boolean } }) => void) | null = null;
+    const sub = { id: 'sub-1', optedIn: false, addEventListener: (_: 'change', l: typeof onChange) => void (onChange = l), removeEventListener: vi.fn() };
+    (sdk.User as Record<string, unknown>).PushSubscription = sub;
+    const reported: string[] = [];
+    const watching = watchPushSubscription((id) => reported.push(id));
+    await sdkLoads(sdk);
+    const stop = await watching;
+    expect(reported).toEqual([]); // not allowed yet
+    onChange!({ current: { id: 'sub-1', optedIn: true } });
+    onChange!({ current: { id: 'sub-1', optedIn: true } });
+    onChange!({ current: { id: 'sub-2', optedIn: true } });
+    expect(reported).toEqual(['sub-1', 'sub-2']);
+    stop();
+    expect(sub.removeEventListener).toHaveBeenCalled();
     vi.unstubAllEnvs();
   });
 

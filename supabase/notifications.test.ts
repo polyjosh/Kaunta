@@ -133,11 +133,67 @@ describe('sending', () => {
     const sent = await one<{ url: string; headers: Record<string, string>; body: any }>('select url, headers, body from net.sent');
     expect(sent.url).toBe('https://api.onesignal.com/notifications?c=push');
     expect(sent.headers.Authorization).toBe('Key os_v2_app_xyz');
-    expect(sent.body).toMatchObject({ app_id: 'app-123', target_channel: 'push', headings: { en: 'Shift started' }, web_url: '/admin/reconcile' });
+    expect(sent.body).toMatchObject({ app_id: 'app-123', target_channel: 'push', headings: { en: 'Shift started' }, web_url: 'https://kaunta-book.vercel.app/admin/reconcile' });
+    // The screen stays a path in data, for the app itself.
+    expect(sent.body.data.url).toBe('/admin/reconcile');
     expect(sent.body.include_aliases.external_id.sort()).toEqual(['account_acc_mgr', 'account_acc_njeri']);
     expect(await one("select status from public.notifications where kind = 'shift_opened'")).toEqual({ status: 'sent' });
     // Sent once.
     expect(await call<number>(pg, 'select public.send_notifications() as r')).toBe(0);
+  });
+
+  it('records what OneSignal answered: refusals fail with the reason, people it could not reach are noted', async () => {
+    await fakeSupabase(true);
+    await pg.exec(`create table net._http_response (id bigint, status_code int, content text, error_msg text, timed_out boolean)`);
+    await pg.exec(`insert into public.notifications (bar_id, kind, external_ids, heading, contents, url)
+                   values ('bar_baraka', 'a', '{account_acc_njeri}', '{"en":"a"}', '{"en":"a"}', '/admin'),
+                          ('bar_baraka', 'b', '{account_acc_njeri,account_acc_mgr}', '{"en":"b"}', '{"en":"b"}', '/admin'),
+                          ('bar_baraka', 'c', '{account_acc_njeri}', '{"en":"c"}', '{"en":"c"}', '/admin')`);
+    expect(await call<number>(pg, 'select public.send_notifications() as r')).toBe(3);
+    const ids = (await all(`select kind, request_id from public.notifications where kind in ('a','b','c') order by kind`)).map((r: any) => Number(r.request_id));
+    await pg.query(
+      `insert into net._http_response values ($1, 400, '{"errors":["Option Begin your notification web_url with http:// or https://."]}', null, false),
+                                             ($2, 200, '{"id":"x","errors":{"invalid_aliases":{"external_id":["account_acc_mgr"]}}}', null, false),
+                                             ($3, 200, '{"id":"y"}', null, false)`,
+      ids,
+    );
+    expect(await call<number>(pg, 'select public.record_onesignal_replies() as r')).toBe(2);
+    const rows = await all(`select kind, status, error from public.notifications where kind in ('a','b','c') order by kind`);
+    expect(rows[0]).toMatchObject({ kind: 'a', status: 'failed' });
+    expect(rows[0].error).toContain('web_url');
+    expect(rows[1]).toMatchObject({ kind: 'b', status: 'sent' });
+    expect(rows[1].error).toContain('account_acc_mgr');
+    expect(rows[2]).toMatchObject({ kind: 'c', status: 'sent', error: null });
+    // Read once.
+    expect(await call<number>(pg, 'select public.record_onesignal_replies() as r')).toBe(0);
+  });
+
+  it('an account gets notifications on its latest browser only: the previous one is removed at OneSignal', async () => {
+    await fakeSupabase(true);
+    await pg.exec(`create table net.deleted (url text, headers jsonb);
+      create function net.http_delete(url text, params jsonb default '{}', headers jsonb default '{}', timeout_milliseconds int default 2000) returns bigint
+      language sql as $f$ insert into net.deleted values (url, headers); select 1::bigint $f$;`);
+    expect(await call(pg, "select public.set_push_subscription('acc_njeri', 'sub-phone') as r")).toEqual({ ok: true, replaced: false });
+    expect(await all('select * from net.deleted')).toEqual([]);
+    // The same browser again: nothing to remove.
+    expect(await call(pg, "select public.set_push_subscription('acc_njeri', 'sub-phone') as r")).toEqual({ ok: true, replaced: false });
+    // Signed in on another browser: that one now; the phone's subscription goes.
+    expect(await call(pg, "select public.set_push_subscription('acc_njeri', 'sub-laptop') as r")).toEqual({ ok: true, replaced: true });
+    expect(await all('select url, headers from net.deleted')).toEqual([
+      { url: 'https://api.onesignal.com/apps/app-123/subscriptions/sub-phone', headers: { Authorization: 'Key os_v2_app_xyz' } },
+    ]);
+    expect(await one("select push_subscription_id from public.accounts where id = 'acc_njeri'")).toEqual({ push_subscription_id: 'sub-laptop' });
+    expect(await call(pg, "select public.set_push_subscription('acc_njeri', '') as r")).toEqual({ ok: false });
+  });
+
+  it('the app reports its subscription through kaunta_admin with its session', async () => {
+    await pg.exec(`insert into public.account_sessions (token_hash, account_id, expires_at) values (public.token_hash('sess-1'), 'acc_njeri', now() + interval '1 day')`);
+    expect(await call(pg, "select public.kaunta_admin('sess-1', 'admin_push_subscription', '{\"p_subscription\":\"sub-a\"}') as r")).toMatchObject({ ok: true });
+    expect(await one("select push_subscription_id from public.accounts where id = 'acc_njeri'")).toEqual({ push_subscription_id: 'sub-a' });
+    await expect(pg.query("select public.kaunta_admin('nope', 'admin_push_subscription', '{}')")).rejects.toThrow(/signed_out/);
+    await pg.exec('set role anon');
+    await expect(pg.query("select public.set_push_subscription('acc_njeri', 'x')")).rejects.toThrow(/permission denied/);
+    await pg.exec('reset role');
   });
 
   it('still reads a key saved under the old Vault name (onesignal_rest_api_key)', async () => {

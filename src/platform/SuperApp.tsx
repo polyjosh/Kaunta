@@ -544,9 +544,9 @@ function BarScreen() {
 
           <section className="a-card">
             <h2>{t('super.bar.devices')}</h2>
-            {!s || s.lookups.devices.length === 0 ? <p className="a-muted">{t('super.bar.noDevices')}</p> : (
+            {!s || s.lookups.devices.filter((d) => !d.deleted_at).length === 0 ? <p className="a-muted">{t('super.bar.noDevices')}</p> : (
               <ul className="s-list">
-                {s.lookups.devices.map((d) => <li key={d.id}><strong>{d.name}</strong> <span className="a-muted">{d.revoked_at ? t('admin.kind.revoked') : d.last_sync_at ? hhmm(d.last_sync_at) : ''}</span></li>)}
+                {s.lookups.devices.filter((d) => !d.deleted_at).map((d) => <li key={d.id}><strong>{d.name}</strong> <span className="a-muted">{d.revoked_at ? t('admin.kind.revoked') : d.last_sync_at ? hhmm(d.last_sync_at) : ''}</span></li>)}
               </ul>
             )}
           </section>

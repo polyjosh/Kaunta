@@ -550,5 +550,10 @@
   "admin.audit.barReset": "Bar reset to new · every earlier record cleared",
   "admin.audit.handedOverTo": "Order {order} handed over to {name}",
   "admin.audit.orderNoted": "Nickname on {order}: “{note}”",
-  "admin.audit.orderNoteCleared": "Nickname removed from {order}"
+  "admin.audit.orderNoteCleared": "Nickname removed from {order}",
+  "admin.staff.deleteDevice": "Delete",
+  "admin.staff.deleteWhy": "Delete {name}? It stops working at once (it is revoked) and leaves this list. Its sales stay in the records.",
+  "admin.staff.deleteWhyRevoked": "Delete {name} from this list? Its sales stay in the records.",
+  "admin.staff.deleteConfirm": "Delete {name}",
+  "admin.audit.deviceDeleted": "Phone deleted · {name}"
 }

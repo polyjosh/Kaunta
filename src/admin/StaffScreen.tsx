@@ -162,6 +162,7 @@ export function StaffScreen() {
   const [editing, setEditing] = useState<{ id: Id; pin: string } | null>(null);
   const [confirmSuspend, setConfirmSuspend] = useState<string | null>(null);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<Id | null>(null);
   const [reason, setReason] = useState<(typeof REVOKE_REASONS)[number]>('lost');
 
   if (!data) return <AdminLayout>{null}</AdminLayout>;
@@ -196,7 +197,7 @@ export function StaffScreen() {
   const people = data.people.filter((p) => !p.archived_at && !p.suspended_at).sort(order);
   const suspended = data.people.filter((p) => !p.archived_at && p.suspended_at).sort(order);
   const archived = data.people.filter((p) => p.archived_at);
-  const devices = [...data.devices].sort((a, b) => Number(!!a.revoked_at) - Number(!!b.revoked_at) || a.name.localeCompare(b.name));
+  const devices = data.devices.filter((d) => !d.deleted_at).sort((a, b) => Number(!!a.revoked_at) - Number(!!b.revoked_at) || a.name.localeCompare(b.name));
   const deviceStatus = (d: Device) =>
     d.revoked_at ? null : d.last_sync_at && clock.getTime() - Date.parse(d.last_sync_at) < SYNCED_MS ? 'synced' : 'quiet';
 
@@ -382,8 +383,29 @@ export function StaffScreen() {
                 ) : (
                   <StatusChip status="offline" className="a-chip-sm">{t('admin.staff.notRecently')}</StatusChip>
                 )}
-                {!d.revoked_at && revoking !== d.id && (
+                {!d.revoked_at && revoking !== d.id && deleting !== d.id && (
                   <button type="button" className="a-btn a-btn-sm a-btn-danger" onClick={() => setRevoking(d.id)}>{t('staff.revoke')}</button>
+                )}
+                {revoking !== d.id && deleting !== d.id && (
+                  <button type="button" className="a-btn a-btn-sm" onClick={() => setDeleting(d.id)}>{t('admin.staff.deleteDevice')}</button>
+                )}
+                {deleting === d.id && (
+                  <div className="a-revoke">
+                    <p className="a-note">{t(d.revoked_at ? 'admin.staff.deleteWhyRevoked' : 'admin.staff.deleteWhy', { name: d.name })}</p>
+                    <div className="a-actions">
+                      <button
+                        type="button"
+                        className="a-btn a-btn-sm a-btn-danger"
+                        onClick={async () => {
+                          setDeleting(null);
+                          await recordAdminEvent(db, ctx, { type: 'device_deleted', payload: { device_id: d.id } });
+                        }}
+                      >
+                        {t('admin.staff.deleteConfirm', { name: d.name })}
+                      </button>
+                      <button type="button" className="a-btn a-btn-sm" onClick={() => setDeleting(null)}>{t('common.cancel')}</button>
+                    </div>
+                  </div>
                 )}
                 {revoking === d.id && (
                   <div className="a-revoke">

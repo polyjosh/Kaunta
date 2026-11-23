@@ -62,6 +62,7 @@ export type AdminEvent =
   | { type: 'person_reinstated'; payload: { person_id: Id } }
   /** R-DEV-2 */
   | { type: 'device_revoked'; payload: { device_id: Id; reason: string } }
+  | { type: 'device_deleted'; payload: { device_id: Id } }
   /** R-DAY-3: kept on record with whatever variance there was. */
   | { type: 'day_closed'; payload: { day_close: DayClose } };
 
@@ -325,6 +326,14 @@ export async function applyAdminEvent(db: KauntaDB, event: AdminEvent, { by, at 
     }
     case 'device_revoked': {
       await db.devices.update(event.payload.device_id, { revoked_at: at, revoked_reason: event.payload.reason });
+      return;
+    }
+    case 'device_deleted': {
+      // Deleting revokes too; the row stays (orders name the phone they came from).
+      const device = await db.devices.get(event.payload.device_id);
+      if (device) {
+        await db.devices.update(device.id, { revoked_at: device.revoked_at ?? at, revoked_reason: device.revoked_reason ?? 'Deleted', deleted_at: at });
+      }
       return;
     }
     case 'day_closed': {

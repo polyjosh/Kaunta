@@ -550,5 +550,10 @@
   "admin.audit.barReset": "Baa imeanzishwa upya · rekodi zote za awali zimefutwa",
   "admin.audit.handedOverTo": "Oda {order} imekabidhiwa {name}",
   "admin.audit.orderNoted": "Jina la utani kwenye {order}: “{note}”",
-  "admin.audit.orderNoteCleared": "Jina la utani limeondolewa kwenye {order}"
+  "admin.audit.orderNoteCleared": "Jina la utani limeondolewa kwenye {order}",
+  "admin.staff.deleteDevice": "Futa",
+  "admin.staff.deleteWhy": "Futa {name}? Itaacha kufanya kazi mara moja (inafutiwa ruhusa) na kuondoka kwenye orodha hii. Mauzo yake yanabaki kwenye kumbukumbu.",
+  "admin.staff.deleteWhyRevoked": "Futa {name} kwenye orodha hii? Mauzo yake yanabaki kwenye kumbukumbu.",
+  "admin.staff.deleteConfirm": "Futa {name}",
+  "admin.audit.deviceDeleted": "Simu imefutwa · {name}"
 }
