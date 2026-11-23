@@ -8,7 +8,7 @@ import { loadReceipt } from '../data/receipt';
 import { seedDatabase } from '../data/seedDb';
 import { I18nProvider } from '../lib/I18nProvider';
 import { OrderDetailScreen } from './OrderDetailScreen';
-import { ReceiptProvider, receiptTime } from './Receipt';
+import { ReceiptProvider, receiptPageCss, receiptTime } from './Receipt';
 import { SellScreen } from './SellScreen';
 import { SessionProvider } from './Session';
 
@@ -102,5 +102,27 @@ describe('printing receipts', () => {
     expect(receipt.getByText('Kiprop')).toBeInTheDocument();
     expect(receipt.getByText('Balance to pay')).toBeInTheDocument();
     expect(receipt.getByText('KES 850')).toBeInTheDocument();
+  });
+});
+
+describe('the page fits the receipt (roll printers stop at the last line)', () => {
+  it('is as wide as the roll and as long as the receipt, plus a short tail', () => {
+    // 96 px = 1 inch = 25.4 mm.
+    expect(receiptPageCss(80, 960)).toBe('@page { size: 80mm 258mm; margin: 0; }');
+    expect(receiptPageCss(58, 384)).toBe('@page { size: 58mm 106mm; margin: 0; }');
+    // Never a sliver of a page.
+    expect(receiptPageCss(80, 0)).toBe('@page { size: 80mm 30mm; margin: 0; }');
+  });
+
+  it('sets the page before printing, at this phone’s paper width', async () => {
+    renderAt('/counter/orders/o_044');
+    await user.click(await screen.findByRole('button', { name: 'Print receipt' }));
+    await waitFor(() => expect(print).toHaveBeenCalledTimes(1));
+    expect(document.getElementById('k-receipt-page')?.textContent).toContain('size: 80mm');
+
+    localStorage.setItem('kaunta.paperWidth', '58');
+    await user.click(screen.getByRole('button', { name: 'Print receipt' }));
+    await waitFor(() => expect(print).toHaveBeenCalledTimes(2));
+    expect(document.getElementById('k-receipt-page')?.textContent).toContain('size: 58mm');
   });
 });

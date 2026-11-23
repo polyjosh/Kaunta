@@ -1,15 +1,29 @@
-/* A printed receipt: drawn outside the app, shown only while printing. Sized for
-   58 mm and 80 mm receipt paper (about 48–72 mm printable); black on white whatever the theme. */
+/* A printed receipt: drawn outside the app, shown only while printing; black on
+   white whatever the theme. The page is set to the roll's width (--k-paper, 80 or
+   58 mm) and to the receipt's own length just before printing (Receipt.tsx), so a
+   roll printer stops at the last line. */
 .k-receipt-root {
+  --k-paper: 80mm;
+  --k-printable: 72mm;
   display: none;
 }
 
-@media print {
-  @page {
-    margin: 3mm;
-  }
+/* Laid out off screen, at the roll's width, to be measured. */
+.k-receipt-root.is-measuring {
+  display: block;
+  position: fixed;
+  left: -10000px;
+  top: 0;
+  width: var(--k-paper);
+  visibility: hidden;
+}
 
+@media print {
+
+  html:has(body.k-printing),
   body.k-printing {
+    margin: 0 !important;
+    padding: 0 !important;
     background: #fff !important;
   }
 
@@ -23,9 +37,11 @@
 }
 
 .k-receipt {
-  width: 100%;
-  max-width: 72mm;
-  margin: 0 auto;
+  box-sizing: border-box;
+  width: var(--k-paper);
+  /* The printable middle of the roll; the page itself has no margin. */
+  padding: 2mm calc((var(--k-paper) - var(--k-printable)) / 2) 0;
+  margin: 0;
   color: #000;
   background: #fff;
   font: 12px/1.35 ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;

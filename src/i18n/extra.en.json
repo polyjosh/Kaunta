@@ -203,5 +203,6 @@
   "sales.expensesTotal_one": "{count} expense",
   "sales.expensesTotal_other": "{count} expenses",
   "sales.noExpenses": "No expenses.",
-  "sales.manageExpenses": "Add or remove expenses"
+  "sales.manageExpenses": "Add or remove expenses",
+  "receipt.paper": "Receipt paper"
 }

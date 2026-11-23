@@ -29,6 +29,61 @@ export function setPrintsReceipts(on: boolean): void {
   }
 }
 
+export type PaperWidth = 80 | 58;
+const PAPER_KEY = 'kaunta.paperWidth';
+/** What a roll printer can print on: 72 mm of 80 mm paper, 48 mm of 58 mm. */
+const PRINTABLE_MM: Record<PaperWidth, number> = { 80: 72, 58: 48 };
+/** Paper fed after the last line, so a cutter does not cut through it. */
+const TAIL_MM = 4;
+
+/** The roll this phone's printer takes (80 mm unless set to 58 mm here). */
+export function paperWidth(): PaperWidth {
+  try {
+    return localStorage.getItem(PAPER_KEY) === '58' ? 58 : 80;
+  } catch {
+    return 80;
+  }
+}
+
+export function setPaperWidth(width: PaperWidth): void {
+  try {
+    localStorage.setItem(PAPER_KEY, String(width));
+  } catch {
+    // Only a convenience: 80 mm stays.
+  }
+}
+
+/**
+ * The page for one receipt: as wide as the roll, and exactly as long as the
+ * receipt, so a roll printer feeds to the last line and stops (and cuts),
+ * like a supermarket till: short receipts stay short, long ones are never split.
+ */
+export function receiptPageCss(width: PaperWidth, heightPx: number): string {
+  const heightMm = Math.ceil((heightPx * 25.4) / 96) + TAIL_MM;
+  return `@page { size: ${width}mm ${Math.max(heightMm, 30)}mm; margin: 0; }`;
+}
+
+const PAGE_STYLE_ID = 'k-receipt-page';
+
+/** Measures the receipt at the roll's width and sets the page to its length. */
+function fitPageToReceipt(width: PaperWidth): void {
+  const root = document.querySelector<HTMLElement>('.k-receipt-root');
+  const receipt = root?.querySelector<HTMLElement>('.k-receipt');
+  if (!root || !receipt) return;
+  root.style.setProperty('--k-paper', `${width}mm`);
+  root.style.setProperty('--k-printable', `${PRINTABLE_MM[width]}mm`);
+  root.classList.add('is-measuring');
+  const height = receipt.getBoundingClientRect().height;
+  root.classList.remove('is-measuring');
+  let style = document.getElementById(PAGE_STYLE_ID);
+  if (!style) {
+    style = document.createElement('style');
+    style.id = PAGE_STYLE_ID;
+    document.head.appendChild(style);
+  }
+  style.textContent = `@media print { ${receiptPageCss(width, height)} }`;
+}
+
 interface ReceiptPrinter {
   /** Prints this order's receipt now (the phone's print dialog). */
   print: (orderId: Id) => Promise<void>;
@@ -71,6 +126,7 @@ export function ReceiptProvider({ children }: { children: ReactNode }) {
     window.addEventListener('afterprint', done, { once: true });
     const frame = requestAnimationFrame(() => {
       try {
+        fitPageToReceipt(paperWidth());
         window.print();
       } catch {
         // No print here (some in-app browsers): the sale is recorded either way.

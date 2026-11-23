@@ -203,5 +203,6 @@
   "sales.expensesTotal_one": "Matumizi {count}",
   "sales.expensesTotal_other": "Matumizi {count}",
   "sales.noExpenses": "Hakuna matumizi.",
-  "sales.manageExpenses": "Ongeza au ondoa matumizi"
+  "sales.manageExpenses": "Ongeza au ondoa matumizi",
+  "receipt.paper": "Karatasi ya risiti"
 }

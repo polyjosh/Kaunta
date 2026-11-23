@@ -9,7 +9,7 @@ import { businessDayOf } from '../domain/time';
 import type { Id, PaymentMethod, Person, Product, ProductSize } from '../domain/types';
 import { useI18n } from '../lib/I18nProvider';
 import { formatKES } from '../lib/money';
-import { PrintToggle } from './PrintToggle';
+import { PaperToggle, PrintToggle } from './PrintToggle';
 import { usePrintReceipt } from './Receipt';
 import { displayLabel, labelForTable, matchesSearch, productName, sizeLabel } from './labels';
 import type { TableChoice } from './labels';
@@ -478,6 +478,7 @@ export function SellScreen() {
           </button>
           <PushButton className="c-btn c-btn-secondary" />
           <PrintToggle />
+          <PaperToggle />
           <button type="button" className="c-btn c-btn-secondary" onClick={() => navigate('/counter/shift/sales')}>
             {t('sales.menu')}
           </button>
