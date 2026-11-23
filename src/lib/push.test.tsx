@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PushButton } from '../components/PushButton';
+import { PushPrompt, resetPushPrompt } from '../components/PushPrompt';
 import { I18nProvider } from './I18nProvider';
 import type { OneSignalApi } from './push';
 import { PUSH_WORKER_PATH, PUSH_WORKER_SCOPE, accountAudience, deviceAudience, pushConfig, resetPushForTests, startPush } from './push';
@@ -95,5 +96,68 @@ describe('push notifications (OneSignal)', () => {
       </I18nProvider>,
     );
     expect(container).toBeEmptyDOMElement();
+  });
+
+  describe('the prompt after signing in', () => {
+    const renderPrompt = (audience: 'counter' | 'admin' = 'counter') =>
+      render(
+        <I18nProvider initialLocale="en">
+          <PushPrompt audience={audience} />
+        </I18nProvider>,
+      );
+    const livePush = () => {
+      vi.stubEnv('VITE_SUPABASE_URL', live.VITE_SUPABASE_URL);
+      vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', live.VITE_SUPABASE_PUBLISHABLE_KEY);
+      vi.stubEnv('VITE_ONESIGNAL_APP_ID', 'app-1');
+    };
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      sessionStorage.clear();
+    });
+
+    it('asks someone who has not allowed notifications; Turn on opens the browser’s question', async () => {
+      livePush();
+      const sdk = fakeSdk();
+      renderPrompt();
+      await sdkLoads(sdk);
+      const dialog = await screen.findByRole('alertdialog', { name: 'Turn on notifications' });
+      expect(dialog).toHaveTextContent('when an order is still unpaid');
+      await userEvent.click(screen.getByRole('button', { name: 'Turn on' }));
+      expect(sdk.Notifications.requestPermission).toHaveBeenCalled();
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+    });
+
+    it('Not now hides it until the next sign-in', async () => {
+      livePush();
+      const sdk = fakeSdk();
+      const first = renderPrompt('admin');
+      await sdkLoads(sdk);
+      expect(await screen.findByRole('alertdialog')).toHaveTextContent('a request waits for you');
+      await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      first.unmount();
+
+      renderPrompt('admin');
+      await new Promise((r) => setTimeout(r, 0));
+      expect(screen.queryByRole('alertdialog')).toBeNull();
+      first.unmount();
+
+      resetPushPrompt();
+      renderPrompt('admin');
+      expect(await screen.findByRole('alertdialog')).toBeInTheDocument();
+    });
+
+    it('says nothing when notifications are already on, or push is not set up', async () => {
+      livePush();
+      const sdk = fakeSdk(true);
+      const { container } = renderPrompt();
+      await sdkLoads(sdk);
+      await new Promise((r) => setTimeout(r, 0));
+      expect(container).toBeEmptyDOMElement();
+      vi.unstubAllEnvs();
+      resetPushForTests();
+      const off = renderPrompt();
+      expect(off.container).toBeEmptyDOMElement();
+    });
   });
 });

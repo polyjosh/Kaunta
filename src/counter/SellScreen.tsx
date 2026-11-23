@@ -14,6 +14,7 @@ import { usePrintReceipt } from './Receipt';
 import { displayLabel, labelForTable, matchesSearch, productName, sizeLabel } from './labels';
 import type { TableChoice } from './labels';
 import { PushButton } from '../components/PushButton';
+import { PushPrompt } from '../components/PushPrompt';
 import { DecisionNotices } from './DecisionNotices';
 import { useSession } from './Session';
 import { Avatar, Sheet, Toast, TopBar, withOffline } from './ui';
@@ -429,6 +430,7 @@ export function SellScreen() {
       </footer>
 
       <Toast message={toast} onDone={clearToast} />
+      <PushPrompt audience="counter" />
 
       {sizeProduct && (
         <Sheet title={productName(sizeProduct, locale)} subtitle={t('sell.pickSize')} onClose={closeSheet}>

@@ -5,6 +5,7 @@ import { KauntaDB } from '../data/db';
 import { DbProvider } from '../data/react';
 import { useI18n } from '../lib/I18nProvider';
 import { accountAudience, pushAs } from '../lib/push';
+import { resetPushPrompt } from '../components/PushPrompt';
 import { useDemoServer } from '../data/demoServer';
 import { businessDayOf } from '../domain/time';
 import type { MessageKey } from '../lib/i18n';
@@ -300,7 +301,10 @@ function AdminLive({ server: given, db }: { server: AdminServer; db?: KauntaDB }
     [who, server],
   );
 
-  if (state === 'signedOut') return <OwnerSignIn signIn={(username, secret) => server.signIn(username, secret)} notice={notice} onSignedIn={() => setState('bars')} />;
+  if (state === 'signedOut') return <OwnerSignIn signIn={(username, secret) => server.signIn(username, secret)} notice={notice} onSignedIn={() => {
+    resetPushPrompt();
+    setState('bars');
+  }} />;
   if (state === 'suspended') return <NoBars onSignOut={signOut} suspended={who?.suspended ?? []} />;
   if (state === 'pick') return <BarPicker bars={bars} onPick={open} onSignOut={signOut} />;
   if (state !== 'ready' || !me || !store || !barServer || !choice) return <div className="a-app" aria-busy="true" />;
@@ -398,6 +402,7 @@ function AdminDemo({ db }: { db?: KauntaDB }) {
     return (
       <OwnerSignIn
         onSignedIn={(id) => {
+          resetPushPrompt();
           setOwnerSession(id);
           setAccountId(id);
         }}

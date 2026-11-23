@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon, Logo } from '../components/Icon';
+import { resetPushPrompt } from '../components/PushPrompt';
 import { useCounterBar } from './DemoCounterGate';
 import { attemptLogin, loginSignedInAdmin, signsInAtCounter } from '../data/login';
 import { useDb, useQuery } from '../data/react';
@@ -62,6 +63,8 @@ export function LoginScreen() {
     if (!deviceId) return;
     // Continue this person's shift on this phone, or open one, and pick up handed-over orders.
     await startShift(db, { person_id: p.id, device_id: deviceId }, floatKes);
+    // Signed in: ask about notifications again if this browser has not allowed them.
+    resetPushPrompt();
     session.login(p.id);
     navigate('/counter/sell', { replace: true });
   };

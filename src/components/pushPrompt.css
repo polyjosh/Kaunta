@@ -1,0 +1,83 @@
+/* "Turn on notifications?" after signing in: a small centred dialog, counter and admin themes alike. */
+.k-push-prompt-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.k-push-prompt {
+  width: min(380px, 100%);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  background: var(--k-tile);
+  color: var(--k-text);
+  border: 1px solid var(--k-line);
+  border-radius: var(--k-r-card);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+
+.k-push-prompt-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--k-r-pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--k-pending-bg);
+  color: var(--k-pending-fg);
+}
+
+.k-push-prompt h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.k-push-prompt p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--k-text-2);
+}
+
+.k-push-prompt-actions {
+  width: 100%;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.k-push-prompt-primary,
+.k-push-prompt-secondary {
+  min-height: 52px;
+  border-radius: var(--k-r-pill);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.k-push-prompt-primary {
+  border: none;
+  background: var(--k-ember);
+  color: #1c1006 !important;
+}
+
+.k-push-prompt-primary:disabled {
+  opacity: 0.6;
+}
+
+.k-push-prompt-secondary {
+  border: 1px solid var(--k-line-strong);
+  background: transparent;
+  color: var(--k-text) !important;
+}

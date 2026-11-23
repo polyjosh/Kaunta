@@ -204,5 +204,11 @@
   "sales.expensesTotal_other": "{count} expenses",
   "sales.noExpenses": "No expenses.",
   "sales.manageExpenses": "Add or remove expenses",
-  "receipt.paper": "Receipt paper"
+  "receipt.paper": "Receipt paper",
+  "push.prompt.title": "Turn on notifications",
+  "push.prompt.counter": "Get an alert on this phone when an order is still unpaid, and when an admin approves or rejects your request.",
+  "push.prompt.admin": "Get an alert when a request waits for you, stock runs low, or a shift starts or closes.",
+  "push.prompt.allow": "Turn on",
+  "push.prompt.later": "Not now",
+  "push.prompt.ok": "OK"
 }

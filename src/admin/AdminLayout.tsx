@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { PushButton } from '../components/PushButton';
+import { PushPrompt } from '../components/PushPrompt';
 import type { ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Icon } from '../components/Icon';
@@ -113,6 +114,12 @@ function KauntaBanner() {
 }
 
 /** While the PIN in force is the one Kaunta set, suggest changing it (once per visit, can be put off). */
+/** After signing in: allow notifications (not for Kaunta looking at a bar). */
+function AdminPushPrompt() {
+  const { kaunta } = useAdmin();
+  return kaunta ? null : <PushPrompt audience="admin" />;
+}
+
 function PinReminder() {
   const { t } = useI18n();
   const { account } = useAdmin();
@@ -193,6 +200,7 @@ export function AdminLayout({ children, wide = true }: { children: ReactNode; wi
       <main className={`a-main${wide ? '' : ' is-narrow'}`}>
         <KauntaBanner />
         <PinReminder />
+        <AdminPushPrompt />
         {children}
       </main>
     </div>

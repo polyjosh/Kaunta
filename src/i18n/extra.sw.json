@@ -204,5 +204,11 @@
   "sales.expensesTotal_other": "Matumizi {count}",
   "sales.noExpenses": "Hakuna matumizi.",
   "sales.manageExpenses": "Ongeza au ondoa matumizi",
-  "receipt.paper": "Karatasi ya risiti"
+  "receipt.paper": "Karatasi ya risiti",
+  "push.prompt.title": "Washa arifa",
+  "push.prompt.counter": "Pata arifa kwenye simu hii oda ikiwa bado haijalipwa, na msimamizi akikubali au kukataa ombi lako.",
+  "push.prompt.admin": "Pata arifa ombi likikusubiri, bidhaa zikipungua, au zamu ikianza au kufungwa.",
+  "push.prompt.allow": "Washa",
+  "push.prompt.later": "Si sasa",
+  "push.prompt.ok": "Sawa"
 }
