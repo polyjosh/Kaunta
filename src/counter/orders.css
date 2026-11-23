@@ -1332,3 +1332,8 @@
   flex-direction: column;
   gap: 14px;
 }
+
+/* Print receipt on an order */
+.c-print-btn {
+  width: 100%;
+}

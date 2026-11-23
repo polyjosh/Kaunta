@@ -7,6 +7,9 @@ import { cleanup, configure } from '@testing-library/react';
 // full parallel run that can take longer than the default 1s for findBy queries.
 configure({ asyncUtilTimeout: 5_000 });
 
+// jsdom has no printing: receipts call window.print, which tests replace with a spy where they check it.
+if (typeof window !== 'undefined') window.print = () => undefined;
+
 afterEach(() => {
   // Database tests run in the node environment, without a DOM.
   if (typeof document === 'undefined') return;

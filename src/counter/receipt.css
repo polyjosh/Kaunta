@@ -1,0 +1,131 @@
+/* A printed receipt: drawn outside the app, shown only while printing. Sized for
+   58 mm and 80 mm receipt paper (about 48–72 mm printable); black on white whatever the theme. */
+.k-receipt-root {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 3mm;
+  }
+
+  body.k-printing {
+    background: #fff !important;
+  }
+
+  body.k-printing > *:not(.k-receipt-root) {
+    display: none !important;
+  }
+
+  body.k-printing > .k-receipt-root {
+    display: block;
+  }
+}
+
+.k-receipt {
+  width: 100%;
+  max-width: 72mm;
+  margin: 0 auto;
+  color: #000;
+  background: #fff;
+  font: 12px/1.35 ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.k-receipt * {
+  color: #000 !important;
+}
+
+.k-receipt-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed #000;
+  text-align: center;
+}
+
+.k-receipt-bar {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.k-receipt dl {
+  margin: 0;
+}
+
+.k-receipt dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.k-receipt dt {
+  flex: none;
+}
+
+.k-receipt dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.k-receipt-meta {
+  padding: 6px 0;
+  border-bottom: 1px dashed #000;
+}
+
+.k-receipt-lines {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 4px 0;
+}
+
+.k-receipt-lines th {
+  font-weight: 700;
+  text-align: left;
+  border-bottom: 1px solid #000;
+}
+
+.k-receipt-lines th:last-child,
+.k-receipt-lines td:last-child {
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: top;
+}
+
+.k-receipt-lines td {
+  padding: 3px 0;
+}
+
+.k-receipt-lines small {
+  display: block;
+  font-size: 11px;
+}
+
+.k-receipt-totals {
+  padding: 6px 0;
+  border-top: 1px dashed #000;
+  border-bottom: 1px dashed #000;
+}
+
+.k-receipt-totals .is-total {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.k-receipt-totals .is-status {
+  font-weight: 700;
+}
+
+.k-receipt-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding-top: 6px;
+  font-size: 11px;
+  text-align: center;
+}

@@ -11,6 +11,7 @@ import { SessionProvider, useSession } from './counter/Session';
 import { ShiftScreen } from './counter/ShiftScreen';
 import { ExpensesScreen } from './counter/ExpensesScreen';
 import { ShiftSalesScreen } from './counter/ShiftSalesScreen';
+import { ReceiptProvider } from './counter/Receipt';
 import { ScreenErrorBoundary } from './components/ErrorBoundary';
 import { deviceAudience, pushAs } from './lib/push';
 import { SyncScreen } from './counter/SyncScreen';
@@ -64,6 +65,7 @@ export function App({ db, config = serverConfig(), transport }: AppProps) {
   const counter = (
     <PairingGate enabled={!demo}>
       <SessionProvider>
+        <ReceiptProvider>
         {!demo && <CounterPush />}
         <ScreenErrorBoundary home="/counter/sell">
           <Routes>
@@ -82,6 +84,7 @@ export function App({ db, config = serverConfig(), transport }: AppProps) {
             <Route path="*" element={<Navigate to="/counter/login" replace />} />
           </Routes>
         </ScreenErrorBoundary>
+        </ReceiptProvider>
       </SessionProvider>
     </PairingGate>
   );

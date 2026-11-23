@@ -12,6 +12,7 @@ import type { Id, OrderLine } from '../domain/types';
 import { useI18n } from '../lib/I18nProvider';
 import { formatAmount, formatKES } from '../lib/money';
 import { displayLabel, productName, sizeLabel } from './labels';
+import { usePrintReceipt } from './Receipt';
 import { useSession } from './Session';
 import { Avatar, BackBar, NumberPad, Sheet, Toast, toastFromState, useNow, withOffline } from './ui';
 import type { ToastMessage } from './ui';
@@ -38,6 +39,7 @@ export function OrderDetailScreen() {
   const navigate = useNavigate();
   const now = useNow();
   const [sheet, setSheet] = useState<SheetState>(null);
+  const receipts = usePrintReceipt();
   const location = useLocation();
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const { online } = useConnection();
@@ -234,6 +236,10 @@ export function OrderDetailScreen() {
             )}
           </div>
         )}
+        <button type="button" className="c-btn c-btn-secondary c-print-btn" onClick={() => void receipts.print(order.id)}>
+          <Icon name="receipt" size={20} strokeWidth={2.4} />
+          {t('receipt.print')}
+        </button>
         {open && activeLines.length > 0 && (
           <button type="button" className="c-btn c-btn-link c-void-link" onClick={() => navigate(`/counter/orders/${order.id}/void`)}>
             {t('order.voidLink')}

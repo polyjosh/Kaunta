@@ -9,6 +9,8 @@ import { businessDayOf } from '../domain/time';
 import type { Id, PaymentMethod, Person, Product, ProductSize } from '../domain/types';
 import { useI18n } from '../lib/I18nProvider';
 import { formatKES } from '../lib/money';
+import { PrintToggle } from './PrintToggle';
+import { usePrintReceipt } from './Receipt';
 import { displayLabel, labelForTable, matchesSearch, productName, sizeLabel } from './labels';
 import type { TableChoice } from './labels';
 import { PushButton } from '../components/PushButton';
@@ -48,6 +50,7 @@ type SheetState =
 
 /** Screen 2: record a sale in 2 taps (pay later) or 3 (paid). Rules R-SELL-1…6. */
 export function SellScreen() {
+  const receipts = usePrintReceipt();
   const { t, locale } = useI18n();
   const db = useDb();
   const session = useSession();
@@ -180,6 +183,8 @@ export function SellScreen() {
         items: cart,
         paid_by: paidBy,
       });
+      // A receipt for every sale, paid now or later (when this phone prints receipts).
+      void receipts.printAfterSale(order.id);
       // Lines clear and the table resets; the server stays (R-SELL-3).
       setCart([]);
       setTable(null);
@@ -472,6 +477,7 @@ export function SellScreen() {
             {t('sell.switchUser')}
           </button>
           <PushButton className="c-btn c-btn-secondary" />
+          <PrintToggle />
           <button type="button" className="c-btn c-btn-secondary" onClick={() => navigate('/counter/shift/sales')}>
             {t('sales.menu')}
           </button>

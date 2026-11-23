@@ -160,6 +160,15 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 - **Admin account menu on phones**: when the header wrapped, the avatar moved to the left and the menu (anchored to its right) ran off the screen. `.a-header-tools` now stays on the right; the menu scrolls if the screen is short.
 - **"← Kaunta Book" on the sign-in cards** (owner/manager and /super) goes to `/?home`; the landing page does not send the installed app back to its last way when `?home` is there (that redirect is why the link seemed dead). The lockup on the owner sign-in card links home too.
 
+## Receipts (2026-11-23, after the counter changes)
+
+- **A receipt for every sale**: after **Record (pay later)** and **Record & paid** (`printAfterSale` in `SellScreen`), and **Print receipt** on any order (open, paid or voided) to print it again. Uses the phone's own print dialog (`window.print`), so it prints to whatever the phone can print to: a receipt printer through its Android print service, a Wi-Fi printer, or PDF. No printer drivers or Bluetooth code in the app.
+- **What it shows** (`loadReceipt`, `src/data/receipt.ts`; works offline): bar name, order number and table, nickname, date and time (Nairobi), **Served by** (the server on the sale), Recorded by + phone, each item (size, qty × price, line total; "void asked" on lines waiting for a decision), total, each payment (Cash / M-Pesa with last 4), then To pay / Balance to pay / Paid in full / Voided, "Printed …" and Kaunta Book.
+- **Layout** (`src/counter/Receipt.tsx`, `receipt.css`): drawn outside the app and shown only while printing (`body.k-printing`), black on white, monospace, up to 72 mm wide (58 mm and 80 mm paper).
+- **Name menu → "Receipt after each sale: On/Off"**, per phone (`localStorage` `kaunta.printReceipts`, on unless turned off), for phones with no printer. Print receipt on an order works either way.
+- The order number printed straight after a sale is the phone's; when two phones record offline at once the server can renumber one (R-DAY-2), so a receipt may show a number that later changes.
+- Tests: `src/counter/receipt.test.tsx`. jsdom has no printing: `src/test/setup.ts` stubs `window.print`.
+
 ## Counter changes: nicknames, handover to a person, shift block (2026-11-23)
 
 - **Hidden for now**: "Split bill" on an order and "Move to a new order" on a line (`SHOW_SPLIT_BILL` / `SHOW_MOVE` in `OrderDetailScreen.tsx`; the code and its tests stay, skipped). The Cash + M-Pesa split in the payment sheet is unchanged.
@@ -187,7 +196,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 
 ## Tests
 
-- `npm test`: 574 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
+- `npm test`: 580 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
 - Counter UI and phone-sync tests pin the clock to the 22:20 snapshot; before 2026-11-11 they used the real clock and broke when the business day rolled over.
 - `npm run test:e2e`: 17 Playwright tests (landing and counter at 360×800, admin at 390 px and desktop). `e2e/fullLoop.spec.ts` does the whole loop in one browser: add a bar, its code, presets, add a person, the code at the counter, one-time code → PIN, a sale, the sale in admin.
 
