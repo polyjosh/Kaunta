@@ -2552,3 +2552,36 @@
 .a-text-btn.is-danger {
   color: var(--k-error-fg);
 }
+
+/* Another business day (DayPicker on Today and Reconcile) */
+.a-title-tools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.a-daypick {
+  position: relative;
+  display: inline-flex;
+}
+
+.a-daypick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* The native date field opens from the button; it stays out of sight and out of the tab order. */
+.a-daypick-input {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  border: 0;
+  padding: 0;
+}

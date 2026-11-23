@@ -141,5 +141,14 @@
   "super.form.maxBars": "Baa wanazoweza kufungua",
   "super.form.maxBarsHint": "Ikiwemo hii ya kwanza. 1 hadi {max}; acha tupu kwa bila kikomo. Unaweza kubadilisha baadaye kwenye Wamiliki na mameneja.",
   "super.signIn.locked": "Majaribio mengi yasiyo sahihi. Jaribu tena baada ya dakika 15.",
-  "super.signIn.notSet": "Nenosiri la Kaunta bado halijawekwa kwenye seva. Liweke mara moja kwenye kihariri cha SQL cha Supabase (tazama supabase/README.md)."
+  "super.signIn.notSet": "Nenosiri la Kaunta bado halijawekwa kwenye seva. Liweke mara moja kwenye kihariri cha SQL cha Supabase (tazama supabase/README.md).",
+  "super.reset.title": "Anzisha baa hii upya",
+  "super.reset.body": "Kwa baa iliyotumika kwa majaribio. Inafuta kila rekodi yake (mauzo, malipo, menyu na stoo, zamu na matumizi, maombi, kumbukumbu za ukaguzi, simu za kaunta) na kila mtu aliyeongezwa na mmiliki: wafanyakazi wa kaunta, wahudumu na mameneja. Mameneja wasio na baa nyingine wanapoteza akaunti zao. Baa, msimbo wake na mmiliki wanabaki, na inafunguka kama baa mpya.",
+  "super.reset.start": "Anzisha upya…",
+  "super.reset.warning": "Hili haliwezi kutenduliwa. Simu za kaunta za baa hii zitaomba msimbo wa baa tena.",
+  "super.reset.typeName": "Andika jina la baa kuthibitisha: {name}",
+  "super.reset.confirm": "Anzisha {name} upya",
+  "super.reset.wrongName": "Hilo si jina la baa.",
+  "super.reset.notFound": "Baa hii haipo tena.",
+  "super.reset.done": "{name} imeanzishwa upya. Inafunguka kama baa mpya."
 }

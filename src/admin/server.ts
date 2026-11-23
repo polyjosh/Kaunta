@@ -206,6 +206,21 @@ const wire = (e: AdminOutboxEntry) => ({ id: e.id, type: e.type, payload: e.payl
 export async function applyAdminPull(db: KauntaDB, data: AdminPull): Promise<boolean> {
   return db.transaction('rw', db.tables, async () => {
     if ((await db.adminOutbox.where('status').equals('pending').count()) > 0) return false;
+    // Kaunta reset the bar (bar.reset_at): drop everything held of it and pull it again from the start.
+    const resetValue = (data.bar ?? []).map((b) => b.reset_at).find((v) => typeof v === 'string');
+    if (typeof resetValue === 'string') {
+      const resetAt = new Date(resetValue).toISOString();
+      const known = (await db.meta.get('bar_reset_at'))?.value;
+      if (known !== resetAt) {
+        const incremental = !!(await db.meta.get('pull_cursor'));
+        await db.meta.put({ key: 'bar_reset_at', value: resetAt });
+        if (incremental) {
+          for (const table of db.tables) if (table.name !== 'meta') await table.clear();
+          await db.meta.delete('pull_cursor');
+          return false;
+        }
+      }
+    }
     for (const table of ADMIN_TABLES) {
       const rows = data[table] ?? [];
       if (rows.length > 0) await db.table(table).bulkPut(rows.map(normaliseRow));

@@ -308,6 +308,22 @@ export function setBarSuspended(barId: string, suspended: boolean): void {
   update((p) => ({ ...p, bars: p.bars.map((b) => (b.id === barId ? { ...b, suspended_at: suspended ? (b.suspended_at ?? new Date().toISOString()) : null } : b)) }));
 }
 
+/**
+ * Kaunta resets a bar to new (demo): everyone the owner added leaves it, and
+ * managers' accounts that run no other bar are deleted. The bar, its code and
+ * its owner stay. Its records are cleared by the caller (actions.resetBar).
+ */
+export function resetBarMembers(barId: string): { accountsRemoved: number } {
+  const p = platform();
+  const bar = p.bars.find((b) => b.id === barId);
+  if (!bar) return { accountsRemoved: 0 };
+  const leaving = p.members.filter((m) => m.bar_id === barId && m.account_id !== bar.owner_account_id).map((m) => m.account_id);
+  const members = p.members.filter((m) => !(m.bar_id === barId && m.account_id !== bar.owner_account_id));
+  const gone = new Set(leaving.filter((id) => !members.some((m) => m.account_id === id) && !p.bars.some((b) => b.owner_account_id === id)));
+  update((q) => ({ ...q, members, accounts: q.accounts.filter((a) => !gone.has(a.id)) }));
+  return { accountsRemoved: gone.size };
+}
+
 /** How many bars an owner owns, and how many Kaunta lets them own (null = no limit). */
 export function barLimit(accountId: string, p: Platform = platform()): { used: number; max: number | null } {
   const max = p.accounts.find((a) => a.id === accountId)?.max_bars;

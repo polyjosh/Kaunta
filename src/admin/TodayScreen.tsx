@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import type { IconName } from '../components/Icon';
 import { attentionFlags, byServer, salesByHour, todaySummary } from '../domain/admin';
@@ -14,7 +14,8 @@ import { AdminLayout, PageTitle } from './AdminLayout';
 import { BarCodeCard } from './BarCodeCard';
 import { FirstRun } from './FirstRun';
 import { useNow } from './AdminSession';
-import { hhmm, personName, useDayData } from './data';
+import { dayLabel, hhmm, personName, useDayData } from './data';
+import { DayPicker } from './DayPicker';
 import type { AdminDay } from './data';
 
 type Tone = 'error' | 'warning' | 'written-off';
@@ -119,8 +120,15 @@ function flagView(flag: Flag, data: AdminDay, t: TFunction, locale: Locale): Fla
 export function TodayScreen() {
   const { t, locale } = useI18n();
   const now = useNow();
+  const navigate = useNavigate();
+  const [params] = useSearchParams();
   const dayStart = '06:00';
-  const day = businessDayOf(now, dayStart);
+  const today = businessDayOf(now, dayStart);
+  // Another business day from the calendar: /admin?day=2026-11-08 (never one in the future).
+  const asked = params.get('day');
+  const day = asked && /^\d{4}-\d{2}-\d{2}$/.test(asked) && asked < today ? asked : today;
+  const isToday = day === today;
+  const pickDay = (d: string) => navigate(d === today ? '/admin' : `/admin?day=${d}`);
   const data = useDayData(day);
 
   if (!data) return <AdminLayout>{null}</AdminLayout>;
@@ -142,7 +150,7 @@ export function TodayScreen() {
   const topServer = servers[0]?.served_kes ?? 0;
   const total = s.cash_kes + s.mpesa_kes;
   const cashPct = total > 0 ? Math.round((s.cash_kes / total) * 1000) / 10 : 0;
-  const currentHour = hhmm(now.toISOString()).slice(0, 2);
+  const currentHour = isToday ? hhmm(now.toISOString()).slice(0, 2) : null;
 
   const answer =
     s.money_at_risk_kes > 0
@@ -153,11 +161,16 @@ export function TodayScreen() {
 
   return (
     <AdminLayout>
-      <PageTitle title={t('today.title')} aside={t('today.asOf', { time: hhmm(now.toISOString()) })} />
+      <PageTitle title={isToday ? t('today.title') : t('admin.day.title', { date: dayLabel(day, locale) })} aside={isToday ? t('today.asOf', { time: hhmm(now.toISOString()) }) : undefined}>
+        <div className="a-title-tools">
+          {!isToday && <Link className="a-link" to="/admin">{t('admin.day.backToday')}</Link>}
+          <DayPicker day={day} today={today} onPick={pickDay} />
+        </div>
+      </PageTitle>
 
       <section className="a-hero" aria-labelledby="today-q">
         <div className="a-hero-text">
-          <h2 id="today-q">{t('today.question')}</h2>
+          <h2 id="today-q">{isToday ? t('today.question') : t('admin.day.question', { date: dayLabel(day, locale) })}</h2>
           <p>{answer}</p>
         </div>
         <div className="a-hero-tiles">

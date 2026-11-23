@@ -34,6 +34,8 @@ export interface Bar {
   keg_foam_allowance_cups: number;
   /** What a counter phone types to join this bar (see domain/barCode.ts). Admins see it; on a server, phones are sent it after joining. */
   counter_code?: string;
+  /** When Kaunta last reset the bar to new (every record cleared); browsers holding older data drop it. */
+  reset_at?: Instant | null;
 }
 
 export type Role = 'owner' | 'admin' | 'counter' | 'server';

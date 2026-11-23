@@ -541,5 +541,11 @@
   "admin.fact.shift": "Zamu",
   "admin.effect.expenseCash": "Ukikubali, {amount} hazihesabiwi kwenye pesa inayotarajiwa droo. Ukikataa, zamu ya {name} inapungukiwa {amount}.",
   "admin.effect.expenseTill": "Ukikubali, {amount} hazihesabiwi kwenye kiasi cha till ya M-Pesa. Ukikataa, zinahesabiwa kama zimepotea kwenye till.",
-  "admin.audit.voidCancelled": "Ombi la kufuta limeondolewa · {order} imelipwa badala yake"
+  "admin.audit.voidCancelled": "Ombi la kufuta limeondolewa · {order} imelipwa badala yake",
+  "admin.day.pick": "Chagua siku nyingine (inaonyesha {date})",
+  "admin.day.pickField": "Siku ya biashara",
+  "admin.day.title": "Mauzo · {date}",
+  "admin.day.question": "Je, nilipoteza pesa {date}?",
+  "admin.day.backToday": "Rudi leo",
+  "admin.audit.barReset": "Baa imeanzishwa upya · rekodi zote za awali zimefutwa"
 }

@@ -25,7 +25,7 @@ import {
   usePlatform,
   verifySuperPassword,
 } from './platform';
-import type { Account, AccountProblem, CodeProblem, Platform } from './platform';
+import type { Account, AccountProblem, CodeProblem, Platform, PlatformBar } from './platform';
 import { setSnapshotSource, useBarSnapshots } from './superData';
 import {
   addManager,
@@ -36,6 +36,7 @@ import {
   resetSecret,
   setBarCode,
   setBarLimit,
+  resetBar,
   setBarSuspended,
   setPlatformServer,
 } from './actions';
@@ -479,6 +480,8 @@ function BarScreen() {
         <p className="a-note">{t('super.bar.openAdminHint')}</p>
       </section>
 
+      <ResetBarCard bar={bar} />
+
       <div className="a-row is-top">
         <div className="a-col a-grow-main">
           <section className="a-card">
@@ -803,4 +806,62 @@ function liveSnapshots(server: AdminServer) {
       return db;
     },
   };
+}
+
+/**
+ * Start a bar again from nothing (bars used for testing): every record and
+ * everyone the owner added go; the bar, its code and owner stay. Confirmed by
+ * typing the bar's name.
+ */
+function ResetBarCard({ bar }: { bar: PlatformBar }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const matches = typed.trim().toLowerCase() === bar.name.trim().toLowerCase();
+  const run = async () => {
+    if (!matches || busy) return;
+    setBusy(true);
+    setProblem(null);
+    try {
+      const answer = await resetBar(bar.id, typed);
+      if (answer) setProblem(t(answer === 'confirm' ? 'super.reset.wrongName' : 'super.reset.notFound'));
+      else {
+        setDone(true);
+        setOpen(false);
+        setTyped('');
+      }
+    } catch (e) {
+      setProblem((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section className="a-card s-reset" aria-labelledby="reset-h">
+      <h2 id="reset-h">{t('super.reset.title')}</h2>
+      <p className="a-note">{t('super.reset.body')}</p>
+      {done && <p className="a-ok" role="status">{t('super.reset.done', { name: bar.name })}</p>}
+      {!open ? (
+        <div className="a-actions">
+          <button type="button" className="a-btn a-btn-danger" onClick={() => { setOpen(true); setDone(false); }}>{t('super.reset.start')}</button>
+        </div>
+      ) : (
+        <>
+          <p className="a-note is-strong">{t('super.reset.warning')}</p>
+          <label className="a-field">
+            {t('super.reset.typeName', { name: bar.name })}
+            <input value={typed} autoComplete="off" onChange={(e) => setTyped(e.target.value)} />
+          </label>
+          {problem && <p className="a-error" role="alert">{problem}</p>}
+          <div className="a-actions">
+            <button type="button" className="a-btn a-btn-danger" disabled={!matches || busy} onClick={() => void run()}>{t('super.reset.confirm', { name: bar.name })}</button>
+            <button type="button" className="a-btn" onClick={() => { setOpen(false); setTyped(''); setProblem(null); }}>{t('common.cancel')}</button>
+          </div>
+        </>
+      )}
+    </section>
+  );
 }

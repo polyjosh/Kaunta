@@ -14,6 +14,8 @@ const extra = {
   plus: 'M12 5v14 M5 12h14',
   check: 'M20 6L9 17l-5-5',
   list: 'M4 6h16M4 12h16M4 18h10',
+  // Pick another day (Today, Reconcile).
+  calendar: 'M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z M3 10h18 M8 3v4 M16 3v4',
   // Comp (on the house), as drawn in Approvals.dc.html.
   gift: 'M3 8h18v4H3z M5 12v9h14v-9 M12 8v13 M12 8c-2-4-6-4-6-1s6 1 6 1zm0 0c2-4 6-4 6-1s-6 1-6 1z',
 } as const;

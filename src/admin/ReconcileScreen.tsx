@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Icon } from '../components/Icon';
 import { StatusChip } from '../components/StatusChip';
 import { displayLabel } from '../counter/labels';
@@ -14,6 +14,7 @@ import { formatAmount, formatKES } from '../lib/money';
 import { AdminLayout, PageTitle } from './AdminLayout';
 import { useAdmin, useNow } from './AdminSession';
 import { dayLabel, deviceName, hhmm, personName, shiftDay, useDayData } from './data';
+import { DayPicker } from './DayPicker';
 
 /** Whole KES typed by the admin: digits only, no decimals. */
 export function parseKes(text: string): number | null {
@@ -27,6 +28,7 @@ export function ReconcileScreen({ day }: { day: BusinessDay }) {
   const db = useDb();
   const { ctx, now } = useAdmin();
   const clock = useNow();
+  const navigate = useNavigate();
   const data = useDayData(day);
   const [tillText, setTillText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -72,6 +74,7 @@ export function ReconcileScreen({ day }: { day: BusinessDay }) {
       />
       <nav className="a-daynav" aria-label={t('admin.recon.otherDays')}>
         <Link className="a-link" to={`/admin/reconcile/${shiftDay(day, -1)}`}>← {dayLabel(shiftDay(day, -1), locale)}</Link>
+        <DayPicker day={day} today={today} onPick={(d) => navigate(`/admin/reconcile/${d}`)} />
         {day < today && <Link className="a-link" to={`/admin/reconcile/${shiftDay(day, 1)}`}>{dayLabel(shiftDay(day, 1), locale)} →</Link>}
       </nav>
 

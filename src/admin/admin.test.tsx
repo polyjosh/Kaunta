@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { seedAdminDatabase } from '../data/adminSeed';
@@ -64,6 +64,28 @@ describe('Today (R-DAY-4)', () => {
     const flag = screen.getByText('Pilsner is at −4 bottles').closest('a')!;
     expect(flag).toHaveAttribute('href', '/admin/stock/new?product=pilsner');
     expect(flag.querySelector('svg')).not.toBeNull();
+  });
+
+  it('the calendar loads another day, and Back to today returns', async () => {
+    renderAt('/admin');
+    await screen.findByText('KES 86,450');
+    const field = screen.getByLabelText('Business day');
+    expect(field).toHaveAttribute('max', '2026-11-10');
+    expect(field).toHaveAttribute('min', '2026-10-06');
+    expect(screen.getByRole('button', { name: 'Choose another day (showing Tue 10 Nov)' })).toBeInTheDocument();
+    fireEvent.change(field, { target: { value: '2026-11-09' } });
+    expect(await screen.findByRole('heading', { name: 'Sales · Mon 9 Nov' })).toBeInTheDocument();
+    expect(screen.getByText('Did I lose money on Mon 9 Nov?')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText('KES 86,450')).toBeNull());
+    expect(screen.getByRole('link', { name: 'Reconcile the day →' })).toHaveAttribute('href', '/admin/reconcile/2026-11-09');
+    await user.click(screen.getByRole('link', { name: 'Back to today' }));
+    expect(await screen.findByText('KES 86,450')).toBeInTheDocument();
+  });
+
+  it('a day in the address that is today or later is today', async () => {
+    renderAt('/admin?day=2026-12-31');
+    expect(await screen.findByText('KES 86,450')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Back to today' })).toBeNull();
   });
 
   it('the Approvals tab carries the waiting count', async () => {
@@ -150,6 +172,16 @@ describe('Reconcile (R-SHIFT-2, R-DAY-3)', () => {
     await user.type(screen.getByLabelText('Till total in KES'), '47650');
     expect(screen.queryByText('Recorded but not on the till')).toBeNull();
     expect(document.querySelector('.a-variance')).toHaveClass('k-tone-paid');
+  });
+
+  it('the calendar opens another day', async () => {
+    renderAt('/admin/reconcile/2026-11-10');
+    await screen.findByRole('heading', { name: 'Reconcile · Tue 10 Nov' });
+    fireEvent.change(screen.getByLabelText('Business day'), { target: { value: '2026-11-08' } });
+    expect(await screen.findByRole('heading', { name: 'Reconcile · Sun 8 Nov' })).toBeInTheDocument();
+    // Nothing outside what this device keeps, and nothing in the future.
+    fireEvent.change(screen.getByLabelText('Business day'), { target: { value: '2026-11-20' } });
+    expect(screen.getByRole('heading', { name: 'Reconcile · Sun 8 Nov' })).toBeInTheDocument();
   });
 
   it('closes once every shift is closed, and keeps the difference on record', async () => {

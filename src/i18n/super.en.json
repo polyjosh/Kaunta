@@ -141,5 +141,14 @@
   "super.form.maxBars": "Bars they can open",
   "super.form.maxBarsHint": "Counting this first one. 1 to {max}; leave empty for no limit. You can change it later under Owners & managers.",
   "super.signIn.locked": "Too many wrong tries. Try again in 15 minutes.",
-  "super.signIn.notSet": "Kaunta's password is not set on the server yet. Set it once in the Supabase SQL editor (see supabase/README.md)."
+  "super.signIn.notSet": "Kaunta's password is not set on the server yet. Set it once in the Supabase SQL editor (see supabase/README.md).",
+  "super.reset.title": "Start this bar again",
+  "super.reset.body": "For a bar that was used for testing. Clears every record of it (sales, payments, the menu and stock, shifts and expenses, approvals, the audit log, counter phones) and everyone the owner added: counter staff, servers and managers. Managers who run no other bar lose their account. The bar, its code and its owner stay, and it opens like a new bar.",
+  "super.reset.start": "Reset bar…",
+  "super.reset.warning": "This cannot be undone. Counter phones of this bar will ask for the bar code again.",
+  "super.reset.typeName": "Type the bar’s name to confirm: {name}",
+  "super.reset.confirm": "Reset {name} to new",
+  "super.reset.wrongName": "That is not the bar’s name.",
+  "super.reset.notFound": "This bar is no longer there.",
+  "super.reset.done": "{name} has been reset. It opens as a new bar."
 }

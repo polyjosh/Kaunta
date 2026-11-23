@@ -91,6 +91,40 @@ export async function setBarSuspended(barId: string, suspended: boolean): Promis
   await then(server.call('super_set_bar_suspended', { bar_id: barId, suspended }));
 }
 
+export type ResetProblem = 'confirm' | 'not_found';
+
+/**
+ * Kaunta resets a bar to new: every record of it goes (sales, menu, stock,
+ * shifts, approvals, the audit log, phones) and so does everyone the owner
+ * added. The bar, its code and its owner stay; it opens in first run.
+ * `confirm` is the bar's name, typed.
+ */
+export async function resetBar(barId: string, confirm: string): Promise<ResetProblem | null> {
+  if (!server) {
+    const bar = demo.platform().bars.find((b) => b.id === barId);
+    if (!bar) return 'not_found';
+    if (confirm.trim().toLowerCase() !== bar.name.trim().toLowerCase()) return 'confirm';
+    demo.resetBarMembers(barId);
+    // Its store on this browser goes; it is made again, new, when the bar is next opened.
+    // (The sample bar's store comes back as the sample night: it is the demo.)
+    const store = demoStore(barId);
+    store.close();
+    await store.delete();
+    if (barId === demo.SAMPLE_BAR_ID) {
+      // The sample counter's store is the app's default one: emptied (it seeds again), not deleted.
+      const { db: counterDb } = await import('../data/db');
+      await counterDb.transaction('rw', counterDb.tables, async () => {
+        for (const table of counterDb.tables) await table.clear();
+      });
+    }
+    refreshSnapshots();
+    return null;
+  }
+  const answer = await then(server.call<{ ok?: true; error?: ResetProblem }>('super_reset_bar', { bar_id: barId, confirm }));
+  refreshSnapshots();
+  return answer.error ?? null;
+}
+
 /** A bar's code: the one given (checked unique), or a fresh one. */
 export async function setBarCode(barId: string, code: string): Promise<{ code: string } | { error: CodeProblem }> {
   if (!server) {

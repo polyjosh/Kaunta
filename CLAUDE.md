@@ -148,6 +148,12 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 - Not yet: keys not set; never sent through real OneSignal (sending tested with stand-in `net`/`vault` in `supabase/notifications.test.ts`).
 - Tests: `supabase/notifications.test.ts`, `src/lib/push.test.tsx`.
 
+## Other days on Today and Reconcile; Kaunta resets a bar (asked for after the rename)
+
+- **Calendar** (`src/admin/DayPicker.tsx`): a calendar button opens the browser's date picker, from 35 days back (`DAYS_KEPT`, what `admin_pull` keeps on the device) to today. Today takes `/admin?day=YYYY-MM-DD` ("Sales · Mon 9 Nov", "Did I lose money on …?", Back to today; a day that is today or later is today); Reconcile goes to `/admin/reconcile/<day>`.
+- **Reset a bar** (`/super` → bar page → Start this bar again; typing the bar's name confirms): server `super_reset_bar` (`20261126000000_kaunta_bar_reset.sql`, through `kaunta_super`) deletes every record of the bar (orders, lines, payments, stock movements, approvals, shifts, events, audit log, deliveries, day closes, kegs, products, sizes, price history, devices, pairing codes, notifications) and every person but the owner; managers' accounts that run no other bar and own none are deleted. The bar, code, settings, owner and owner's account stay; one `bar_reset` audit row by Kaunta. The audit log's append-only trigger lets deletes through only while `kaunta.reset_bar` is set (inside the reset). `bar.reset_at` makes `applyAdminPull` drop a browser's copy and pull from the start; counter phones lose their device and ask for the bar code. Demo: `resetBarMembers` + the bar's store deleted (the sample bar comes back as the sample night).
+- Tests: `supabase/barReset.test.ts`, `src/platform/reset.test.tsx`, calendar tests in `src/admin/admin.test.tsx`.
+
 ## Renamed Kaunta Book (2026-11-19)
 
 - The product is **Kaunta Book**: page title, installed-app name (`short_name` "Kaunta Book"), landing copy, install prompts, "Recorded in Kaunta Book", the counter's top bar before pairing, and the logo. **"Kaunta" stays** where it means the company/team that runs the platform (`/super` "Kaunta platform", "Kaunta set your password", "Kaunta has suspended…", the `kaunta` actor). Lowercase Kiswahili "kaunta" (counter) is unchanged.
@@ -164,7 +170,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 
 ## Tests
 
-- `npm test`: 550 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
+- `npm test`: 559 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
 - Counter UI and phone-sync tests pin the clock to the 22:20 snapshot; before 2026-11-11 they used the real clock and broke when the business day rolled over.
 - `npm run test:e2e`: 17 Playwright tests (landing and counter at 360×800, admin at 390 px and desktop). `e2e/fullLoop.spec.ts` does the whole loop in one browser: add a bar, its code, presets, add a person, the code at the counter, one-time code → PIN, a sale, the sale in admin.
 

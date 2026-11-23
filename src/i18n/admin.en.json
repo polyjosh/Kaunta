@@ -541,5 +541,11 @@
   "admin.fact.shift": "Shift",
   "admin.effect.expenseCash": "Approve and {amount} stays off the cash expected in the drawer. Reject and {name}’s shift is short by {amount}.",
   "admin.effect.expenseTill": "Approve and {amount} stays off what the M-Pesa till should show. Reject and it counts as missing from the till.",
-  "admin.audit.voidCancelled": "Void request taken back · {order} paid instead"
+  "admin.audit.voidCancelled": "Void request taken back · {order} paid instead",
+  "admin.day.pick": "Choose another day (showing {date})",
+  "admin.day.pickField": "Business day",
+  "admin.day.title": "Sales · {date}",
+  "admin.day.question": "Did I lose money on {date}?",
+  "admin.day.backToday": "Back to today",
+  "admin.audit.barReset": "Bar reset to new · every earlier record cleared"
 }

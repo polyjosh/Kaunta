@@ -182,6 +182,8 @@ export function describeAudit(e: AuditEvent, l: AuditLookups, t: TFunction, loca
       const s: Shift = d.shift;
       return { what: t('admin.audit.shiftOpened', { amount: formatKES(s.float_kes) }), changes: none };
     }
+    case 'bar_reset':
+      return { what: t('admin.audit.barReset'), changes: none };
     case 'void_request_cancelled':
       return { what: t('admin.audit.voidCancelled', { order: order(d.order_id)?.short_no ?? '' }), changes: none };
     case 'shift_expense_added':
