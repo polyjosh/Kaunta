@@ -555,5 +555,12 @@
   "admin.staff.deleteWhy": "Delete {name}? It stops working at once (it is revoked) and leaves this list. Its sales stay in the records.",
   "admin.staff.deleteWhyRevoked": "Delete {name} from this list? Its sales stay in the records.",
   "admin.staff.deleteConfirm": "Delete {name}",
-  "admin.audit.deviceDeleted": "Phone deleted · {name}"
+  "admin.audit.deviceDeleted": "Phone deleted · {name}",
+  "admin.recon.closeForTitle": "Shifts still open",
+  "admin.recon.closeForBody": "Someone left without closing their shift? Count the cash in their drawer and close it for them. The day can be closed once every shift is.",
+  "admin.recon.closeFor": "Close {name}’s shift",
+  "admin.recon.countedLabel": "Cash counted in {name}’s drawer (KES)",
+  "admin.recon.closeConfirm": "Close {name}’s shift",
+  "admin.recon.expectedShort": "expected {amount}",
+  "admin.audit.shiftClosedFor": "Shift of {name} closed by an admin · {result}"
 }

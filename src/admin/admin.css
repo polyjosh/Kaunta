@@ -1773,6 +1773,39 @@
   background: var(--k-error-bg);
 }
 
+/* On a phone: the reason picker and the buttons take the card's width and wrap, never wider than the page. */
+.a-revoke {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.a-revoke > *,
+.a-revoke .a-field {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.a-revoke .a-field {
+  flex: 1 1 100%;
+}
+
+.a-revoke select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.a-revoke .a-actions {
+  flex-wrap: wrap;
+}
+
+.a-revoke .a-btn {
+  max-width: 100%;
+  white-space: normal;
+  text-align: center;
+}
+
 .a-pair-code {
   font-size: 44px;
   font-weight: 800;
@@ -2578,15 +2611,80 @@
   gap: 8px;
 }
 
-/* The native date field opens from the button; it stays out of sight and out of the tab order. */
+/* The native date field lies over the button, invisible: a tap (or click) lands on it and opens the
+   browser's own picker, which phones only do for a real tap on the field. Out of the tab order. */
 .a-daypick-input {
   position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 1px;
-  height: 1px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
   opacity: 0;
-  pointer-events: none;
   border: 0;
   padding: 0;
+  font-size: 16px; /* no zoom on iPhone */
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.a-daypick-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+/* Reconcile: close an open shift for someone */
+.a-close-shifts {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--k-line);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.a-close-shifts h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.a-close-shift {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--k-line);
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.a-close-shift-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.a-close-shift-head .a-muted {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.a-close-shift-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 420px;
+}
+
+.a-close-shift-form input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.a-close-shift-form .a-actions {
+  flex-wrap: wrap;
 }

@@ -334,6 +334,32 @@ export interface FeedRow {
 }
 
 /**
+ * "Served" on the Sales page: every order of the day still to be paid, once,
+ * with all its items (not those voided) and what is still due. Newest first.
+ */
+export function unpaidRows(data: Pick<DayData, 'orders' | 'lines' | 'payments'>): FeedRow[] {
+  return data.orders
+    .filter((o) => o.status === 'open')
+    .map((order) => {
+      const lines = data.lines.filter((l) => l.order_id === order.id && l.status !== 'voided');
+      const payments = data.payments.filter((p) => p.order_id === order.id);
+      return {
+        id: `unpaid-${order.id}`,
+        at: order.created_at,
+        kind: 'served' as const,
+        order,
+        lines,
+        payments,
+        amount_kes: orderDue(lines, payments),
+        approval: null,
+        actor_id: order.recorded_by,
+        device_id: order.device_id,
+      };
+    })
+    .sort((a, b) => b.at.localeCompare(a.at));
+}
+
+/**
  * The live sales feed, newest first, built from the audit log so rows arrive
  * exactly as counters sync. Approvals raised by the server (price mismatch,
  * archived product, revoked phone) come in as "needs review" too.
@@ -396,7 +422,7 @@ const GROUPS: Record<AuditGroup, string[]> = {
   voids: ['void_recorded', 'void_requested', 'approval_decided', 'approval_undone'],
   products: ['product_saved'],
   stock: ['delivery_recorded', 'shelf_counted', 'keg_finished', 'keg_checked'],
-  logins: ['login', 'logged_in', 'pin_failed', 'person_unlocked', 'pin_reset', 'pin_set', 'pin_changed', 'person_saved', 'person_archived', 'person_suspended', 'person_reinstated', 'device_paired', 'device_revoked', 'device_deleted'],
+  logins: ['login', 'logged_in', 'pin_failed', 'person_unlocked', 'pin_reset', 'pin_set', 'pin_changed', 'person_saved', 'person_archived', 'person_suspended', 'person_reinstated', 'device_paired', 'device_revoked', 'device_deleted', 'shift_closed_by_admin'],
   shifts: ['shift_opened', 'shift_expense_added', 'shift_expense_removed', 'shift_closed', 'day_closed'],
 };
 export const AUDIT_GROUPS = Object.keys(GROUPS) as AuditGroup[];

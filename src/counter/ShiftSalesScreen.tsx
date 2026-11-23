@@ -256,11 +256,19 @@ function SalesDayPicker({ day, first, today, onPick }: { day: BusinessDay; first
         <Icon name="calendar" size={20} />
         <span>{dayLabel(day, locale)}</span>
       </button>
+      {/* Over the button: on phones the tap lands on the field itself (scripts may not open it there). */}
       <input
         ref={input}
         className="c-daypick-input"
         type="date"
         tabIndex={-1}
+        onClick={(e) => {
+          try {
+            e.currentTarget.showPicker();
+          } catch {
+            // The browser opens it by itself.
+          }
+        }}
         aria-label={t('sales.pickDayField')}
         min={first}
         max={today}

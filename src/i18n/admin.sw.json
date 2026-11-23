@@ -555,5 +555,12 @@
   "admin.staff.deleteWhy": "Futa {name}? Itaacha kufanya kazi mara moja (inafutiwa ruhusa) na kuondoka kwenye orodha hii. Mauzo yake yanabaki kwenye kumbukumbu.",
   "admin.staff.deleteWhyRevoked": "Futa {name} kwenye orodha hii? Mauzo yake yanabaki kwenye kumbukumbu.",
   "admin.staff.deleteConfirm": "Futa {name}",
-  "admin.audit.deviceDeleted": "Simu imefutwa · {name}"
+  "admin.audit.deviceDeleted": "Simu imefutwa · {name}",
+  "admin.recon.closeForTitle": "Zamu ambazo bado ziko wazi",
+  "admin.recon.closeForBody": "Mtu ameondoka bila kufunga zamu yake? Hesabu pesa taslimu kwenye droo yake na uifunge kwa niaba yake. Siku inaweza kufungwa zamu zote zikifungwa.",
+  "admin.recon.closeFor": "Funga zamu ya {name}",
+  "admin.recon.countedLabel": "Pesa taslimu zilizohesabiwa kwenye droo ya {name} (KES)",
+  "admin.recon.closeConfirm": "Funga zamu ya {name}",
+  "admin.recon.expectedShort": "inatarajiwa {amount}",
+  "admin.audit.shiftClosedFor": "Zamu ya {name} imefungwa na msimamizi · {result}"
 }

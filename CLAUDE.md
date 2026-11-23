@@ -164,6 +164,14 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 - **Admin account menu on phones**: when the header wrapped, the avatar moved to the left and the menu (anchored to its right) ran off the screen. `.a-header-tools` now stays on the right; the menu scrolls if the screen is short.
 - **"← Kaunta Book" on the sign-in cards** (owner/manager and /super) goes to `/?home`; the landing page does not send the installed app back to its last way when `?home` is there (that redirect is why the link seemed dead). The lockup on the owner sign-in card links home too.
 
+## Admin on phones; Served; closing a shift for someone (2026-11-23, evening)
+
+- **Calendar buttons on phones** (Today, Reconcile, and the counter's Sales History): the date field now lies invisibly over the button, so a tap lands on the field and opens the phone's own picker (phones do not let a script open it). `showPicker()` on click for desktop.
+- **Sales → Served**: the orders still to be paid, one row each with all their items (not voided) and what is still due, Pending or Part paid (`unpaidRows` in `src/domain/admin.ts`). Before, "served" rows came from the log and stayed even after the order was paid. All, Paid, Voids and Needs review unchanged.
+- **Revoke / Delete card on phones**: the reason picker and buttons take the card's width and wrap (`.a-revoke` in `admin.css`); was 434 px wide on a 360 px screen.
+- **Close a shift for someone** (Reconcile → Shifts still open → "Close Akinyi's shift"): the admin counts that drawer and types it; the shift closes like a counter close (counted − expected, short/over shown before closing), audited "Shift of Akinyi closed by an admin". Then the day can close. Admin event `shift_closed_by_admin`; server `20261201000002_kaunta_admin_close_shift.sql` (whole KES, kept as it was if the counter closed it first). The phone sees it closed with its next pull; the person's still-open orders stay theirs.
+- Tests: Served and Reconcile close in `src/admin/admin.test.tsx`, `supabase/devices.test.ts`.
+
 ## Sync fix, error screens, small changes (2026-11-23, after push notifications)
 
 - **Paid on one counter, still pending on another (fixed)**: `sync_pull` sent orders, lines and payments only while open or from today/yesterday (approvals: waiting or 2 days; shifts: open or opened in 2 days). An older order paid elsewhere matched neither once paid, so other phones kept it pending (seen live: 20 Nov orders paid on Counter 3 on 23 Nov, pending on Counter 2). `20261129000000_kaunta_pull_any_day.sql`: the window now applies only to a phone's first pull; after that every row changed since the cursor comes down. The migration also touches `updated_at` on rows changed in the last 14 days (no status column written, so no notification triggers) so phones that had skipped them take them once. Tests: `supabase/pullAnyDay.test.ts` (fails without the migration).
@@ -219,7 +227,7 @@ Last updated: 2026-11-17 (everything on the server: accounts, Kaunta, limits, su
 
 ## Tests
 
-- `npm test`: 600 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
+- `npm test`: 604 unit and integration tests, including Postgres (PGlite) tests of the migrations (with and without `seed.sql`), of bar isolation and of bar codes (`supabase/multiBar.test.ts`).
 - Counter UI and phone-sync tests pin the clock to the 22:20 snapshot; before 2026-11-11 they used the real clock and broke when the business day rolled over.
 - `npm run test:e2e`: 17 Playwright tests (landing and counter at 360×800, admin at 390 px and desktop). `e2e/fullLoop.spec.ts` does the whole loop in one browser: add a bar, its code, presets, add a person, the code at the counter, one-time code → PIN, a sale, the sale in admin.
 

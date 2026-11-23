@@ -4,7 +4,7 @@ import { StatusChip } from '../components/StatusChip';
 import type { Status } from '../components/StatusChip';
 import { displayLabel, productName, sizeLabel } from '../counter/labels';
 import { useQuery } from '../data/react';
-import { byServer, feedRows, todaySummary } from '../domain/admin';
+import { byServer, feedRows, todaySummary, unpaidRows } from '../domain/admin';
 import type { FeedKind, FeedRow } from '../domain/admin';
 import { businessDayOf } from '../domain/time';
 import type { OrderLine } from '../domain/types';
@@ -93,8 +93,10 @@ export function FeedScreen() {
 
   if (!data || !audit) return <AdminLayout>{null}</AdminLayout>;
   const all = feedRows(audit.filter((e) => businessDayOf(e.at, data.bar.day_start) === day), data);
-  const rows = all.filter((r) => filter === 'all' || r.kind === filter);
-  const count = (f: Filter) => (f === 'all' ? all.length : all.filter((r) => r.kind === f).length);
+  // Served: the orders still to be paid, one row each with all their items and what is due.
+  const unpaid = unpaidRows(data);
+  const rows = filter === 'served' ? unpaid : all.filter((r) => filter === 'all' || r.kind === filter);
+  const count = (f: Filter) => (f === 'all' ? all.length : f === 'served' ? unpaid.length : all.filter((r) => r.kind === f).length);
   const servers = byServer(data);
   const total = todaySummary(data);
 
@@ -116,9 +118,13 @@ export function FeedScreen() {
             return (
               <div key={r.id} className="a-feed-row">
                 <span className="a-feed-time">{hhmm(r.at)}</span>
-                <StatusChip status={CHIP[r.kind]} className="a-chip-sm">
-                  {r.kind === 'served' ? t('feed.servedPending') : undefined}
-                </StatusChip>
+                {r.id.startsWith('unpaid-') && r.payments.length > 0 ? (
+                  <StatusChip status="partPaid" className="a-chip-sm" />
+                ) : (
+                  <StatusChip status={CHIP[r.kind]} className="a-chip-sm">
+                    {r.kind === 'served' ? t('feed.servedPending') : undefined}
+                  </StatusChip>
+                )}
                 <span className="a-feed-what">
                   <strong>{d.what}</strong>
                   <span>{d.who}</span>

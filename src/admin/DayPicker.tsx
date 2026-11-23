@@ -32,11 +32,19 @@ export function DayPicker({ day, today, onPick }: { day: BusinessDay; today: Bus
         <Icon name="calendar" size={18} />
         <span>{dayLabel(day, locale)}</span>
       </button>
+      {/* Over the button: on phones the tap lands on the field itself (scripts may not open it there). */}
       <input
         ref={input}
         className="a-daypick-input"
         type="date"
         tabIndex={-1}
+        onClick={(e) => {
+          try {
+            e.currentTarget.showPicker();
+          } catch {
+            // The browser opens it by itself.
+          }
+        }}
         aria-label={t('admin.day.pickField')}
         min={min}
         max={today}

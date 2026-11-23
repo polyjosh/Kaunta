@@ -63,6 +63,8 @@ export type AdminEvent =
   /** R-DEV-2 */
   | { type: 'device_revoked'; payload: { device_id: Id; reason: string } }
   | { type: 'device_deleted'; payload: { device_id: Id } }
+  /** Someone left without closing: an owner or manager counts the drawer and closes the shift for them. */
+  | { type: 'shift_closed_by_admin'; payload: { shift_id: Id; person_id: Id; counted_cash_kes: number; expected_cash_kes: number; result_kes: number } }
   /** R-DAY-3: kept on record with whatever variance there was. */
   | { type: 'day_closed'; payload: { day_close: DayClose } };
 
@@ -326,6 +328,12 @@ export async function applyAdminEvent(db: KauntaDB, event: AdminEvent, { by, at 
     }
     case 'device_revoked': {
       await db.devices.update(event.payload.device_id, { revoked_at: at, revoked_reason: event.payload.reason });
+      return;
+    }
+    case 'shift_closed_by_admin': {
+      const { shift_id, counted_cash_kes, result_kes } = event.payload;
+      const shift = await db.shifts.get(shift_id);
+      if (shift && shift.closed_at === null) await db.shifts.update(shift_id, { closed_at: at, counted_cash_kes, result_kes });
       return;
     }
     case 'device_deleted': {

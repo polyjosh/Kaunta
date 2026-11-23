@@ -32,6 +32,8 @@ export function ReconcileScreen({ day }: { day: BusinessDay }) {
   const data = useDayData(day);
   const [tillText, setTillText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** The open shift being closed here, and the cash counted in its drawer. */
+  const [closing, setClosing] = useState<{ id: string; counted: string } | null>(null);
 
   if (!data) return <AdminLayout>{null}</AdminLayout>;
   const shifts = shiftRecon(data, day);
@@ -137,6 +139,78 @@ export function ReconcileScreen({ day }: { day: BusinessDay }) {
           </div>
         )}
         <p className="a-note">{[t('admin.recon.amountsInKes'), ...shortNotes, ...openNotes].join(' ')}</p>
+        {!closed && shifts.some((s) => s.shift.closed_at === null) && (
+          <div className="a-close-shifts">
+            <h3>{t('admin.recon.closeForTitle')}</h3>
+            <p className="a-note">{t('admin.recon.closeForBody')}</p>
+            {shifts
+              .filter((s) => s.shift.closed_at === null)
+              .map((r) => {
+                const name = personName(data.people, r.shift.person_id);
+                const counted = closing?.id === r.shift.id ? parseKes(closing.counted) : null;
+                return (
+                  <div key={r.shift.id} className="a-close-shift">
+                    <div className="a-close-shift-head">
+                      <strong>{name}</strong>
+                      <span className="a-muted">
+                        {deviceName(data.devices, r.shift.device_id)} · {hhmm(r.shift.opened_at)} · {t('admin.recon.expectedShort', { amount: formatKES(r.expected_kes) })}
+                      </span>
+                      {closing?.id !== r.shift.id && (
+                        <button type="button" className="a-btn a-btn-sm" onClick={() => setClosing({ id: r.shift.id, counted: '' })}>
+                          {t('admin.recon.closeFor', { name })}
+                        </button>
+                      )}
+                    </div>
+                    {closing?.id === r.shift.id && (
+                      <div className="a-close-shift-form">
+                        <label className="a-field a-field-sm">
+                          {t('admin.recon.countedLabel', { name })}
+                          <input
+                            inputMode="numeric"
+                            autoFocus
+                            value={closing.counted}
+                            placeholder={formatAmount(r.expected_kes)}
+                            onChange={(e) => setClosing({ id: r.shift.id, counted: e.target.value })}
+                          />
+                        </label>
+                        {counted !== null && (
+                          <p className="a-note">
+                            {counted === r.expected_kes
+                              ? t('status.matches')
+                              : t(counted < r.expected_kes ? 'admin.shortAmount' : 'admin.overAmount', { amount: formatKES(Math.abs(counted - r.expected_kes)) })}
+                          </p>
+                        )}
+                        <div className="a-actions">
+                          <button
+                            type="button"
+                            className="a-btn a-btn-sm a-btn-primary"
+                            disabled={counted === null}
+                            onClick={async () => {
+                              if (counted === null) return;
+                              setClosing(null);
+                              await recordAdminEvent(db, ctx, {
+                                type: 'shift_closed_by_admin',
+                                payload: {
+                                  shift_id: r.shift.id,
+                                  person_id: r.shift.person_id,
+                                  counted_cash_kes: counted,
+                                  expected_cash_kes: r.expected_kes,
+                                  result_kes: counted - r.expected_kes,
+                                },
+                              });
+                            }}
+                          >
+                            {t('admin.recon.closeConfirm', { name })}
+                          </button>
+                          <button type="button" className="a-btn a-btn-sm" onClick={() => setClosing(null)}>{t('common.cancel')}</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+          </div>
+        )}
       </section>
 
       <section className="a-card" aria-labelledby="recon-mpesa">

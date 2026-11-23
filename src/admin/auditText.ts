@@ -194,6 +194,14 @@ export function describeAudit(e: AuditEvent, l: AuditLookups, t: TFunction, loca
       const params = { label: x.label, amount: formatKES(x.amount_kes), from: t(x.paid_from === 'mpesa' ? 'expense.fromTill' : 'expense.fromCash') };
       return { what: t(e.kind === 'shift_expense_added' ? 'admin.audit.expenseAdded' : 'admin.audit.expenseRemoved', params), changes: none };
     }
+    case 'shift_closed_by_admin': {
+      const result: number = d.result_kes ?? 0;
+      const outcome = result === 0 ? t('status.matches') : t(result < 0 ? 'admin.shortAmount' : 'admin.overAmount', { amount: formatKES(Math.abs(result)) });
+      return {
+        what: t('admin.audit.shiftClosedFor', { name: person(d.person_id), result: outcome }),
+        changes: [{ before: t('admin.audit.expected', { amount: formatKES(d.expected_cash_kes ?? 0) }), after: t('admin.audit.counted', { amount: formatKES(d.counted_cash_kes ?? 0) }) }],
+      };
+    }
     case 'shift_closed': {
       const result: number = d.result_kes ?? 0;
       const counted: number = d.counted_cash_kes ?? 0;

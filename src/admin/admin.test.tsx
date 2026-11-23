@@ -192,6 +192,25 @@ describe('Reconcile (R-SHIFT-2, R-DAY-3)', () => {
     expect(await screen.findByText(/Day closed by Njeri at 02:14/)).toBeInTheDocument();
     expect(await db.dayCloses.get('2026-11-10')).toMatchObject({ till_total_kes: 47_650, recorded_mpesa_kes: 48_400, closed_by: 'p_njeri' });
   });
+
+  it('an admin closes a shift someone left open, with the cash they count, and then the day can close', async () => {
+    renderAt('/admin/reconcile/2026-11-10');
+    await user.click(await screen.findByRole('button', { name: 'Close Akinyi’s shift' }));
+    const counted = screen.getByLabelText('Cash counted in Akinyi’s drawer (KES)');
+    const close = screen.getAllByRole('button', { name: 'Close Akinyi’s shift' }).at(-1)!;
+    expect(close).toBeDisabled();
+    await user.type(counted, '14000');
+    expect(within(counted.closest('.a-close-shift') as HTMLElement).getByText(/^Short KES/)).toBeInTheDocument();
+    await user.click(close);
+    await waitFor(async () => expect((await db.shifts.get('s_p_akinyi'))!.closed_at).not.toBeNull());
+    const shift = (await db.shifts.get('s_p_akinyi'))!;
+    expect(shift.counted_cash_kes).toBe(14_000);
+    expect(shift.result_kes).toBeLessThan(0);
+    expect((await db.auditEvents.where('kind').equals('shift_closed_by_admin').toArray())).toHaveLength(1);
+    await waitFor(() => expect(screen.queryByText('Shifts still open')).toBeNull());
+    await user.type(screen.getByLabelText('Till total in KES'), '47650');
+    expect(screen.getByRole('button', { name: 'Close the business day' })).toBeEnabled();
+  });
 });
 
 describe('Sales feed', () => {
@@ -203,6 +222,19 @@ describe('Sales feed', () => {
     expect(total).toHaveTextContent('6,480');
     await user.click(screen.getByRole('button', { name: /Needs review/ }));
     expect(screen.getAllByText('Needs review').length).toBeGreaterThanOrEqual(5);
+    expect(screen.queryByText('Paid', { selector: '.k-chip span' })).toBeNull();
+  });
+
+  it('Served shows each order still to be paid, once, with what is due', async () => {
+    renderAt('/admin/sales');
+    const served = await screen.findByRole('button', { name: /^Served/ });
+    expect(served).toHaveTextContent('5');
+    await user.click(served);
+    const rows = Array.from(document.querySelectorAll('.a-feed-row'));
+    expect(rows).toHaveLength(5);
+    const due = rows.map((r) => Number(r.querySelector('.a-feed-amount')!.textContent!.replace(/[^0-9]/g, '')));
+    expect(due.reduce((a, b) => a + b, 0)).toBe(6_480);
+    expect(screen.getByText('Part paid')).toBeInTheDocument();
     expect(screen.queryByText('Paid', { selector: '.k-chip span' })).toBeNull();
   });
 });
